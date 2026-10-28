@@ -1,0 +1,624 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1d6a48"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Apontamento de Terceiros</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: uma coluna de fichas (dia → lançar equipe → lançamentos), barra de envio fixa no rodapé */
+:root{
+  --bg:#eef0eb; --surface:#ffffff; --sunk:#f6f7f3; --ink:#18201b; --muted:#5a655d; --line:#d6dbd2;
+  --accent:#1d6a48; --accent-soft:#e1efe7; --accent-ink:#ffffff;
+  --warn:#8f5300; --warn-bg:#fdf0d6; --err:#a8231b; --err-bg:#fbe4e1; --info:#2f5d86; --info-bg:#e3edf6;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111613; --surface:#1a201c; --sunk:#151a17; --ink:#e4ebe6; --muted:#98a59c; --line:#2c3530;
+  --accent:#55c08d; --accent-soft:#1d3328; --accent-ink:#0b1a12;
+  --warn:#f0b65c; --warn-bg:#382a12; --err:#ff8d82; --err-bg:#3a1b18; --info:#8dbbe6; --info-bg:#1a2a3a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111613; --surface:#1a201c; --sunk:#151a17; --ink:#e4ebe6; --muted:#98a59c; --line:#2c3530;
+  --accent:#55c08d; --accent-soft:#1d3328; --accent-ink:#0b1a12;
+  --warn:#f0b65c; --warn-bg:#382a12; --err:#ff8d82; --err-bg:#3a1b18; --info:#8dbbe6; --info-bg:#1a2a3a; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:15px/1.45 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 120px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 8px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{font:700 1.3rem/1.1 var(--f-display);margin:0;letter-spacing:.01em;text-wrap:balance}
+.brand .sub{font:500 .78rem var(--f-mono);color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);font:600 .9rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;padding:8px 6px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h2{font:600 .8rem var(--f-display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted);font-weight:500;min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 10px;min-height:44px;width:100%;min-width:0}
+input[type="time"]{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:600 .95rem var(--f-display);letter-spacing:.02em;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:10px 14px;min-height:44px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:34px;padding:6px 10px;font-size:.85rem}
+.btn.danger{color:var(--err)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hint{font-size:.8rem;color:var(--muted);margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.ordinfo{background:var(--sunk);border:1px dashed var(--line);border-radius:8px;padding:10px;font-size:.85rem;display:grid;gap:2px}
+.ordinfo b{font-weight:600}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px}
+.person{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);cursor:pointer;min-height:48px}
+.person input{width:20px;height:20px;min-height:0;accent-color:var(--accent);flex:none}
+.person .nm{font-weight:500;line-height:1.2}
+.person .mt{font:400 .72rem var(--f-mono);color:var(--muted)}
+.person.on{border-color:var(--accent);background:var(--accent-soft)}
+.person.used{opacity:.5}
+.chip{display:inline-flex;align-items:center;gap:4px;font:600 .7rem var(--f-display);text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:999px;white-space:nowrap}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.err{background:var(--err-bg);color:var(--err)}
+.chip.info{background:var(--info-bg);color:var(--info)}
+.chip.ok{background:var(--accent-soft);color:var(--accent)}
+.group{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.ghead{padding:10px 12px;background:var(--sunk);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.ghead .on{font:600 1rem var(--f-mono)}
+.ghead .ds{font-size:.85rem;color:var(--muted)}
+.ghead select{width:auto;min-height:34px;padding:4px 8px;font-size:.85rem}
+.line{padding:10px 12px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.line:last-child{border-bottom:0}
+.lt{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.lt .nm{font-weight:600}
+.lt .tot{font:600 .95rem var(--f-mono)}
+.times{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.times label.f{font-size:.7rem}
+.alm{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);min-height:44px;cursor:pointer;white-space:nowrap}
+.alm input{width:20px;height:20px;min-height:0;accent-color:var(--accent)}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.split{background:var(--info-bg);border-radius:8px;padding:10px;display:grid;gap:8px}
+.empty{padding:22px 14px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r);font-size:.9rem}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar .in{max-width:760px;margin:0 auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.bar .sum{font:500 .8rem var(--f-mono);color:var(--muted);line-height:1.3}
+.bar .sum b{color:var(--ink);font-size:1rem}
+.issues{display:grid;gap:6px}
+.issue{font-size:.85rem;padding:8px 10px;border-radius:8px}
+.issue.err{background:var(--err-bg);color:var(--err)}
+.issue.warn{background:var(--warn-bg);color:var(--warn)}
+table.list{width:100%;border-collapse:collapse;font-size:.85rem}
+table.list td,table.list th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tscroll{overflow-x:auto}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:.88rem;z-index:20;max-width:min(92vw,520px);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.picker{display:grid;gap:8px}
+.picker button{text-align:left;justify-content:flex-start;font-size:1.05rem;min-height:56px}
+@media (max-width:420px){.times{grid-template-columns:1fr 1fr}.times .alm{grid-column:1/-1;min-height:30px}}
+@media (prefers-reduced-motion:no-preference){.person,.btn{transition:background .12s,border-color .12s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1 id="hTitle">Apontamento de Terceiros</h1>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button id="tabA" role="tab" aria-selected="true" data-tab="apont">Apontamento</button>
+      <button id="tabC" role="tab" aria-selected="false" data-tab="cad">Cadastro</button>
+      <button id="tabH" role="tab" aria-selected="false" data-tab="hist">Enviados</button>
+    </nav>
+  </header>
+
+  <!-- Seleção de empresa (primeiro acesso) -->
+  <section class="card" id="vPick" hidden>
+    <h2>Qual empresa você representa?</h2>
+    <div class="picker" id="pickList"></div>
+    <div class="split">
+      <strong>Outra empresa</strong>
+      <label class="f">Nome da empresa<input id="neNome" placeholder="Ex.: Metalúrgica Silva" autocomplete="organization"></label>
+      <button class="btn primary" id="bAddEmp">Adicionar e começar</button>
+      <p class="hint" id="neErr" style="color:var(--err)"></p>
+    </div>
+    <p class="hint">Fica salvo neste aparelho. Dá para trocar depois em Cadastro.</p>
+  </section>
+
+  <!-- APONTAMENTO -->
+  <div id="vApont" class="wrap" hidden>
+    <section class="card">
+      <h2>Dia trabalhado <span id="dayChip"></span></h2>
+      <div class="grid">
+        <label class="f">Data<input type="date" id="fData"></label>
+        <label class="f">Encarregado<input type="text" id="fEnc" placeholder="Seu nome" autocomplete="name"></label>
+      </div>
+      <div class="row">
+        <button class="btn small" id="bRepeat">Repetir último dia</button>
+        <button class="btn small ghost danger" id="bClear">Limpar dia</button>
+        <span class="hint" id="repeatHint"></span>
+      </div>
+      <div id="clearConfirm" class="split" hidden>
+        <span>Apagar todos os lançamentos deste dia?</span>
+        <div class="row"><button class="btn small danger" id="bClearYes">Apagar</button><button class="btn small" id="bClearNo">Cancelar</button></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Lançar equipe numa ordem</h2>
+      <div class="grid">
+        <label class="f">Nº da ordem<input id="noNum" inputmode="numeric" maxlength="8" placeholder="40500000" class="mono"></label>
+        <label class="f">Setor<select id="noSetor"></select></label>
+        <label class="f">Solicitante<select id="noSol"></select></label>
+        <label class="f">Status<select id="noSt"><option>Em andamento</option><option>Concluída</option></select></label>
+      </div>
+      <label class="f">Descrição do serviço<input id="noDesc" placeholder="Ex.: Confeccionar chuveiro para os prés 06 e 07"></label>
+      <p class="hint" id="noErr" style="color:var(--err)"></p>
+      <div id="peopleBox">
+        <div class="row" style="justify-content:space-between">
+          <span class="hint">Quem trabalhou nesta ordem?</span>
+          <button class="btn small ghost" id="bAll">Marcar todos livres</button>
+        </div>
+        <div class="people" id="people"></div>
+        <div class="times" style="margin-top:10px">
+          <label class="f">Entrada<input type="time" id="dIn" step="60"></label>
+          <label class="f">Saída<input type="time" id="dOut" step="60"></label>
+          <label class="alm"><input type="checkbox" id="dAlm" checked> Almoço <span class="mono" id="almLbl"></span></label>
+        </div>
+        <button class="btn primary" id="bLaunch" style="width:100%;margin-top:10px" disabled>Lançar</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Lançamentos do dia <span class="mono" id="cntLbl"></span></h2>
+      <div id="groups"></div>
+    </section>
+
+    <section class="card" id="issuesCard" hidden>
+      <h2>Antes de enviar</h2>
+      <div class="issues" id="issues"></div>
+    </section>
+
+    <section class="card" id="sendCard" hidden>
+      <h2>Envio <span id="sendChip"></span></h2>
+      <p class="hint">O botão “Enviar por e-mail” prepara um e-mail para <span class="mono" id="destLbl" style="user-select:all"></span> com a planilha do dia em anexo.</p>
+      <ul class="hint" style="margin:0;padding-left:18px;display:grid;gap:4px">
+        <li><b>No computador:</b> baixa um arquivo de e-mail (.eml). Abra o arquivo: o Outlook abre com destinatário, assunto e planilha anexada. Clique em Enviar.</li>
+        <li><b>No celular:</b> abre a tela de compartilhar com a planilha. Escolha o app de e-mail e cole o endereço em “Para” (ele já fica copiado).</li>
+      </ul>
+      <label class="f" id="motivoBox" hidden>Motivo do reenvio (obrigatório)<input id="fMotivo" placeholder="Ex.: corrigi a saída do João, que ficou até 17:30"></label>
+      <div class="row"><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
+    </section>
+  </div>
+
+  <!-- CADASTRO -->
+  <div id="vCad" class="wrap" hidden>
+    <section class="card">
+      <h2>Empresa</h2>
+      <div class="row"><strong id="cEmp"></strong><button class="btn small" id="bSwitch">Trocar empresa</button></div>
+    </section>
+    <section class="card">
+      <h2>Funcionários <span class="mono" id="cFCnt"></span></h2>
+      <label class="f">Nome completo<input id="nfNome" placeholder="Nome e sobrenome, como no documento" autocapitalize="words"></label>
+      <button class="btn small primary" id="nfAdd">Adicionar funcionário</button>
+      <p class="hint" id="nfErr"></p>
+      <div class="tscroll"><table class="list" id="tFunc"></table></div>
+    </section>
+  </div>
+
+  <!-- ENVIADOS -->
+  <div id="vHist" class="wrap" hidden>
+    <section class="card">
+      <h2>Dias salvos neste aparelho</h2>
+      <div class="tscroll"><table class="list" id="tHist"></table></div>
+    </section>
+  </div>
+</div>
+
+<div class="bar" id="bar" hidden>
+  <div class="in">
+    <div class="sum" id="sum"></div>
+    <button class="btn primary" id="bMail">Enviar por e-mail</button>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const BASE = {"empresas":{"Montec":{"funcionarios":[{"nome":"Ademir Maciel Calixto"},{"nome":"Almir Antonio de Moura"},{"nome":"André Alves dos Santos"},{"nome":"César Alves dos Santos"},{"nome":"Edson Ramos da Rocha"},{"nome":"Edvaldo Brito de Souza"},{"nome":"João de Paula Santos"},{"nome":"Julio Cesar Zonzini Martins"},{"nome":"Marcos Fabiano Palhano Gomes"},{"nome":"Rogério Batista"},{"nome":"Sérgio Alves dos Santos"},{"nome":"Wanderley Ferreira dos Reis"},{"nome":"Yago Carvalho dos Santos"}],"ordens":[]},"Jato Dois Irmãos":{"funcionarios":[{"nome":"Ademar da Paixão"},{"nome":"Bruno C. da Silva"},{"nome":"Carlos M. Silva dos Santos"},{"nome":"Daniel A. Mendonça"},{"nome":"Eduardo de Jesus"},{"nome":"Edvaldo S. Santos"},{"nome":"Elivelto da Silva Sacramento"},{"nome":"José Nauey"},{"nome":"Rodrigo J. O. Queiroz"},{"nome":"Wesley da Silva Sousa"}],"ordens":[]},"Equipe Instalações":{"funcionarios":[],"ordens":[]},"Peraçolli":{"funcionarios":[{"nome":"Robson"},{"nome":"Dislaino"}],"ordens":[]}},"setores":["Caldeira 2","Caldeiraria","ETEL","Evaporação","Fermentação","Fermentação (Destilaria)","Filtro Prensa","Fábrica de Açúcar","Graneleiro","Indústria","Laboratório","Levedura","Moenda","Moenda A","Portaria","Tratamento de Caldo","VLC"],"solicitantes":["Agnaldo","Alessandro","Bruno Ferreira","Danilo Bessa","Everton Pinheiro","Fabiano","Galinia","Jilson","Julio","Lucas Gama","Roberta","Rogério (Elétrica)"]};
+const J = {entrada:420, almIni:690, almFim:750, saida:1008, tol:15}; // minutos: 07:00, 11:30, 12:30, 16:48
+const SLUG = {"Montec":"montec","Jato Dois Irmãos":"jato","Equipe Instalações":"equipe","Peraçolli":"peracolli"};
+const KEY = "apontTerceiros.v1";
+const DESTINO_EMAIL = "gabriel07rosendo@gmail.com"; // trocar aqui quando sair do teste
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const hm = m => { if(m==null||isNaN(m)) return ""; m=((m%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); };
+const EARLY = 360; // 06:00 — entrada entre 06:00 e 06:59 conta como 07:00; antes disso é serviço de madrugada
+const isEarly = m => m>=EARLY && m<J.entrada;
+const norm = l => { const oc=l.out%1440; l.out = oc<=l.in ? oc+1440 : oc; }; // saída menor que a entrada = terminou no dia seguinte
+const toMin = s => { if(!s) return null; const [h,m]=s.split(":").map(Number); return h*60+m; };
+const durTxt = m => (m<0?"-":"")+Math.floor(Math.abs(m)/60)+"h"+String(Math.abs(m)%60).padStart(2,"0");
+const uid = () => Math.random().toString(36).slice(2,10);
+const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const WD = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+
+let S = { empresa:null, enc:"", extras:{}, dias:{}, empresasExtra:[] };
+try { const raw = localStorage.getItem(KEY); if(raw) S = Object.assign(S, JSON.parse(raw)); } catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+let curDate = todayISO(), tab = "apont", splitOpen = null;
+const ex = () => (S.extras[S.empresa] ||= {func:[], ordens:[], ocultos:[]});
+function funcs(){ const e=ex(); return [...(BASE.empresas[S.empresa]?.funcionarios||[]), ...e.func].filter(f=>!e.ocultos.includes("f:"+f.nome)).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")); }
+const dkey = (d=curDate) => S.empresa+"|"+d;
+function day(d=curDate){ const x = S.dias[dkey(d)] ||= {linhas:[], status:{}, ordens:{}, envios:[], motivo:""}; x.ordens ||= {}; x.envios ||= []; return x; }
+// ordens existem só dentro do dia em que foram lançadas (sem histórico)
+const ordens = () => Object.values(day().ordens);
+const findOrd = n => day().ordens[n];
+const pkey = l => l.nome;
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true, 3200); }
+
+/* ---------- cálculo ---------- */
+function almOverlap(l){ if(!l.alm) return 0; const a=Math.max(l.in,J.almIni), b=Math.min(l.out,J.almFim); return Math.max(0,b-a); }
+const total = l => (l.out - l.in) - almOverlap(l);
+
+function lineFlags(l, all){
+  const f=[]; const mine = all.filter(x=>pkey(x)===pkey(l) && x.id!==l.id);
+  if(l.out<=l.in) f.push(["err","Saída antes da entrada"]);
+  if(mine.some(x=> l.in < x.out && x.in < l.out)) f.push(["err","Horário sobreposto com outra ordem"]);
+  const cont = mine.some(x=>x.out===l.in || (x.out===J.almIni && l.in===J.almFim));
+  const later = mine.some(x=>x.in>=l.out);
+  const night = l.in < EARLY || l.in >= J.saida || l.out > 1440;
+  if(!night && !cont && l.in > J.entrada+J.tol) f.push(["warn","Entrada após "+hm(J.entrada+J.tol)]);
+  if(night || l.out > J.saida+J.tol) f.push(["err","Hora extra / fora da jornada: justifique"]);
+  else if(!later && l.out < J.saida-J.tol) f.push(["warn","Saída antes de "+hm(J.saida-J.tol)]);
+  if(l.out > 1440) f.push(["info","Termina no dia seguinte"]);
+  if(total(l) > 960) f.push(["warn","Mais de 16h no dia: confira"]);
+  if(l.adj) f.push(["info","Entrada contada 07:00"]);
+  return f;
+}
+
+/* ---------- views ---------- */
+function setTab(t){ tab=t; ["apont","cad","hist"].forEach(x=>{ document.querySelector(`[data-tab="${x}"]`).setAttribute("aria-selected", x===t); });
+  render(); }
+
+function render(){
+  const has = !!S.empresa && allEmp().includes(S.empresa);
+  $("vPick").hidden = has; document.querySelector(".tabs").hidden = !has;
+  $("vApont").hidden = !has || tab!=="apont"; $("vCad").hidden = !has || tab!=="cad"; $("vHist").hidden = !has || tab!=="hist";
+  $("bar").hidden = !has || tab!=="apont";
+  $("hTitle").textContent = has ? S.empresa : "Apontamento de Terceiros";
+  if(!has){ renderPick(); return; }
+  if(tab==="apont") renderApont(); else if(tab==="cad") renderCad(); else renderHist();
+}
+
+function renderPick(){
+  $("pickList").innerHTML = allEmp().map(n=>`<button class="btn" data-emp="${esc(n)}">${esc(n)}</button>`).join("");
+}
+
+function renderApont(){
+  $("fData").value = curDate; $("fEnc").value = S.enc || "";
+  const dt = new Date(curDate+"T12:00:00"), diff = Math.round((new Date(curDate+"T12:00:00") - new Date(todayISO()+"T12:00:00"))/864e5);
+  let chip = `<span class="chip ok">${WD[dt.getDay()]}</span>`;
+  if(diff>0) chip = `<span class="chip err">Data no futuro</span>`; else if(diff<-10) chip = `<span class="chip warn">Há ${-diff} dias · confira</span>`;
+  $("dayChip").innerHTML = chip;
+  const prev = lastDay(); $("bRepeat").disabled = !prev;
+  $("repeatHint").textContent = prev ? "Copia de "+prev.split("-").reverse().join("/") : "Nenhum dia anterior salvo";
+  renderLaunch(); renderGroups(); renderSum();
+}
+
+function renderLaunch(){
+  fillNewOrd();
+  const o = $("noNum").value.trim();
+  const used = usedFull(), lin = day().linhas, keep = new Set([...$("people").querySelectorAll("input:checked")].map(x=>x.value));
+  $("people").innerHTML = funcs().map(f=>{ const k=f.nome, inThis = lin.some(l=>pkey(l)===k && l.ordem===o), u=used.has(k);
+    return `<label class="person${u?" used":""}" data-k="${esc(k)}"><input type="checkbox" value="${esc(k)}" ${u||inThis?"disabled":(keep.has(k)?"checked":"")}><span><span class="nm">${esc(f.nome)}</span><br>${inThis||u?`<span class="mt">${inThis?"já nesta ordem":"já lançado"}</span>`:""}</span></label>`; }).join("") || `<div class="empty">Nenhum funcionário cadastrado. Adicione em Cadastro.</div>`;
+  if(!$("dIn").value){ $("dIn").value=hm(J.entrada); $("dOut").value=hm(J.saida); }
+  $("almLbl").textContent = hm(J.almIni)+"–"+hm(J.almFim);
+  updLaunchBtn();
+}
+function usedFull(){ const s=new Set(); const by={}; day().linhas.forEach(l=>{ (by[pkey(l)] ||= []).push(l); });
+  Object.entries(by).forEach(([k,ls])=>{ const mn=Math.min(...ls.map(l=>l.in)), mx=Math.max(...ls.map(l=>l.out)); if(mn<=J.entrada+J.tol && mx>=J.saida-J.tol) s.add(k); }); return s; }
+function updLaunchBtn(){ const n = $("people").querySelectorAll("input:checked").length; $("bLaunch").disabled = !n; $("bLaunch").textContent = n ? `Lançar ${n} ${n>1?"pessoas":"pessoa"} nesta ordem` : "Marque quem trabalhou";
+  $("people").querySelectorAll(".person").forEach(p=>p.classList.toggle("on", p.querySelector("input").checked)); }
+
+function fillNewOrd(){
+  if($("noSetor").options.length) return;
+  $("noSetor").innerHTML = `<option value="">Escolha…</option>`+BASE.setores.map(s=>`<option>${esc(s)}</option>`).join("");
+  $("noSol").innerHTML = `<option value="">Escolha…</option>`+BASE.solicitantes.map(s=>`<option>${esc(s)}</option>`).join("");
+}
+
+function renderGroups(){
+  const d = day(), lin = d.linhas;
+  $("cntLbl").textContent = lin.length ? new Set(lin.map(pkey)).size+" pessoas" : "";
+  if(!lin.length){ $("groups").innerHTML = `<div class="empty">Nada lançado ainda. Preencha a ordem acima e marque a equipe, ou use “Repetir último dia”.</div>`; return; }
+  const by = {}; lin.forEach(l=>(by[l.ordem] ||= []).push(l));
+  $("groups").innerHTML = `<div style="display:grid;gap:10px">` + Object.entries(by).map(([o,ls])=>{ const ord=findOrd(o)||{setor:"",desc:""}; const st=d.status[o]||ord.status||"Em andamento";
+    return `<div class="group"><div class="ghead"><div style="min-width:0"><div class="on">${esc(o)} <span class="chip info">${esc(ord.setor)}</span></div><div class="ds">${esc(ord.desc)}</div></div>
+      <select data-st="${esc(o)}" aria-label="Status da ordem ${esc(o)}"><option ${st==="Em andamento"?"selected":""}>Em andamento</option><option ${st==="Concluída"?"selected":""}>Concluída</option></select></div>
+      ${ls.sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in).map(l=>lineHTML(l,lin)).join("")}</div>`; }).join("") + `</div>`;
+}
+function lineHTML(l, all){
+  const fl = lineFlags(l, all), t = total(l), needObs = fl.some(f=>f[1].startsWith("Hora extra"));
+  const opts = ordens().filter(o=>o.ordem!==l.ordem).map(o=>`<option value="${esc(o.ordem)}">${esc(o.ordem)} · ${esc(o.setor)}</option>`).join("") + `<option value="__new">+ Nova ordem</option>`;
+  const setOpts = BASE.setores.map(s=>`<option>${esc(s)}</option>`).join(""), solOpts = BASE.solicitantes.map(s=>`<option>${esc(s)}</option>`).join("");
+  return `<div class="line" data-id="${l.id}">
+    <div class="lt"><span><span class="nm">${esc(l.nome)}</span></span><span class="tot">${durTxt(t)}</span></div>
+    <div class="times">
+      <label class="f">Entrada<input type="time" step="60" data-f="in" value="${hm(l.in)}"></label>
+      <label class="f">Saída<input type="time" step="60" data-f="out" value="${hm(l.out)}"></label>
+      <label class="alm"><input type="checkbox" data-f="alm" ${l.alm?"checked":""}> Almoço</label>
+    </div>
+    ${fl.length?`<div class="chips">${fl.map(f=>`<span class="chip ${f[0]}">${esc(f[1])}</span>`).join("")}</div>`:""}
+    ${needObs||l.obs?`<label class="f">Justificativa / observação<input data-f="obs" value="${esc(l.obs||"")}" placeholder="Ex.: término da montagem do rolo, autorizado por…"></label>`:""}
+    ${splitOpen===l.id?`<div class="split">
+        <span>Trocou de ordem no meio do dia</span>
+        <div class="grid"><label class="f">Horário da troca<input type="time" step="60" id="spAt" value="${hm(l.in<J.almIni&&l.out>J.almFim?J.almIni:Math.round((l.in+l.out)/2))}"></label>
+        <label class="f">Foi para a ordem<select id="spOrd"><option value="">Escolha…</option>${opts}</select></label></div>
+        <div id="spNew" class="grid" hidden>
+          <label class="f">Nº da ordem<input id="spNum" inputmode="numeric" maxlength="8" class="mono" placeholder="40500000"></label>
+          <label class="f">Setor<select id="spSetor"><option value="">Escolha…</option>${setOpts}</select></label>
+          <label class="f">Solicitante<select id="spSol"><option value="">Escolha…</option>${solOpts}</select></label>
+          <label class="f">Descrição do serviço<input id="spDesc"></label>
+        </div>
+        <div class="row"><button class="btn small primary" data-a="spOk">Dividir</button><button class="btn small" data-a="spNo">Cancelar</button></div></div>`:""}
+    <div class="row"><button class="btn small ghost" data-a="split">Dividir em 2 ordens</button><button class="btn small ghost danger" data-a="del">Remover</button></div>
+  </div>`;
+}
+
+function issues(){
+  const out=[], d=day(), lin=d.linhas;
+  const diff = Math.round((new Date(curDate+"T12:00:00") - new Date(todayISO()+"T12:00:00"))/864e5);
+  if(!lin.length) out.push(["err","Nenhum lançamento no dia."]);
+  if(diff>0) out.push(["err","A data está no futuro. Confira o dia trabalhado."]);
+  if(!(S.enc||"").trim()) out.push(["err","Preencha o nome do encarregado."]);
+  if(d.envios.length && (d.motivo||"").trim().length<5) out.push(["err",`Este dia já foi enviado ${d.envios.length}x. Escreva o motivo do reenvio no quadro Envio.`]);
+  lin.forEach(l=>{ const fl=lineFlags(l,lin);
+    fl.filter(f=>f[0]==="err").forEach(f=>{ if(f[1].startsWith("Hora extra") && (l.obs||"").trim().length>=5) return; out.push(["err", `${l.nome} (${l.ordem}): ${f[1].startsWith("Hora extra")?"hora extra / fora da jornada sem justificativa":f[1].toLowerCase()}.`]); });
+  });
+  return out;
+}
+function renderSum(){
+  const lin=day().linhas, hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), n=new Set(lin.map(pkey)).size, o=new Set(lin.map(l=>l.ordem)).size;
+  $("sum").innerHTML = `<b>${durTxt(hh)}</b> HH<br>${n} pessoas · ${o} ordens${day().envios.length?" · enviado "+day().envios.length+"x":""}`;
+  const is = issues(); $("issuesCard").hidden = !lin.length || !is.length;
+  const ev=day().envios; $("sendCard").hidden = !lin.length; $("destLbl").textContent = DESTINO_EMAIL;
+  $("sendChip").innerHTML = ev.length ? `<span class="chip ok">Enviado ${ev.length}x · último ${new Date(ev[ev.length-1].em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>` : `<span class="chip warn">Não enviado</span>`;
+  $("motivoBox").hidden = !ev.length; if(document.activeElement!==$("fMotivo")) $("fMotivo").value = day().motivo||"";
+  $("bMail").textContent = ev.length ? "Reenviar por e-mail" : "Enviar por e-mail";
+  $("issues").innerHTML = is.map(i=>`<div class="issue ${i[0]}">${esc(i[1])}</div>`).join("");
+}
+
+function renderCad(){
+  $("cEmp").textContent = S.empresa;
+  const fs = funcs(), e=ex();
+  $("cFCnt").textContent = fs.length;
+  $("tFunc").innerHTML = `<tr><th>Nome completo</th><th></th></tr>` + fs.map(f=>`<tr><td>${esc(f.nome)}</td><td><button class="btn small ghost danger" data-rmf="${esc(f.nome)}">Remover</button></td></tr>`).join("");
+}
+function renderHist(){
+  const rows = Object.entries(S.dias).filter(([k,v])=>k.startsWith(S.empresa+"|") && v.linhas.length).sort((a,b)=>b[0].localeCompare(a[0]));
+  $("tHist").innerHTML = rows.length ? `<tr><th>Data</th><th>Pessoas</th><th>HH</th><th>Status</th><th></th></tr>` + rows.map(([k,v])=>{ const d=k.split("|")[1];
+    return `<tr><td class="mono">${d.split("-").reverse().join("/")}</td><td>${new Set(v.linhas.map(pkey)).size}</td><td class="mono">${durTxt(v.linhas.reduce((a,l)=>a+Math.max(0,total(l)),0))}</td><td>${(v.envios||[]).length?`<span class="chip ok">Enviado ${v.envios.length}x</span>`:'<span class="chip warn">Não enviado</span>'}</td><td><button class="btn small" data-open="${d}">Abrir</button></td></tr>`; }).join("")
+    : `<tr><td><div class="empty">Nenhum dia salvo ainda.</div></td></tr>`;
+}
+
+function allEmp(){ return [...Object.keys(BASE.empresas), ...(S.empresasExtra||[])]; }
+function empSlug(n){ return (SLUG[n] || n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"") || "EMPRESA").toUpperCase(); }
+function addEmp(){
+  const n=$("neNome").value.trim().replace(/\s+/g," ");
+  const dup=allEmp().find(e=>e.toLowerCase()===n.toLowerCase());
+  if(dup){ S.empresa=dup; save(); tab="apont"; render(); return; }
+  if(n.length<3){ $("neErr").textContent="Digite o nome da empresa (pelo menos 3 letras)."; return; }
+  (S.empresasExtra ||= []).push(n); S.empresa=n; save(); $("neNome").value=""; $("neErr").textContent="";
+  tab="cad"; setTab("cad"); toast("Empresa "+n+" criada. Cadastre os funcionários para começar.");
+}
+function lastDay(){ const ks = Object.keys(S.dias).filter(k=>k.startsWith(S.empresa+"|") && S.dias[k].linhas.length).map(k=>k.split("|")[1]).filter(d=>d<curDate).sort(); return ks.pop()||null; }
+
+/* ---------- eventos ---------- */
+document.addEventListener("click", ev=>{
+  const t = ev.target.closest("button"); if(!t) return;
+  if(t.dataset.tab) return setTab(t.dataset.tab);
+  if(t.dataset.emp){ S.empresa=t.dataset.emp; save(); tab="apont"; render(); return; }
+  if(t.dataset.open){ curDate=t.dataset.open; setTab("apont"); return; }
+  if(t.dataset.rmf){ const k=t.dataset.rmf, e=ex(); const i=e.func.findIndex(f=>f.nome===k); if(i>=0) e.func.splice(i,1); else e.ocultos.push("f:"+k); save(); renderCad(); toast("Funcionário removido da lista"); return; }
+  const line = t.closest(".line"); if(line && t.dataset.a){ const lin=day().linhas, l=lin.find(x=>x.id===line.dataset.id);
+    if(t.dataset.a==="del"){ lin.splice(lin.indexOf(l),1); }
+    if(t.dataset.a==="split"){ splitOpen = splitOpen===l.id?null:l.id; }
+    if(t.dataset.a==="spNo"){ splitOpen=null; }
+    if(t.dataset.a==="spOk"){ let at=toMin($("spAt").value); if(at!=null && l.out>1440 && at<=l.in) at+=1440; let o=$("spOrd").value;
+      if(!o){ toast("Escolha a ordem para onde ele foi"); return; }
+      if(!(at>l.in && at<l.out)){ toast("O horário da troca precisa estar entre "+hm(l.in)+" e "+hm(l.out)); return; }
+      if(o==="__new"){ const nw={ordem:$("spNum").value.trim(), setor:$("spSetor").value, solicitante:$("spSol").value, desc:$("spDesc").value.trim(), status:"Em andamento"};
+        const err=ordErr(nw); if(err){ toast(err); return; }
+        if(nw.ordem===l.ordem){ toast("É a mesma ordem da primeira parte"); return; }
+        if(!day().ordens[nw.ordem]){ day().ordens[nw.ordem]=nw; day().status[nw.ordem]=nw.status; } o=nw.ordem; }
+      const outOrig=l.out; let bIn=at; if(at===J.almIni) bIn=J.almFim;
+      l.out=at; lin.push({...l, id:uid(), ordem:o, in:bIn, out:outOrig, obs:"", adj:false}); splitOpen=null; toast(`${l.nome} dividido: ${hm(l.in)}–${hm(at)} e ${hm(bIn)}–${hm(outOrig)}`); }
+    save(); renderApont(); return; }
+  switch(t.id){
+    case "bAddEmp": addEmp(); break;
+    case "bSwitch": S.empresa=null; save(); render(); break;
+    case "bAll": $("people").querySelectorAll("input:not(:disabled)").forEach(i=>i.checked=true); updLaunchBtn(); break;
+    case "bLaunch": launch(); break;
+    case "bRepeat": repeat(); break;
+    case "bClear": $("clearConfirm").hidden=false; break;
+    case "bClearNo": $("clearConfirm").hidden=true; break;
+    case "bClearYes": delete S.dias[dkey()]; $("clearConfirm").hidden=true; save(); renderApont(); toast("Dia apagado"); break;
+    case "nfAdd": addFunc(); break;
+    case "bGen": generate(); break;
+    case "bMail": sendMail(); break;
+  }
+});
+document.addEventListener("change", ev=>{
+  const t=ev.target;
+  if(t.id==="fData"){ if(t.value){ curDate=t.value; splitOpen=null; renderApont(); } return; }
+  if(t.id==="spOrd"){ $("spNew").hidden = t.value!=="__new"; return; }
+  if(t.closest("#people")){ updLaunchBtn(); return; }
+  if(t.dataset.st){ day().status[t.dataset.st]=t.value; save(); return; }
+  if(t.id==="dIn"){ const m=toMin(t.value); if(m!=null && isEarly(m)){ t.value=hm(J.entrada); toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } return; }
+  const line=t.closest(".line"); if(line && t.dataset.f){ const l=day().linhas.find(x=>x.id===line.dataset.id);
+    if(t.dataset.f==="alm") l.alm=t.checked;
+    if(t.dataset.f==="in"||t.dataset.f==="out"){ let m=toMin(t.value); if(m==null) return;
+      if(t.dataset.f==="in" && isEarly(m)){ m=J.entrada; l.adj=true; toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } else if(t.dataset.f==="in") l.adj=false;
+      l[t.dataset.f]=m; norm(l); }
+    if(t.dataset.f==="obs") l.obs=t.value.trim();
+    save(); setTimeout(renderApont,0); }
+});
+document.addEventListener("input", ev=>{ if(ev.target.id==="fEnc"){ S.enc=ev.target.value; save(); renderSum(); }
+  if(ev.target.id==="fMotivo"){ day().motivo=ev.target.value; save(); renderSum(); }
+  if(ev.target.id==="noNum"){ const v=ev.target.value.replace(/\D/g,""); if(v!==ev.target.value) ev.target.value=v;
+    const d=day().ordens[v]; if(d){ $("noSetor").value=d.setor; $("noSol").value=d.solicitante||""; $("noDesc").value=d.desc; $("noSt").value=day().status[v]||d.status; }
+    $("noErr").textContent=""; renderLaunch(); } });
+
+function ordErr(o){ return !/^\d{8}$/.test(o.ordem) ? "A ordem precisa ter 8 dígitos." : !o.setor ? "Escolha o setor da ordem." : (o.desc||"").length<5 ? "Descreva o serviço da ordem." : ""; }
+function launch(){
+  const ord={ordem:$("noNum").value.trim(), setor:$("noSetor").value, solicitante:$("noSol").value, desc:$("noDesc").value.trim().replace(/\s+/g," "), status:$("noSt").value};
+  const err=ordErr(ord); $("noErr").textContent=err; if(err){ $("noNum").scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  const o=ord.ordem; day().ordens[o]=ord; day().status[o]=ord.status;
+  let i=toMin($("dIn").value), out=toMin($("dOut").value); const alm=$("dAlm").checked;
+  if(i==null||out==null||out===i){ toast("Confira entrada e saída"); return; }
+  let adj=false; if(isEarly(i)){ i=J.entrada; adj=true; }
+  if(out<=i) out+=1440; // terminou no dia seguinte (madrugada)
+  const ks=[...$("people").querySelectorAll("input:checked")].map(x=>x.value), fs=funcs();
+  ks.forEach(k=>{ const f=fs.find(x=>x.nome===k); day().linhas.push({id:uid(), nome:f.nome, ordem:o, in:i, out, alm, obs:"", adj}); });
+  save();
+  ["noNum","noDesc","dIn"].forEach(x=>$(x).value=""); $("noSetor").value=""; $("noSol").value=""; $("noSt").value="Em andamento"; renderApont(); toast(`${ks.length} lançados na ordem ${o}`);
+  $("groups").scrollIntoView({behavior:"smooth", block:"start"});
+}
+function repeat(){
+  const p=lastDay(); if(!p) return; const src=S.dias[S.empresa+"|"+p];
+  if(day().linhas.length){ toast("Este dia já tem lançamentos. Use “Limpar dia” antes de repetir."); return; }
+  const pers = {}; src.linhas.forEach(l=>(pers[pkey(l)] ||= []).push(l));
+  Object.values(pers).forEach(ls=>{ const split = ls.length>1;
+    ls.forEach(l=>day().linhas.push({...l, id:uid(), obs:"", adj:false, ...(split?{}:{in:J.entrada,out:J.saida,alm:true})})); });
+  day().status = {...src.status}; day().ordens = JSON.parse(JSON.stringify(src.ordens||{})); save(); renderApont(); toast("Copiado de "+p.split("-").reverse().join("/")+". Ajuste quem faltou ou mudou.");
+}
+function addFunc(){
+  const n=$("nfNome").value.trim().replace(/\s+/g," ");
+  const err = n.split(" ").length<2 ? "Informe nome e sobrenome." : funcs().some(f=>f.nome.toLowerCase()===n.toLowerCase()) ? "Esse funcionário já está cadastrado." : "";
+  $("nfErr").textContent = err; if(err) return;
+  const e=ex(); e.ocultos=e.ocultos.filter(x=>x.toLowerCase()!=="f:"+n.toLowerCase());
+  e.func.push({nome:n}); save(); $("nfNome").value=""; renderCad(); toast("Funcionário adicionado");
+}
+
+/* ---------- geração do .xlsx (sem biblioteca) ---------- */
+const CRC = (()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(b){ let c=0xFFFFFFFF; for(let i=0;i<b.length;i++) c = CRC[(c^b[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function zip(files){ const enc=new TextEncoder(), parts=[], cen=[]; let off=0;
+  for(const [name,txt] of files){ const nb=enc.encode(name), data=enc.encode(txt), crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30)); h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true); h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true); h.setUint16(26,nb.length,true);
+    parts.push(new Uint8Array(h.buffer), nb, data);
+    const c=new DataView(new ArrayBuffer(46)); c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true); c.setUint16(28,nb.length,true); c.setUint32(42,off,true);
+    cen.push(new Uint8Array(c.buffer), nb); off += 30+nb.length+data.length; }
+  const csize = cen.reduce((a,b)=>a+b.length,0), e=new DataView(new ArrayBuffer(22)); e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,csize,true); e.setUint32(16,off,true);
+  return new Blob([...parts, ...cen, new Uint8Array(e.buffer)], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}); }
+const xesc = s => String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
+function colL(i){ let s=""; i++; while(i){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; }
+function buildXlsx(rows, head, widths){
+  // estilos: 0 normal, 1 cabeçalho, 2 data, 3 hora, 4 duração
+  const cell=(v,r,c)=>{ const ref=colL(c)+r; if(v==null||v==="") return "";
+    if(typeof v==="object") return `<c r="${ref}" s="${v.s}"><v>${v.v}</v></c>`;
+    if(typeof v==="number") return `<c r="${ref}"><v>${v}</v></c>`;
+    return `<c r="${ref}" t="inlineStr"${r===1?' s="1"':""}><is><t xml:space="preserve">${xesc(v)}</t></is></c>`; };
+  const sd = `<sheetData>`+[head,...rows].map((row,ri)=>`<row r="${ri+1}">${row.map((v,ci)=>cell(v,ri+1,ci)).join("")}</row>`).join("")+`</sheetData>`;
+  const cols = `<cols>`+widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")+`</cols>`;
+  const last = colL(head.length-1)+(rows.length+1);
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>${cols}${sd}<autoFilter ref="A1:${last}"/></worksheet>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="hh:mm"/><numFmt numFmtId="166" formatCode="[h]:mm"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1D6A48"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  return zip([
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="APONTAMENTO" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">APONTAMENTO!$A$1:$${colL(head.length-1)}$${rows.length+1}</definedName></definedNames></workbook>`],
+    ["xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/styles.xml", styles],
+    ["xl/worksheets/sheet1.xml", sheet],
+  ]);
+}
+const serial = iso => (Date.UTC(+iso.slice(0,4), +iso.slice(5,7)-1, +iso.slice(8,10)) - Date.UTC(1899,11,30))/864e5;
+const tv = m => ({s:3, v:(m/1440).toFixed(10)});
+
+let downloadsP = null;
+try { if(window.claude?.use) downloadsP = window.claude.use("downloads").catch(()=>null); } catch(e){}
+
+function buildDay(){
+  const d=day(), head=["EMPRESA","DATA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","SOLICITANTE","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","OBSERVAÇÃO","ENCARREGADO"];
+  const lin=[...d.linhas].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in);
+  const rows = lin.map(l=>{ const o=findOrd(l.ordem)||{}; const ov=almOverlap(l);
+    const ai = ov? Math.max(l.in,J.almIni):null, af = ov? Math.min(l.out,J.almFim):null;
+    return [S.empresa, {s:2,v:serial(curDate)}, l.nome, tv(l.in), ai!=null?tv(ai):"", af!=null?tv(af):"", tv(l.out%1440), {s:4,v:(total(l)/1440).toFixed(10)}, Number(l.ordem), o.setor||"", o.solicitante||"", o.desc||"", d.status[l.ordem]||o.status||"", l.obs||"", S.enc.trim()]; });
+  const blob = buildXlsx(rows, head, [16,11,32,9,13,13,9,9,11,22,18,48,16,30,20]);
+  const envioN = d.envios.length+1, br=curDate.split("-").reverse().join("/");
+  const fname = `APONT_${empSlug(S.empresa)}_${curDate}${envioN>1?"_REENVIO"+envioN:""}.xlsx`;
+  const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), n=new Set(lin.map(pkey)).size, nOrd=new Set(lin.map(l=>l.ordem)).size;
+  const subject = `APONTAMENTO | ${S.empresa} | ${br}`;
+  const body = [`Segue em anexo o apontamento de ${S.empresa} do dia ${br} (${WD[new Date(curDate+"T12:00:00").getDay()]}).`, "",
+    `Encarregado: ${S.enc.trim()}`, `Pessoas: ${n} | Ordens: ${nOrd}`,
+    ...(envioN>1?["", `REENVIO ${envioN} (substitui o envio anterior)`, `Motivo: ${(d.motivo||"").trim()}`]:[]),
+    "", "Enviado pelo formulário de Apontamento de Terceiros."].join("\r\n");
+  return {blob, fname, subject, body, d};
+}
+const okToSend = () => { const is = issues().filter(i=>i[0]==="err"); if(is.length){ renderSum(); $("issuesCard").scrollIntoView({behavior:"smooth"}); toast("Corrija os itens em vermelho antes de enviar"); return false; } return true; };
+function markSent(d){ d.envios.push({em:new Date().toISOString(), motivo:d.envios.length?(d.motivo||"").trim():""}); d.motivo=""; save(); renderSum(); }
+function dlBlob(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},3000); }
+
+async function generate(){
+  if(!okToSend()) return;
+  const {blob, fname} = buildDay();
+  if(downloadsP){ const dl = await downloadsP; if(dl){ try{ await dl.save({filename:fname, data:blob}); toast(`Planilha ${fname} baixada.`); return; } catch(e){ if(e?.code==="declined") return; } } }
+  try{ dlBlob(blob, fname); toast(`Planilha ${fname} baixada.`); }catch(e){ toast("Não consegui baixar neste navegador"); }
+}
+
+/* ---------- envio por e-mail com a planilha anexa ---------- */
+const isMobile = () => (navigator.userAgentData && navigator.userAgentData.mobile) || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+async function b64(blob){ const u=new Uint8Array(await blob.arrayBuffer()); let s=""; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); }
+const b64txt = s => { const u=new TextEncoder().encode(s); let r=""; for(let i=0;i<u.length;i+=0x8000) r+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(r); };
+const wrap76 = s => s.replace(/.{1,76}/g, "$&\r\n");
+async function buildEml(blob, fname, subject, body){
+  const bd = "----=_Apont_"+uid();
+  return new Blob([[
+    "X-Unsent: 1",
+    `To: ${DESTINO_EMAIL}`,
+    `Subject: =?UTF-8?B?${b64txt(subject)}?=`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/mixed; boundary="${bd}"`,
+    "",
+    `--${bd}`,
+    'Content-Type: text/plain; charset="utf-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    wrap76(b64txt(body)),
+    `--${bd}`,
+    `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; name="${fname}"`,
+    `Content-Disposition: attachment; filename="${fname}"`,
+    "Content-Transfer-Encoding: base64",
+    "",
+    wrap76(await b64(blob)),
+    `--${bd}--`, ""
+  ].join("\r\n")], {type:"message/rfc822"});
+}
+async function sendMail(){
+  if(!okToSend()) return;
+  const {blob, fname, subject, body, d} = buildDay();
+  // celular: tela de compartilhar com a planilha anexada
+  if(isMobile()){
+    const file = new File([blob], fname, {type:blob.type});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.clipboard.writeText(DESTINO_EMAIL); }catch(e){}
+      try{ await navigator.share({files:[file], title:subject, text:body}); markSent(d); toast(`Confira se o e-mail foi para ${DESTINO_EMAIL}.`); return; }
+      catch(e){ if(e && e.name==="AbortError"){ toast("Envio cancelado"); return; } }
+    }
+  }
+  // computador: arquivo .eml que abre no Outlook já com a planilha anexa
+  try{
+    const eml = await buildEml(blob, fname, subject, body);
+    dlBlob(eml, fname.replace(/\.xlsx$/,".eml")); markSent(d);
+    toast("E-mail baixado. Abra o arquivo .eml: o Outlook abre com a planilha anexada. Clique em Enviar.");
+    return;
+  }catch(e){}
+  try{ dlBlob(blob, fname); markSent(d); toast(`Planilha baixada. Anexe num e-mail para ${DESTINO_EMAIL}.`); }catch(e){ toast("Não consegui preparar o envio neste navegador"); }
+}
+
+/* ---------- início ---------- */
+const h = location.hash.slice(1).toLowerCase(); const fromHash = Object.keys(SLUG).find(n=>SLUG[n]===h);
+if(fromHash && !S.empresa){ S.empresa=fromHash; save(); }
+render();
+</script>
+</body></html>
