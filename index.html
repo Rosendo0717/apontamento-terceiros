@@ -228,6 +228,8 @@ const J = {entrada:420, almIni:690, almFim:750, saida:1008, tol:15}; // minutos:
 const SLUG = {"Montec":"montec","Jato Dois Irmãos":"jato","Equipe Instalações":"equipe","Peraçolli":"peracolli"};
 const KEY = "apontTerceiros.v1";
 const DESTINO_EMAIL = "gabriel07rosendo@gmail.com"; // trocar aqui quando sair do teste
+const ENVIO_URL = ""; // endereço do Google Apps Script (termina em /exec). Vazio = envio pelo Outlook/.eml
+const ENVIO_CHAVE = "apont-terceiros-2026";
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const hm = m => { if(m==null||isNaN(m)) return ""; m=((m%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); };
@@ -594,9 +596,27 @@ async function buildEml(blob, fname, subject, body){
     `--${bd}--`, ""
   ].join("\r\n")], {type:"message/rfc822"});
 }
+async function sendDirect(blob, fname, subject, body, d){
+  const btn=$("bMail"), old=btn.textContent; btn.disabled=true; btn.textContent="Enviando…";
+  try{
+    const lin=d.linhas, payload={chave:ENVIO_CHAVE, empresa:S.empresa, data:curDate.split("-").reverse().join("/"), assunto:subject, corpo:body,
+      nomeArquivo:fname, arquivo:await b64(blob), envio:d.envios.length+1, motivo:(d.motivo||"").trim(), encarregado:S.enc.trim(), pessoas:new Set(lin.map(pkey)).size};
+    const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload)});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.erro||"falha");
+    return true;
+  }catch(e){ return false; }
+  finally{ btn.disabled=false; btn.textContent=old; }
+}
 async function sendMail(){
   if(!okToSend()) return;
   const {blob, fname, subject, body, d} = buildDay();
+  // envio direto pelo servidor (sem baixar nada)
+  if(ENVIO_URL){
+    if(await sendDirect(blob, fname, subject, body, d)){ markSent(d); toast(`Enviado para ${DESTINO_EMAIL} com a planilha em anexo.`); return; }
+    toast(navigator.onLine===false ? "Sem internet agora. Vou preparar o e-mail pelo aparelho." : "Não consegui enviar direto. Vou preparar o e-mail pelo aparelho.");
+    await new Promise(r=>setTimeout(r,1200));
+  }
   // celular: tela de compartilhar com a planilha anexada
   if(isMobile()){
     const file = new File([blob], fname, {type:blob.type});
