@@ -638,7 +638,7 @@ async function sendMail(){
 
 /* ---------- início ---------- */
 const h = location.hash.slice(1).toLowerCase(); const fromHash = Object.keys(SLUG).find(n=>SLUG[n]===h);
-if(fromHash && !S.empresa){ S.empresa=fromHash; save(); }
+S.empresa = fromHash || null; // sempre abre na escolha da empresa (a não ser que o link já traga #empresa)
 render();
 </script>
 </body></html>
