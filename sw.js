@@ -1,6 +1,6 @@
 // Guarda o formulário no aparelho para abrir sem internet.
 // Página: tenta a internet (até 4 s) e, se não der, usa a cópia guardada.
-const CACHE = "apont-v1";
+const CACHE = "apont-v2";
 const ARQS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

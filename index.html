@@ -32,6 +32,8 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .brand .sub{font:500 .78rem var(--f-mono);color:var(--muted)}
 .tabs{display:flex;gap:4px;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px}
 .tabs button{flex:1;border:0;background:transparent;color:var(--muted);font:600 .9rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;padding:8px 6px;border-radius:999px;cursor:pointer}
+.tabs button{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:380px){.tabs button{font-size:.76rem;letter-spacing:0;padding:8px 2px}.bar .in{gap:8px}.bar .sum{font-size:.72rem}}
 .tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 section.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .card h2{font:600 .8rem var(--f-display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
