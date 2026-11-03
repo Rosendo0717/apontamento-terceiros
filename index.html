@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1d6a48"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Apontamento de Terceiros</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1d6a48"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Apontamento de Terceiros</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -94,6 +94,7 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
 .tscroll{overflow-x:auto}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:.88rem;z-index:20;max-width:min(92vw,520px);box-shadow:0 4px 16px rgba(0,0,0,.25)}
 .picker{display:grid;gap:8px}
+.qbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 12px;font-size:.88rem;font-weight:500}
 .picker button{text-align:left;justify-content:flex-start;font-size:1.05rem;min-height:56px}
 @media (max-width:420px){.times{grid-template-columns:1fr 1fr}.times .alm{grid-column:1/-1;min-height:30px}}
 @media (prefers-reduced-motion:no-preference){.person,.btn{transition:background .12s,border-color .12s}}
@@ -115,14 +116,11 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
   <section class="card" id="vPick" hidden>
     <h2>Qual empresa você representa?</h2>
     <div class="picker" id="pickList"></div>
-    <div class="split">
-      <strong>Outra empresa</strong>
-      <label class="f">Nome da empresa<input id="neNome" placeholder="Ex.: Metalúrgica Silva" autocomplete="organization"></label>
-      <button class="btn primary" id="bAddEmp">Adicionar e começar</button>
-      <p class="hint" id="neErr" style="color:var(--err)"></p>
-    </div>
-    <p class="hint">Fica salvo neste aparelho. Dá para trocar depois em Cadastro.</p>
+    <p class="hint">Sua empresa não está na lista? Fale com a usina para fazer o cadastro.</p>
+    <div class="row" style="justify-content:space-between"><span class="hint" id="cadSync"></span><button class="btn small ghost" id="bAdmin">Área do administrador</button></div>
   </section>
+
+  <div class="qbar" id="qBar" hidden><span id="qTxt"></span><button class="btn small" id="bQTry">Tentar agora</button></div>
 
   <!-- APONTAMENTO -->
   <div id="vApont" class="wrap" hidden>
@@ -180,13 +178,9 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
 
     <section class="card" id="sendCard" hidden>
       <h2>Envio <span id="sendChip"></span></h2>
-      <p class="hint">O botão “Enviar por e-mail” prepara um e-mail para <span class="mono" id="destLbl" style="user-select:all"></span> com a planilha do dia em anexo.</p>
-      <ul class="hint" style="margin:0;padding-left:18px;display:grid;gap:4px">
-        <li><b>No computador:</b> baixa um arquivo de e-mail (.eml). Abra o arquivo: o Outlook abre com destinatário, assunto e planilha anexada. Clique em Enviar.</li>
-        <li><b>No celular:</b> abre a tela de compartilhar com a planilha. Escolha o app de e-mail e cole o endereço em “Para” (ele já fica copiado).</li>
-      </ul>
+      <p class="hint">O botão “Enviar” manda o apontamento direto para a usina (<span class="mono" id="destLbl" style="user-select:all"></span>) com a planilha do dia em anexo. Sem internet, o envio fica guardado neste aparelho e sai sozinho quando o sinal voltar.</p>
       <label class="f" id="motivoBox" hidden>Motivo do reenvio (obrigatório)<input id="fMotivo" placeholder="Ex.: corrigi a saída do João, que ficou até 17:30"></label>
-      <div class="row"><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
+      <div class="row"><button class="btn small ghost" id="bMailApp">Enviar pelo e-mail do aparelho</button><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
     </section>
   </div>
 
@@ -198,11 +192,40 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
     </section>
     <section class="card">
       <h2>Funcionários <span class="mono" id="cFCnt"></span></h2>
-      <label class="f">Nome completo<input id="nfNome" placeholder="Nome e sobrenome, como no documento" autocapitalize="words"></label>
-      <button class="btn small primary" id="nfAdd">Adicionar funcionário</button>
-      <p class="hint" id="nfErr"></p>
+      <p class="hint">Para incluir ou tirar alguém da lista, fale com a usina.</p>
       <div class="tscroll"><table class="list" id="tFunc"></table></div>
     </section>
+  </div>
+
+  <!-- ADMINISTRADOR -->
+  <div id="vAdmin" class="wrap" hidden>
+    <section class="card" id="admLogin">
+      <h2>Área do administrador</h2>
+      <p class="hint">Aqui você cadastra empresas e funcionários. O cadastro fica salvo no servidor e vale para todos os aparelhos.</p>
+      <label class="f">Senha mestre<input type="password" id="admSenha" autocomplete="current-password"></label>
+      <div class="row"><button class="btn primary" id="bAdmEnter">Entrar</button><button class="btn ghost" id="bAdmBack">Voltar</button></div>
+      <p class="hint" id="admErr" style="color:var(--err)"></p>
+    </section>
+    <div id="admPanel" class="wrap" hidden>
+      <section class="card">
+        <h2>Empresas <span id="admSave"></span></h2>
+        <label class="f">Nova empresa<input id="admNovaEmp" placeholder="Ex.: Metalúrgica Silva" autocomplete="off"></label>
+        <button class="btn small primary" id="bAdmAddEmp">Adicionar empresa</button>
+        <p class="hint" id="admEmpErr" style="color:var(--err)"></p>
+        <div class="tscroll"><table class="list" id="tAdmEmp"></table></div>
+      </section>
+      <section class="card" id="admFuncCard" hidden>
+        <h2><span>Funcionários · <span id="admEmpNome"></span></span><span class="mono" id="admFCnt"></span></h2>
+        <div class="grid">
+          <label class="f">Nome completo<input id="admFNome" placeholder="Nome e sobrenome" autocapitalize="words" autocomplete="off"></label>
+          <label class="f">Matrícula (opcional)<input id="admFMat" class="mono" placeholder="Ex.: TR000000" autocapitalize="characters" autocomplete="off"></label>
+        </div>
+        <button class="btn small primary" id="bAdmAddF">Adicionar funcionário</button>
+        <p class="hint" id="admFErr" style="color:var(--err)"></p>
+        <div class="tscroll"><table class="list" id="tAdmF"></table></div>
+      </section>
+      <div class="row"><button class="btn ghost" id="bAdmOut">Sair da área do administrador</button></div>
+    </div>
   </div>
 
   <!-- ENVIADOS -->
@@ -217,13 +240,13 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
 <div class="bar" id="bar" hidden>
   <div class="in">
     <div class="sum" id="sum"></div>
-    <button class="btn primary" id="bMail">Enviar por e-mail</button>
+    <button class="btn primary" id="bMail">Enviar</button>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
-const BASE = {"empresas":{"Montec":{"funcionarios":[{"nome":"Ademir Maciel Calixto"},{"nome":"Almir Antonio de Moura"},{"nome":"André Alves dos Santos"},{"nome":"César Alves dos Santos"},{"nome":"Edson Ramos da Rocha"},{"nome":"Edvaldo Brito de Souza"},{"nome":"João de Paula Santos"},{"nome":"Julio Cesar Zonzini Martins"},{"nome":"Marcos Fabiano Palhano Gomes"},{"nome":"Rogério Batista"},{"nome":"Sérgio Alves dos Santos"},{"nome":"Wanderley Ferreira dos Reis"},{"nome":"Yago Carvalho dos Santos"}],"ordens":[]},"Jato Dois Irmãos":{"funcionarios":[{"nome":"Ademar da Paixão"},{"nome":"Bruno C. da Silva"},{"nome":"Carlos M. Silva dos Santos"},{"nome":"Daniel A. Mendonça"},{"nome":"Eduardo de Jesus"},{"nome":"Edvaldo S. Santos"},{"nome":"Elivelto da Silva Sacramento"},{"nome":"José Nauey"},{"nome":"Rodrigo J. O. Queiroz"},{"nome":"Wesley da Silva Sousa"}],"ordens":[]},"Equipe Instalações":{"funcionarios":[],"ordens":[]},"Peraçolli":{"funcionarios":[{"nome":"Robson"},{"nome":"Dislaino"}],"ordens":[]}},"setores":["Caldeira 2","Caldeiraria","ETEL","Evaporação","Fermentação","Fermentação (Destilaria)","Filtro Prensa","Fábrica de Açúcar","Graneleiro","Indústria","Laboratório","Levedura","Moenda","Moenda A","Portaria","Tratamento de Caldo","VLC"],"solicitantes":["Agnaldo","Alessandro","Bruno Ferreira","Danilo Bessa","Everton Pinheiro","Fabiano","Galinia","Jilson","Julio","Lucas Gama","Roberta","Rogério (Elétrica)"]};
+const BASE = {"empresas":{"Montec":{"funcionarios":[{"nome":"Ademir Maciel Calixto","mat":"TR109324"},{"nome":"Almir Antonio de Moura","mat":"TR099735"},{"nome":"André Alves dos Santos","mat":"TR105192"},{"nome":"César Alves dos Santos","mat":"TR105179"},{"nome":"Edson Ramos da Rocha","mat":"TR083795"},{"nome":"Edvaldo Brito de Souza","mat":"TR112062"},{"nome":"João de Paula Santos","mat":"TR105997"},{"nome":"Julio Cesar Zonzini Martins","mat":"TR111017"},{"nome":"Marcos Fabiano Palhano Gomes","mat":"TR104273"},{"nome":"Rogério Batista","mat":"TR103624"},{"nome":"Sérgio Alves dos Santos","mat":"TR104676"},{"nome":"Wanderley Ferreira dos Reis","mat":"TR104674"},{"nome":"Yago Carvalho dos Santos","mat":"TR108904"}],"ordens":[]},"Jato Dois Irmãos":{"funcionarios":[{"nome":"Ademar da Paixão"},{"nome":"Bruno C. da Silva"},{"nome":"Carlos M. Silva dos Santos"},{"nome":"Daniel A. Mendonça"},{"nome":"Eduardo de Jesus"},{"nome":"Edvaldo S. Santos"},{"nome":"Elivelto da Silva Sacramento"},{"nome":"José Nauey"},{"nome":"Rodrigo J. O. Queiroz"},{"nome":"Wesley da Silva Sousa"}],"ordens":[]},"Equipe Instalações":{"funcionarios":[],"ordens":[]},"Peraçolli":{"funcionarios":[{"nome":"Robson"},{"nome":"Dislaino"}],"ordens":[]}},"setores":["Caldeira 2","Caldeiraria","ETEL","Evaporação","Fermentação","Fermentação (Destilaria)","Filtro Prensa","Fábrica de Açúcar","Graneleiro","Indústria","Laboratório","Levedura","Moenda","Moenda A","Portaria","Tratamento de Caldo","VLC"],"solicitantes":["Agnaldo","Alessandro","Bruno Ferreira","Danilo Bessa","Everton Pinheiro","Fabiano","Galinia","Jilson","Julio","Lucas Gama","Roberta","Rogério (Elétrica)"]};
 const J = {entrada:420, almIni:690, almFim:750, saida:1008, tol:15}; // minutos: 07:00, 11:30, 12:30, 16:48
 const SLUG = {"Montec":"montec","Jato Dois Irmãos":"jato","Equipe Instalações":"equipe","Peraçolli":"peracolli"};
 const KEY = "apontTerceiros.v1";
@@ -242,13 +265,31 @@ const uid = () => Math.random().toString(36).slice(2,10);
 const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 const WD = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
 
-let S = { empresa:null, enc:"", extras:{}, dias:{}, empresasExtra:[] };
+let S = { empresa:null, enc:"", dias:{}, fila:[] };
 try { const raw = localStorage.getItem(KEY); if(raw) S = Object.assign(S, JSON.parse(raw)); } catch(e){}
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 
+S.fila ||= [];
 let curDate = todayISO(), tab = "apont", splitOpen = null;
-const ex = () => (S.extras[S.empresa] ||= {func:[], ordens:[], ocultos:[]});
-function funcs(){ const e=ex(); return [...(BASE.empresas[S.empresa]?.funcionarios||[]), ...e.func].filter(f=>!e.ocultos.includes("f:"+f.nome)).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")); }
+
+/* cadastro central (servidor) com cópia neste aparelho para funcionar sem internet */
+const CADKEY = "apontTerceiros.cad";
+const slugify = n => n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || "empresa";
+function cadFromBase(){ return { empresas: Object.keys(BASE.empresas).map(n=>({nome:n, slug:SLUG[n]||slugify(n)})),
+  funcionarios: Object.fromEntries(Object.entries(BASE.empresas).map(([n,e])=>[n, e.funcionarios.map(f=>({nome:f.nome, mat:f.mat||""}))])) }; }
+let CAD = null, cadOrigem = "padrão";
+try { const c = JSON.parse(localStorage.getItem(CADKEY)||"null"); if(c && c.empresas && c.empresas.length){ CAD=c.cad||c; cadOrigem = c.em ? "salvo em "+new Date(c.em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "salvo"; } } catch(e){}
+if(!CAD) CAD = cadFromBase();
+function cacheCad(){ try{ localStorage.setItem(CADKEY, JSON.stringify({...CAD, em:new Date().toISOString()})); }catch(e){} }
+async function fetchCad(){
+  if(!ENVIO_URL) return;
+  try{
+    const r = await fetch(`${ENVIO_URL}?acao=cadastro&chave=${encodeURIComponent(ENVIO_CHAVE)}`);
+    const j = await r.json();
+    if(j.ok && j.empresas && j.empresas.length){ CAD={empresas:j.empresas, funcionarios:j.funcionarios||{}}; cacheCad(); cadOrigem="atualizado agora"; if(!ADM.senha) render(); }
+  }catch(e){ cadOrigem = cadOrigem==="padrão" ? "sem internet · usando a lista padrão" : "sem internet · lista "+cadOrigem; if(!S.empresa && tab!=="admin") renderPick(); }
+}
+function funcs(){ return [...(CAD.funcionarios[S.empresa]||[])].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")); }
 const dkey = (d=curDate) => S.empresa+"|"+d;
 function day(d=curDate){ const x = S.dias[dkey(d)] ||= {linhas:[], status:{}, ordens:{}, envios:[], motivo:""}; x.ordens ||= {}; x.envios ||= []; return x; }
 // ordens existem só dentro do dia em que foram lançadas (sem histórico)
@@ -283,6 +324,9 @@ function setTab(t){ tab=t; ["apont","cad","hist"].forEach(x=>{ document.querySel
   render(); }
 
 function render(){
+  renderQ();
+  if(tab==="admin"){ ["vPick","vApont","vCad","vHist","bar"].forEach(x=>$(x).hidden=true); document.querySelector(".tabs").hidden=true; $("vAdmin").hidden=false; $("hTitle").textContent="Administrador"; renderAdmin(); return; }
+  $("vAdmin").hidden = true;
   const has = !!S.empresa && allEmp().includes(S.empresa);
   $("vPick").hidden = has; document.querySelector(".tabs").hidden = !has;
   $("vApont").hidden = !has || tab!=="apont"; $("vCad").hidden = !has || tab!=="cad"; $("vHist").hidden = !has || tab!=="hist";
@@ -293,7 +337,8 @@ function render(){
 }
 
 function renderPick(){
-  $("pickList").innerHTML = allEmp().map(n=>`<button class="btn" data-emp="${esc(n)}">${esc(n)}</button>`).join("");
+  $("pickList").innerHTML = allEmp().map(n=>`<button class="btn" data-emp="${esc(n)}">${esc(n)}</button>`).join("") || `<div class="empty">Nenhuma empresa cadastrada.</div>`;
+  $("cadSync").textContent = "Lista de empresas: "+cadOrigem;
 }
 
 function renderApont(){
@@ -312,7 +357,7 @@ function renderLaunch(){
   const o = $("noNum").value.trim();
   const used = usedFull(), lin = day().linhas, keep = new Set([...$("people").querySelectorAll("input:checked")].map(x=>x.value));
   $("people").innerHTML = funcs().map(f=>{ const k=f.nome, inThis = lin.some(l=>pkey(l)===k && l.ordem===o), u=used.has(k);
-    return `<label class="person${u?" used":""}" data-k="${esc(k)}"><input type="checkbox" value="${esc(k)}" ${u||inThis?"disabled":(keep.has(k)?"checked":"")}><span><span class="nm">${esc(f.nome)}</span><br>${inThis||u?`<span class="mt">${inThis?"já nesta ordem":"já lançado"}</span>`:""}</span></label>`; }).join("") || `<div class="empty">Nenhum funcionário cadastrado. Adicione em Cadastro.</div>`;
+    return `<label class="person${u?" used":""}" data-k="${esc(k)}"><input type="checkbox" value="${esc(k)}" ${u||inThis?"disabled":(keep.has(k)?"checked":"")}><span><span class="nm">${esc(f.nome)}</span>${f.mat||inThis||u?`<br><span class="mt">${[f.mat, inThis?"já nesta ordem":(u?"já lançado":"")].filter(Boolean).map(esc).join(" · ")}</span>`:""}</span></label>`; }).join("") || `<div class="empty">Nenhum funcionário cadastrado para esta empresa. Fale com a usina.</div>`;
   if(!$("dIn").value){ $("dIn").value=hm(J.entrada); $("dOut").value=hm(J.saida); }
   $("almLbl").textContent = hm(J.almIni)+"–"+hm(J.almFim);
   updLaunchBtn();
@@ -383,34 +428,90 @@ function renderSum(){
   $("sum").innerHTML = `<b>${durTxt(hh)}</b> HH<br>${n} pessoas · ${o} ordens${day().envios.length?" · enviado "+day().envios.length+"x":""}`;
   const is = issues(); $("issuesCard").hidden = !lin.length || !is.length;
   const ev=day().envios; $("sendCard").hidden = !lin.length; $("destLbl").textContent = DESTINO_EMAIL;
-  $("sendChip").innerHTML = ev.length ? `<span class="chip ok">Enviado ${ev.length}x · último ${new Date(ev[ev.length-1].em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>` : `<span class="chip warn">Não enviado</span>`;
+  const ult=ev[ev.length-1], hora=ult?new Date(ult.em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"";
+  $("sendChip").innerHTML = !ult ? `<span class="chip warn">Não enviado</span>` : ult.status==="pendente" ? `<span class="chip warn">Aguardando internet · ${hora}</span>` : ult.status==="app" ? `<span class="chip info">Aberto no e-mail do aparelho ${ev.length}x · ${hora}</span>` : `<span class="chip ok">Entregue ${ev.length}x · último ${hora}</span>`;
   $("motivoBox").hidden = !ev.length; if(document.activeElement!==$("fMotivo")) $("fMotivo").value = day().motivo||"";
-  $("bMail").textContent = ev.length ? "Reenviar por e-mail" : "Enviar por e-mail";
+  if(!qRunning) $("bMail").textContent = ev.length ? "Reenviar" : "Enviar";
   $("issues").innerHTML = is.map(i=>`<div class="issue ${i[0]}">${esc(i[1])}</div>`).join("");
 }
 
 function renderCad(){
   $("cEmp").textContent = S.empresa;
-  const fs = funcs(), e=ex();
+  const fs = funcs();
   $("cFCnt").textContent = fs.length;
-  $("tFunc").innerHTML = `<tr><th>Nome completo</th><th></th></tr>` + fs.map(f=>`<tr><td>${esc(f.nome)}</td><td><button class="btn small ghost danger" data-rmf="${esc(f.nome)}">Remover</button></td></tr>`).join("");
+  $("tFunc").innerHTML = `<tr><th>Nome completo</th><th>Matrícula</th></tr>` + fs.map(f=>`<tr><td>${esc(f.nome)}</td><td class="mono">${esc(f.mat||"—")}</td></tr>`).join("");
 }
+function histChip(ev){ const u=ev[ev.length-1]; if(!u) return '<span class="chip warn">Não enviado</span>';
+  return u.status==="pendente" ? '<span class="chip warn">Aguardando internet</span>' : u.status==="app" ? `<span class="chip info">E-mail do aparelho ${ev.length}x</span>` : `<span class="chip ok">Entregue ${ev.length}x</span>`; }
 function renderHist(){
   const rows = Object.entries(S.dias).filter(([k,v])=>k.startsWith(S.empresa+"|") && v.linhas.length).sort((a,b)=>b[0].localeCompare(a[0]));
   $("tHist").innerHTML = rows.length ? `<tr><th>Data</th><th>Pessoas</th><th>HH</th><th>Status</th><th></th></tr>` + rows.map(([k,v])=>{ const d=k.split("|")[1];
-    return `<tr><td class="mono">${d.split("-").reverse().join("/")}</td><td>${new Set(v.linhas.map(pkey)).size}</td><td class="mono">${durTxt(v.linhas.reduce((a,l)=>a+Math.max(0,total(l)),0))}</td><td>${(v.envios||[]).length?`<span class="chip ok">Enviado ${v.envios.length}x</span>`:'<span class="chip warn">Não enviado</span>'}</td><td><button class="btn small" data-open="${d}">Abrir</button></td></tr>`; }).join("")
+    return `<tr><td class="mono">${d.split("-").reverse().join("/")}</td><td>${new Set(v.linhas.map(pkey)).size}</td><td class="mono">${durTxt(v.linhas.reduce((a,l)=>a+Math.max(0,total(l)),0))}</td><td>${histChip(v.envios||[])}</td><td><button class="btn small" data-open="${d}">Abrir</button></td></tr>`; }).join("")
     : `<tr><td><div class="empty">Nenhum dia salvo ainda.</div></td></tr>`;
 }
 
-function allEmp(){ return [...Object.keys(BASE.empresas), ...(S.empresasExtra||[])]; }
-function empSlug(n){ return (SLUG[n] || n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"") || "EMPRESA").toUpperCase(); }
-function addEmp(){
-  const n=$("neNome").value.trim().replace(/\s+/g," ");
-  const dup=allEmp().find(e=>e.toLowerCase()===n.toLowerCase());
-  if(dup){ S.empresa=dup; save(); tab="apont"; render(); return; }
-  if(n.length<3){ $("neErr").textContent="Digite o nome da empresa (pelo menos 3 letras)."; return; }
-  (S.empresasExtra ||= []).push(n); S.empresa=n; save(); $("neNome").value=""; $("neErr").textContent="";
-  tab="cad"; setTab("cad"); toast("Empresa "+n+" criada. Cadastre os funcionários para começar.");
+function allEmp(){ return CAD.empresas.map(e=>e.nome); }
+function empSlug(n){ const e=CAD.empresas.find(x=>x.nome===n); return ((e&&e.slug)||SLUG[n]||slugify(n)).replace(/-/g,"_").toUpperCase(); }
+
+/* ---------- área do administrador ---------- */
+const ADM = { senha:null, sel:null, conf:null };
+async function admPost(body){
+  const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({chave:ENVIO_CHAVE, ...body})});
+  return r.json();
+}
+async function admLogin(){
+  const s=$("admSenha").value; $("admErr").textContent="";
+  if(!s){ $("admErr").textContent="Digite a senha."; return; }
+  if(!ENVIO_URL){ $("admErr").textContent="O servidor não está configurado."; return; }
+  const b=$("bAdmEnter"); b.disabled=true; b.textContent="Entrando…";
+  try{ const j=await admPost({acao:"login", senha:s});
+    if(j.ok){ ADM.senha=s; $("admSenha").value=""; await fetchCadFresh(); renderAdmin(); }
+    else $("admErr").textContent = j.erro==="senha incorreta" ? "Senha incorreta." : "Não deu certo: "+(j.erro||"erro");
+  }catch(e){ $("admErr").textContent="Sem conexão com o servidor. A área do administrador precisa de internet."; }
+  finally{ b.disabled=false; b.textContent="Entrar"; }
+}
+async function fetchCadFresh(){
+  try{ const r=await fetch(`${ENVIO_URL}?acao=cadastro&chave=${encodeURIComponent(ENVIO_CHAVE)}`); const j=await r.json();
+    if(j.ok && j.empresas && j.empresas.length){ CAD={empresas:j.empresas, funcionarios:j.funcionarios||{}}; cacheCad(); cadOrigem="atualizado agora"; }
+    else if(j.ok){ ADM.vazio=true; } // servidor ainda sem cadastro: o primeiro "salvar" envia a lista atual
+  }catch(e){}
+}
+async function admSave(msg){
+  const el=$("admSave"); el.innerHTML=`<span class="chip info">Salvando…</span>`;
+  try{ const j=await admPost({acao:"salvarCadastro", senha:ADM.senha, cadastro:CAD});
+    if(j.ok){ cacheCad(); cadOrigem="atualizado agora"; el.innerHTML=`<span class="chip ok">Salvo no servidor</span>`; if(msg) toast(msg); }
+    else { el.innerHTML=`<span class="chip err">Não salvou</span>`; toast("O servidor recusou: "+(j.erro||"erro")); if(j.erro==="senha incorreta"){ ADM.senha=null; renderAdmin(); } }
+  }catch(e){ el.innerHTML=`<span class="chip err">Sem internet · não salvou</span>`; toast("Sem internet. A alteração não foi salva no servidor."); }
+}
+function renderAdmin(){
+  const on=!!ADM.senha; $("admLogin").hidden=on; $("admPanel").hidden=!on; if(!on) return;
+  $("tAdmEmp").innerHTML = `<tr><th>Empresa</th><th>Link</th><th>Pessoas</th><th></th></tr>` + CAD.empresas.map(e=>`<tr>
+    <td><b>${esc(e.nome)}</b></td><td class="mono" style="user-select:all">#${esc(e.slug)}</td><td class="mono">${(CAD.funcionarios[e.nome]||[]).length}</td>
+    <td><div class="row"><button class="btn small" data-adm-sel="${esc(e.nome)}">Funcionários</button>
+    <button class="btn small ghost danger" data-adm-rme="${esc(e.nome)}">${ADM.conf==="e:"+e.nome?"Confirmar remoção":"Remover"}</button></div></td></tr>`).join("");
+  const sel = ADM.sel && CAD.empresas.some(e=>e.nome===ADM.sel) ? ADM.sel : null;
+  $("admFuncCard").hidden = !sel; if(!sel) return;
+  const fs=[...(CAD.funcionarios[sel]||[])].sort((a,b)=>a.nome.localeCompare(b.nome,"pt"));
+  $("admEmpNome").textContent=sel; $("admFCnt").textContent=fs.length;
+  $("tAdmF").innerHTML = `<tr><th>Nome completo</th><th>Matrícula</th><th></th></tr>` + fs.map(f=>`<tr><td>${esc(f.nome)}</td>
+    <td><input class="mono" data-adm-mat="${esc(f.nome)}" value="${esc(f.mat||"")}" placeholder="—" style="min-height:34px;padding:4px 8px;max-width:140px" aria-label="Matrícula de ${esc(f.nome)}"></td>
+    <td><button class="btn small ghost danger" data-adm-rmf="${esc(f.nome)}">${ADM.conf==="f:"+f.nome?"Confirmar":"Remover"}</button></td></tr>`).join("");
+}
+function admAddEmp(){
+  const n=$("admNovaEmp").value.trim().replace(/\s+/g," "); $("admEmpErr").textContent="";
+  if(n.length<3){ $("admEmpErr").textContent="Digite o nome da empresa (pelo menos 3 letras)."; return; }
+  if(CAD.empresas.some(e=>e.nome.toLowerCase()===n.toLowerCase())){ $("admEmpErr").textContent="Essa empresa já está cadastrada."; return; }
+  let s=slugify(n), i=2; while(CAD.empresas.some(e=>e.slug===s)) s=slugify(n)+"-"+(i++);
+  CAD.empresas.push({nome:n, slug:s}); CAD.funcionarios[n]=[]; ADM.sel=n; $("admNovaEmp").value="";
+  renderAdmin(); admSave("Empresa "+n+" cadastrada. Agora inclua os funcionários.");
+}
+function admAddF(){
+  const sel=ADM.sel, n=$("admFNome").value.trim().replace(/\s+/g," "), m=$("admFMat").value.trim().toUpperCase(); $("admFErr").textContent="";
+  const fs=(CAD.funcionarios[sel] ||= []);
+  const err = n.split(" ").length<2 ? "Informe nome e sobrenome." : fs.some(f=>f.nome.toLowerCase()===n.toLowerCase()) ? "Esse funcionário já está cadastrado." : (m && fs.some(f=>f.mat===m)) ? "Essa matrícula já está em uso nesta empresa." : "";
+  if(err){ $("admFErr").textContent=err; return; }
+  fs.push({nome:n, mat:m}); $("admFNome").value=""; $("admFMat").value=""; $("admFNome").focus();
+  renderAdmin(); admSave(n+" adicionado.");
 }
 function lastDay(){ const ks = Object.keys(S.dias).filter(k=>k.startsWith(S.empresa+"|") && S.dias[k].linhas.length).map(k=>k.split("|")[1]).filter(d=>d<curDate).sort(); return ks.pop()||null; }
 
@@ -420,7 +521,11 @@ document.addEventListener("click", ev=>{
   if(t.dataset.tab) return setTab(t.dataset.tab);
   if(t.dataset.emp){ S.empresa=t.dataset.emp; save(); tab="apont"; render(); return; }
   if(t.dataset.open){ curDate=t.dataset.open; setTab("apont"); return; }
-  if(t.dataset.rmf){ const k=t.dataset.rmf, e=ex(); const i=e.func.findIndex(f=>f.nome===k); if(i>=0) e.func.splice(i,1); else e.ocultos.push("f:"+k); save(); renderCad(); toast("Funcionário removido da lista"); return; }
+  if(t.dataset.admSel){ ADM.sel=t.dataset.admSel; ADM.conf=null; renderAdmin(); $("admFuncCard").scrollIntoView({behavior:"smooth"}); return; }
+  if(t.dataset.admRme){ const n=t.dataset.admRme; if(ADM.conf!=="e:"+n){ ADM.conf="e:"+n; renderAdmin(); return; }
+    CAD.empresas=CAD.empresas.filter(e=>e.nome!==n); delete CAD.funcionarios[n]; if(ADM.sel===n) ADM.sel=null; ADM.conf=null; renderAdmin(); admSave("Empresa "+n+" removida."); return; }
+  if(t.dataset.admRmf){ const n=t.dataset.admRmf; if(ADM.conf!=="f:"+n){ ADM.conf="f:"+n; renderAdmin(); return; }
+    CAD.funcionarios[ADM.sel]=(CAD.funcionarios[ADM.sel]||[]).filter(f=>f.nome!==n); ADM.conf=null; renderAdmin(); admSave(n+" removido."); return; }
   const line = t.closest(".line"); if(line && t.dataset.a){ const lin=day().linhas, l=lin.find(x=>x.id===line.dataset.id);
     if(t.dataset.a==="del"){ lin.splice(lin.indexOf(l),1); }
     if(t.dataset.a==="split"){ splitOpen = splitOpen===l.id?null:l.id; }
@@ -436,7 +541,14 @@ document.addEventListener("click", ev=>{
       l.out=at; lin.push({...l, id:uid(), ordem:o, in:bIn, out:outOrig, obs:"", adj:false}); splitOpen=null; toast(`${l.nome} dividido: ${hm(l.in)}–${hm(at)} e ${hm(bIn)}–${hm(outOrig)}`); }
     save(); renderApont(); return; }
   switch(t.id){
-    case "bAddEmp": addEmp(); break;
+    case "bAdmin": tab="admin"; render(); break;
+    case "bAdmBack": tab="apont"; S.empresa=null; render(); break;
+    case "bAdmOut": ADM.senha=null; ADM.sel=null; tab="apont"; S.empresa=null; render(); fetchCad(); break;
+    case "bAdmEnter": admLogin(); break;
+    case "bAdmAddEmp": admAddEmp(); break;
+    case "bAdmAddF": admAddF(); break;
+    case "bQTry": processQueue(true); break;
+    case "bMailApp": sendViaApp(); break;
     case "bSwitch": S.empresa=null; save(); render(); break;
     case "bAll": $("people").querySelectorAll("input:not(:disabled)").forEach(i=>i.checked=true); updLaunchBtn(); break;
     case "bLaunch": launch(); break;
@@ -444,13 +556,13 @@ document.addEventListener("click", ev=>{
     case "bClear": $("clearConfirm").hidden=false; break;
     case "bClearNo": $("clearConfirm").hidden=true; break;
     case "bClearYes": delete S.dias[dkey()]; $("clearConfirm").hidden=true; save(); renderApont(); toast("Dia apagado"); break;
-    case "nfAdd": addFunc(); break;
     case "bGen": generate(); break;
     case "bMail": sendMail(); break;
   }
 });
 document.addEventListener("change", ev=>{
   const t=ev.target;
+  if(t.dataset.admMat!==undefined){ const f=(CAD.funcionarios[ADM.sel]||[]).find(x=>x.nome===t.dataset.admMat); if(f){ f.mat=t.value.trim().toUpperCase(); t.value=f.mat; admSave("Matrícula de "+f.nome+" salva."); } return; }
   if(t.id==="fData"){ if(t.value){ curDate=t.value; splitOpen=null; renderApont(); } return; }
   if(t.id==="spOrd"){ $("spNew").hidden = t.value!=="__new"; return; }
   if(t.closest("#people")){ updLaunchBtn(); return; }
@@ -464,6 +576,8 @@ document.addEventListener("change", ev=>{
     if(t.dataset.f==="obs") l.obs=t.value.trim();
     save(); setTimeout(renderApont,0); }
 });
+document.addEventListener("keydown", ev=>{ if(ev.key!=="Enter") return; const id=ev.target.id;
+  if(id==="admSenha") admLogin(); else if(id==="admNovaEmp") admAddEmp(); else if(id==="admFNome"||id==="admFMat") admAddF(); });
 document.addEventListener("input", ev=>{ if(ev.target.id==="fEnc"){ S.enc=ev.target.value; save(); renderSum(); }
   if(ev.target.id==="fMotivo"){ day().motivo=ev.target.value; save(); renderSum(); }
   if(ev.target.id==="noNum"){ const v=ev.target.value.replace(/\D/g,""); if(v!==ev.target.value) ev.target.value=v;
@@ -480,7 +594,7 @@ function launch(){
   let adj=false; if(isEarly(i)){ i=J.entrada; adj=true; }
   if(out<=i) out+=1440; // terminou no dia seguinte (madrugada)
   const ks=[...$("people").querySelectorAll("input:checked")].map(x=>x.value), fs=funcs();
-  ks.forEach(k=>{ const f=fs.find(x=>x.nome===k); day().linhas.push({id:uid(), nome:f.nome, ordem:o, in:i, out, alm, obs:"", adj}); });
+  ks.forEach(k=>{ const f=fs.find(x=>x.nome===k); day().linhas.push({id:uid(), mat:f.mat||"", nome:f.nome, ordem:o, in:i, out, alm, obs:"", adj}); });
   save();
   ["noNum","noDesc","dIn"].forEach(x=>$(x).value=""); $("noSetor").value=""; $("noSol").value=""; $("noSt").value="Em andamento"; renderApont(); toast(`${ks.length} lançados na ordem ${o}`);
   $("groups").scrollIntoView({behavior:"smooth", block:"start"});
@@ -492,13 +606,6 @@ function repeat(){
   Object.values(pers).forEach(ls=>{ const split = ls.length>1;
     ls.forEach(l=>day().linhas.push({...l, id:uid(), obs:"", adj:false, ...(split?{}:{in:J.entrada,out:J.saida,alm:true})})); });
   day().status = {...src.status}; day().ordens = JSON.parse(JSON.stringify(src.ordens||{})); save(); renderApont(); toast("Copiado de "+p.split("-").reverse().join("/")+". Ajuste quem faltou ou mudou.");
-}
-function addFunc(){
-  const n=$("nfNome").value.trim().replace(/\s+/g," ");
-  const err = n.split(" ").length<2 ? "Informe nome e sobrenome." : funcs().some(f=>f.nome.toLowerCase()===n.toLowerCase()) ? "Esse funcionário já está cadastrado." : "";
-  $("nfErr").textContent = err; if(err) return;
-  const e=ex(); e.ocultos=e.ocultos.filter(x=>x.toLowerCase()!=="f:"+n.toLowerCase());
-  e.func.push({nome:n}); save(); $("nfNome").value=""; renderCad(); toast("Funcionário adicionado");
 }
 
 /* ---------- geração do .xlsx (sem biblioteca) ---------- */
@@ -541,12 +648,12 @@ let downloadsP = null;
 try { if(window.claude?.use) downloadsP = window.claude.use("downloads").catch(()=>null); } catch(e){}
 
 function buildDay(){
-  const d=day(), head=["EMPRESA","DATA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","SOLICITANTE","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","OBSERVAÇÃO","ENCARREGADO"];
+  const d=day(), head=["EMPRESA","DATA","MATRÍCULA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","SOLICITANTE","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","OBSERVAÇÃO","ENCARREGADO"];
   const lin=[...d.linhas].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in);
   const rows = lin.map(l=>{ const o=findOrd(l.ordem)||{}; const ov=almOverlap(l);
     const ai = ov? Math.max(l.in,J.almIni):null, af = ov? Math.min(l.out,J.almFim):null;
-    return [S.empresa, {s:2,v:serial(curDate)}, l.nome, tv(l.in), ai!=null?tv(ai):"", af!=null?tv(af):"", tv(l.out%1440), {s:4,v:(total(l)/1440).toFixed(10)}, Number(l.ordem), o.setor||"", o.solicitante||"", o.desc||"", d.status[l.ordem]||o.status||"", l.obs||"", S.enc.trim()]; });
-  const blob = buildXlsx(rows, head, [16,11,32,9,13,13,9,9,11,22,18,48,16,30,20]);
+    return [S.empresa, {s:2,v:serial(curDate)}, matOf(l), l.nome, tv(l.in), ai!=null?tv(ai):"", af!=null?tv(af):"", tv(l.out%1440), {s:4,v:(total(l)/1440).toFixed(10)}, Number(l.ordem), o.setor||"", o.solicitante||"", o.desc||"", d.status[l.ordem]||o.status||"", l.obs||"", S.enc.trim()]; });
+  const blob = buildXlsx(rows, head, [16,11,12,32,9,13,13,9,9,11,22,18,48,16,30,20]);
   const envioN = d.envios.length+1, br=curDate.split("-").reverse().join("/");
   const fname = `APONT_${empSlug(S.empresa)}_${curDate}${envioN>1?"_REENVIO"+envioN:""}.xlsx`;
   const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), n=new Set(lin.map(pkey)).size, nOrd=new Set(lin.map(l=>l.ordem)).size;
@@ -557,12 +664,13 @@ function buildDay(){
     "", "Enviado pelo formulário de Apontamento de Terceiros."].join("\r\n");
   return {blob, fname, subject, body, d};
 }
-const okToSend = () => { const is = issues().filter(i=>i[0]==="err"); if(is.length){ renderSum(); $("issuesCard").scrollIntoView({behavior:"smooth"}); toast("Corrija os itens em vermelho antes de enviar"); return false; } return true; };
-function markSent(d){ d.envios.push({em:new Date().toISOString(), motivo:d.envios.length?(d.motivo||"").trim():""}); d.motivo=""; save(); renderSum(); }
+const matOf = l => l.mat || (funcs().find(f=>f.nome===l.nome)||{}).mat || "";
+const okToSend = (soPlanilha) => { const is = issues().filter(i=>i[0]==="err" && !(soPlanilha && i[1].includes("motivo do reenvio"))); if(is.length){ renderSum(); $("issuesCard").scrollIntoView({behavior:"smooth"}); toast("Corrija os itens em vermelho antes de enviar"); return false; } return true; };
+function markSent(d){ d.envios.push({id:uid(), em:new Date().toISOString(), motivo:d.envios.length?(d.motivo||"").trim():"", status:"app"}); d.motivo=""; save(); renderSum(); }
 function dlBlob(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},3000); }
 
 async function generate(){
-  if(!okToSend()) return;
+  if(!okToSend(true)) return;
   const {blob, fname} = buildDay();
   if(downloadsP){ const dl = await downloadsP; if(dl){ try{ await dl.save({filename:fname, data:blob}); toast(`Planilha ${fname} baixada.`); return; } catch(e){ if(e?.code==="declined") return; } } }
   try{ dlBlob(blob, fname); toast(`Planilha ${fname} baixada.`); }catch(e){ toast("Não consegui baixar neste navegador"); }
@@ -596,28 +704,57 @@ async function buildEml(blob, fname, subject, body){
     `--${bd}--`, ""
   ].join("\r\n")], {type:"message/rfc822"});
 }
-async function sendDirect(blob, fname, subject, body, d){
-  const btn=$("bMail"), old=btn.textContent; btn.disabled=true; btn.textContent="Enviando…";
-  try{
-    const lin=d.linhas, payload={chave:ENVIO_CHAVE, empresa:S.empresa, data:curDate.split("-").reverse().join("/"), assunto:subject, corpo:body,
-      nomeArquivo:fname, arquivo:await b64(blob), envio:d.envios.length+1, motivo:(d.motivo||"").trim(), encarregado:S.enc.trim(), pessoas:new Set(lin.map(pkey)).size};
-    const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload)});
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.erro||"falha");
-    return true;
-  }catch(e){ return false; }
-  finally{ btn.disabled=false; btn.textContent=old; }
+function payloadLinhas(d){
+  return [...d.linhas].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in).map(l=>{ const o=findOrd(l.ordem)||{}, ov=almOverlap(l);
+    return {mat:matOf(l), nome:l.nome, ordem:l.ordem, entrada:hm(l.in), saidaAlm:ov?hm(Math.max(l.in,J.almIni)):"", voltaAlm:ov?hm(Math.min(l.out,J.almFim)):"",
+      saida:hm(l.out), total:hm(total(l)), setor:o.setor||"", solicitante:o.solicitante||"", desc:o.desc||"", status:d.status[l.ordem]||o.status||"", obs:l.obs||""}; });
 }
+/* fila: cada envio fica guardado aqui até o servidor confirmar */
 async function sendMail(){
+  if(!ENVIO_URL) return sendViaApp();
   if(!okToSend()) return;
   const {blob, fname, subject, body, d} = buildDay();
-  // envio direto pelo servidor (sem baixar nada)
-  if(ENVIO_URL){
-    if(await sendDirect(blob, fname, subject, body, d)){ markSent(d); toast(`Enviado para ${DESTINO_EMAIL} com a planilha em anexo.`); return; }
-    toast(navigator.onLine===false ? "Sem internet agora. Vou preparar o e-mail pelo aparelho." : "Não consegui enviar direto. Vou preparar o e-mail pelo aparelho.");
-    await new Promise(r=>setTimeout(r,1200));
-  }
-  // celular: tela de compartilhar com a planilha anexada
+  const id = Date.now().toString(36)+"-"+uid(), envioN = d.envios.length+1, motivo=(d.motivo||"").trim();
+  const payload = {chave:ENVIO_CHAVE, id, empresa:S.empresa, data:curDate.split("-").reverse().join("/"), assunto:subject, corpo:body,
+    nomeArquivo:fname, arquivo:await b64(blob), envio:envioN, motivo:envioN>1?motivo:"", encarregado:S.enc.trim(),
+    pessoas:new Set(d.linhas.map(pkey)).size, linhas:payloadLinhas(d)};
+  d.envios.push({id, em:new Date().toISOString(), motivo:envioN>1?motivo:"", status:"pendente"}); d.motivo="";
+  S.fila.push({id, empresa:S.empresa, dataISO:curDate, payload}); save(); renderSum();
+  await processQueue(true);
+}
+let qRunning=false;
+async function processQueue(interativo){
+  if(qRunning || !S.fila.length || !ENVIO_URL){ renderQ(); return; }
+  qRunning=true; const btn=$("bMail"); if(interativo){ btn.disabled=true; btn.textContent="Enviando…"; }
+  let enviados=0, falhou=null;
+  try{
+    for(const item of [...S.fila]){
+      try{
+        const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(item.payload)});
+        const j = await r.json();
+        if(!j.ok){ falhou = "servidor: "+(j.erro||"erro"); item.erro=j.erro||"erro"; break; }
+        S.fila = S.fila.filter(x=>x.id!==item.id);
+        const dd = S.dias[item.empresa+"|"+item.dataISO]; const ev = dd && dd.envios.find(x=>x.id===item.id); if(ev){ ev.status="enviado"; ev.recebido=new Date().toISOString(); }
+        enviados++; save();
+      }catch(e){ falhou="rede"; break; }
+    }
+  } finally { qRunning=false; if(interativo) btn.disabled=false; }
+  save(); if(tab==="apont" && S.empresa) renderSum(); else if(tab==="hist") renderHist(); renderQ();
+  if(enviados && !S.fila.length) toast(enviados>1 ? `${enviados} envios entregues à usina.` : `Enviado para ${DESTINO_EMAIL} com a planilha em anexo.`);
+  else if(falhou==="rede" && interativo) toast("Sem internet agora. O envio ficou guardado e sai sozinho quando o sinal voltar.");
+  else if(falhou && falhou!=="rede" && interativo) toast("O servidor não aceitou o envio ("+falhou+"). Avise a usina.");
+}
+function renderQ(){
+  const n=(S.fila||[]).length; $("qBar").hidden = !n || tab==="admin";
+  if(n){ const err=S.fila.find(x=>x.erro); $("qTxt").textContent = err ? `${n} envio(s) não aceitos pelo servidor (${err.erro}).` : `${n} envio${n>1?"s":""} guardado${n>1?"s":""} neste aparelho, aguardando internet.`; }
+}
+window.addEventListener("online", ()=>processQueue(false));
+setInterval(()=>{ if(S.fila.length && navigator.onLine!==false) processQueue(false); }, 30000);
+
+/* plano B: e-mail do próprio aparelho (Outlook/.eml no computador, compartilhar no celular) */
+async function sendViaApp(){
+  if(!okToSend()) return;
+  const {blob, fname, subject, body, d} = buildDay();  // celular: tela de compartilhar com a planilha anexada
   if(isMobile()){
     const file = new File([blob], fname, {type:blob.type});
     if(navigator.canShare && navigator.canShare({files:[file]})){
@@ -638,7 +775,11 @@ async function sendMail(){
 
 /* ---------- início ---------- */
 const h = location.hash.slice(1).toLowerCase(); const fromHash = Object.keys(SLUG).find(n=>SLUG[n]===h);
-S.empresa = fromHash || null; // sempre abre na escolha da empresa (a não ser que o link já traga #empresa)
+if(!fromHash){ const e=CAD.empresas.find(x=>x.slug===h); S.empresa = e ? e.nome : null; } else S.empresa = fromHash; // sempre abre na escolha da empresa (a não ser que o link já traga #empresa)
 render();
+fetchCad();
+setTimeout(()=>processQueue(false), 1500);
+// funcionar sem internet: guarda a página no aparelho (só no site publicado)
+if("serviceWorker" in navigator && (location.protocol==="https:" && !/claude/.test(location.hostname) || location.hostname==="localhost")){ try{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){} }
 </script>
 </body></html>

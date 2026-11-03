@@ -1,75 +1,187 @@
 /**
- * Apontamento de Terceiros — recebe o apontamento do formulário e envia por e-mail com a planilha anexa.
- * Também guarda o .xlsx numa pasta do Google Drive e registra cada envio numa planilha.
+ * Apontamento de Terceiros — servidor (Google Apps Script)
  *
- * Como usar: cole este código em script.google.com, ajuste o DESTINO abaixo e implante como
- * "App da Web" (Executar como: Eu · Quem pode acessar: Qualquer pessoa).
+ * O que faz:
+ *  - Recebe o apontamento do formulário, envia por e-mail com a planilha anexa,
+ *    guarda o .xlsx no Google Drive e grava cada linha na planilha BASE (histórico).
+ *  - Guarda o cadastro central de empresas e funcionários (só o administrador altera, com a senha mestre).
+ *  - Não envia duas vezes o mesmo envio (o formulário pode tentar de novo quando volta a internet).
+ *
+ * IMPORTANTE: troque a SENHA_MESTRE abaixo SOMENTE aqui no Apps Script.
+ * Não coloque a senha no GitHub (lá o código é público).
  */
 
-const DESTINO = 'gabriel07rosendo@gmail.com';      // para onde vão os e-mails (pode pôr vários separados por vírgula)
-const CHAVE = 'apont-terceiros-2026';              // precisa ser igual à do formulário
-const PASTA = 'Apontamentos Terceiros';            // pasta criada no seu Google Drive
+const DESTINO = 'gabriel07rosendo@gmail.com';   // para onde vão os e-mails (vários: separe por vírgula)
+const CHAVE = 'apont-terceiros-2026';           // igual à do formulário
+const SENHA_MESTRE = 'TROQUE_AQUI';             // senha da área do administrador (troque antes de implantar)
+const PASTA = 'Apontamentos Terceiros';         // pasta no seu Google Drive
 
-function doPost(e) {
-  try {
-    const p = JSON.parse(e.postData.contents);
-    if (p.chave !== CHAVE) return resp({ ok: false, erro: 'chave inválida' });
-    if (!p.arquivo || !p.nomeArquivo) return resp({ ok: false, erro: 'sem anexo' });
+const ABAS = {
+  REGISTRO: ['RECEBIDO EM', 'ID ENVIO', 'EMPRESA', 'DATA', 'ENVIO Nº', 'SITUAÇÃO', 'MOTIVO DO REENVIO', 'ENCARREGADO', 'PESSOAS', 'ARQUIVO'],
+  BASE: ['ID ENVIO', 'RECEBIDO EM', 'ENVIO Nº', 'SITUAÇÃO', 'EMPRESA', 'DATA', 'MATRÍCULA', 'COLABORADOR', 'ENTRADA', 'SAÍDA ALMOÇO',
+         'VOLTA ALMOÇO', 'SAÍDA', 'TOTAL', 'ORDEM', 'SETOR', 'SOLICITANTE', 'DESCRIÇÃO SERVIÇOS', 'STATUS DA ORDEM', 'OBSERVAÇÃO',
+         'ENCARREGADO', 'MOTIVO DO REENVIO'],
+  EMPRESAS: ['EMPRESA', 'LINK (#)'],
+  FUNCIONARIOS: ['EMPRESA', 'COLABORADOR', 'MATRÍCULA']
+};
 
-    const xlsx = Utilities.newBlob(
-      Utilities.base64Decode(p.arquivo),
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      p.nomeArquivo
-    );
+/* ---------------- entradas ---------------- */
 
-    MailApp.sendEmail({
-      to: DESTINO,
-      subject: p.assunto || ('APONTAMENTO | ' + p.empresa + ' | ' + p.data),
-      body: p.corpo || '',
-      attachments: [xlsx],
-      name: 'Apontamento de Terceiros'
-    });
-
-    const pasta = pegarPasta_();
-    const salvo = pasta.createFile(xlsx);
-    registrar_([new Date(), p.empresa, p.data, p.envio || 1, p.motivo || '', p.encarregado || '', p.pessoas || '', salvo.getUrl()]);
-
-    return resp({ ok: true });
-  } catch (err) {
-    return resp({ ok: false, erro: String(err) });
+function doGet(e) {
+  const acao = e && e.parameter && e.parameter.acao;
+  if (acao === 'cadastro') {
+    if (e.parameter.chave !== CHAVE) return resp({ ok: false, erro: 'chave inválida' });
+    return resp(Object.assign({ ok: true }, lerCadastro_()));
   }
-}
-
-// Abrir o endereço no navegador mostra se o script está no ar
-function doGet() {
   return resp({ ok: true, status: 'Apontamento de Terceiros no ar' });
 }
 
-function pegarPasta_() {
+function doPost(e) {
+  let p;
+  try { p = JSON.parse(e.postData.contents); } catch (err) { return resp({ ok: false, erro: 'pedido inválido' }); }
+  if (p.chave !== CHAVE) return resp({ ok: false, erro: 'chave inválida' });
+
+  if (p.acao === 'login') return resp(senhaOk_(p.senha) ? { ok: true } : { ok: false, erro: 'senha incorreta' });
+
+  if (p.acao === 'salvarCadastro') {
+    if (!senhaOk_(p.senha)) return resp({ ok: false, erro: 'senha incorreta' });
+    return comTrava_(() => { salvarCadastro_(p.cadastro); return { ok: true }; });
+  }
+
+  return comTrava_(() => receberEnvio_(p));
+}
+
+/* ---------------- envio do apontamento ---------------- */
+
+function receberEnvio_(p) {
+  if (!p.id || !p.arquivo || !p.nomeArquivo) return { ok: false, erro: 'envio incompleto' };
+  const ss = planilha_();
+  const reg = ss.getSheetByName('REGISTRO');
+
+  // já recebido? (o formulário reenviou depois de cair a internet) → não manda de novo
+  const ids = reg.getLastRow() > 1 ? reg.getRange(2, 2, reg.getLastRow() - 1, 1).getValues().map(r => r[0]) : [];
+  if (ids.indexOf(p.id) >= 0) return { ok: true, repetido: true };
+
+  const xlsx = Utilities.newBlob(Utilities.base64Decode(p.arquivo),
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', p.nomeArquivo);
+
+  MailApp.sendEmail({
+    to: DESTINO,
+    subject: p.assunto || ('APONTAMENTO | ' + p.empresa + ' | ' + p.data),
+    body: p.corpo || '',
+    attachments: [xlsx],
+    name: 'Apontamento de Terceiros'
+  });
+
+  const arquivo = pasta_().createFile(xlsx);
+  const agora = new Date();
+
+  // envios anteriores da mesma empresa + data passam a "SUBSTITUÍDO"
+  marcarSubstituidos_(reg, 3, 4, 6, p.empresa, p.data);
+  const base = ss.getSheetByName('BASE');
+  marcarSubstituidos_(base, 5, 6, 4, p.empresa, p.data);
+
+  reg.appendRow([agora, p.id, p.empresa, "'" + p.data, p.envio || 1, 'VÁLIDO', p.motivo || '', p.encarregado || '', p.pessoas || '', arquivo.getUrl()]);
+
+  const linhas = (p.linhas || []).map(l => [p.id, agora, p.envio || 1, 'VÁLIDO', p.empresa, "'" + p.data, l.mat ? "'" + l.mat : '', l.nome,
+    l.entrada, l.saidaAlm || '', l.voltaAlm || '', l.saida, l.total, l.ordem, l.setor || '', l.solicitante || '', l.desc || '',
+    l.status || '', l.obs || '', p.encarregado || '', p.motivo || '']);
+  if (linhas.length) base.getRange(base.getLastRow() + 1, 1, linhas.length, linhas[0].length).setValues(linhas);
+
+  return { ok: true };
+}
+
+function marcarSubstituidos_(aba, colEmp, colData, colSit, empresa, data) {
+  const n = aba.getLastRow() - 1;
+  if (n < 1) return;
+  const vals = aba.getRange(2, 1, n, aba.getLastColumn()).getDisplayValues();
+  vals.forEach((r, i) => {
+    if (r[colEmp - 1] === empresa && r[colData - 1] === data && r[colSit - 1] === 'VÁLIDO') {
+      aba.getRange(i + 2, colSit).setValue('SUBSTITUÍDO');
+    }
+  });
+}
+
+/* ---------------- cadastro central ---------------- */
+
+function lerCadastro_() {
+  const ss = planilha_();
+  const emp = ss.getSheetByName('EMPRESAS'), fun = ss.getSheetByName('FUNCIONARIOS');
+  const empresas = emp.getLastRow() > 1
+    ? emp.getRange(2, 1, emp.getLastRow() - 1, 2).getDisplayValues().filter(r => r[0]).map(r => ({ nome: r[0], slug: r[1] }))
+    : [];
+  const funcionarios = {};
+  empresas.forEach(e => funcionarios[e.nome] = []);
+  if (fun.getLastRow() > 1) {
+    fun.getRange(2, 1, fun.getLastRow() - 1, 3).getDisplayValues().forEach(r => {
+      if (r[0] && r[1]) (funcionarios[r[0]] = funcionarios[r[0]] || []).push({ nome: r[1], mat: r[2] });
+    });
+  }
+  return { empresas: empresas, funcionarios: funcionarios };
+}
+
+function salvarCadastro_(c) {
+  const ss = planilha_();
+  const emp = ss.getSheetByName('EMPRESAS'), fun = ss.getSheetByName('FUNCIONARIOS');
+  [emp, fun].forEach(a => { if (a.getLastRow() > 1) a.getRange(2, 1, a.getLastRow() - 1, a.getLastColumn()).clearContent(); });
+  const e = (c.empresas || []).map(x => [x.nome, x.slug || '']);
+  if (e.length) emp.getRange(2, 1, e.length, 2).setValues(e);
+  const f = [];
+  Object.keys(c.funcionarios || {}).forEach(n => (c.funcionarios[n] || []).forEach(x => f.push([n, x.nome, x.mat || ''])));
+  if (f.length) {
+    fun.getRange(2, 3, f.length, 1).setNumberFormat('@'); // matrícula como texto
+    fun.getRange(2, 1, f.length, 3).setValues(f);
+  }
+}
+
+/* ---------------- apoio ---------------- */
+
+function senhaOk_(s) { return SENHA_MESTRE !== 'TROQUE_AQUI' && s === SENHA_MESTRE; }
+
+function comTrava_(fn) {
+  const trava = LockService.getScriptLock();
+  try { trava.waitLock(20000); return resp(fn()); }
+  catch (err) { return resp({ ok: false, erro: String(err) }); }
+  finally { try { trava.releaseLock(); } catch (e) {} }
+}
+
+function pasta_() {
   const it = DriveApp.getFoldersByName(PASTA);
   return it.hasNext() ? it.next() : DriveApp.createFolder(PASTA);
 }
 
-function registrar_(linha) {
+function planilha_() {
   const props = PropertiesService.getScriptProperties();
-  let id = props.getProperty('PLANILHA_ID');
-  let ss;
+  const id = props.getProperty('BASE_ID');
+  let ss = null;
   if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }
   if (!ss) {
-    ss = SpreadsheetApp.create('Registro de envios - Apontamento Terceiros');
-    ss.getSheets()[0].appendRow(['RECEBIDO EM', 'EMPRESA', 'DATA', 'ENVIO Nº', 'MOTIVO DO REENVIO', 'ENCARREGADO', 'PESSOAS', 'ARQUIVO']);
-    DriveApp.getFileById(ss.getId()).moveTo(pegarPasta_());
-    props.setProperty('PLANILHA_ID', ss.getId());
+    ss = SpreadsheetApp.create('Base - Apontamento Terceiros');
+    DriveApp.getFileById(ss.getId()).moveTo(pasta_());
+    props.setProperty('BASE_ID', ss.getId());
   }
-  ss.getSheets()[0].appendRow(linha);
+  Object.keys(ABAS).forEach(nome => {
+    let aba = ss.getSheetByName(nome);
+    if (!aba) {
+      aba = ss.insertSheet(nome);
+      aba.appendRow(ABAS[nome]);
+      aba.setFrozenRows(1);
+      aba.getRange(1, 1, 1, ABAS[nome].length).setFontWeight('bold').setBackground('#1d6a48').setFontColor('#ffffff');
+    }
+  });
+  const sobra = ss.getSheetByName('Página1') || ss.getSheetByName('Sheet1');
+  if (sobra && ss.getSheets().length > 1) ss.deleteSheet(sobra);
+  return ss;
 }
 
 function resp(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-// Rode esta função uma vez pelo editor para autorizar Gmail, Drive e Planilhas
+// Rode uma vez pelo editor: autoriza Gmail/Drive/Planilhas e cria a planilha "Base - Apontamento Terceiros"
 function testarAutorizacao() {
-  pegarPasta_();
-  Logger.log('Pasta OK. Cota de e-mails restante hoje: ' + MailApp.getRemainingDailyQuota());
+  const ss = planilha_();
+  Logger.log('Planilha: ' + ss.getUrl());
+  Logger.log('E-mails restantes hoje: ' + MailApp.getRemainingDailyQuota());
+  if (SENHA_MESTRE === 'TROQUE_AQUI') Logger.log('ATENÇÃO: troque a SENHA_MESTRE no topo do código.');
 }
