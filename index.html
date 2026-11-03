@@ -721,11 +721,14 @@ async function sendMail(){
     nomeArquivo:fname, arquivo:await b64(blob), envio:envioN, motivo:envioN>1?motivo:"", encarregado:S.enc.trim(),
     pessoas:new Set(d.linhas.map(pkey)).size, linhas:payloadLinhas(d)};
   d.envios.push({id, em:new Date().toISOString(), motivo:envioN>1?motivo:"", status:"pendente"}); d.motivo="";
-  S.fila.push({id, empresa:S.empresa, dataISO:curDate, payload}); save(); renderSum();
+  const item={id, empresa:S.empresa, dataISO:curDate, payload};
+  S.fila.push(item); save(); renderSum();
+  await idbPut("fila", {...item, url:ENVIO_URL}); pedirEnvioEmSegundoPlano();
   await processQueue(true);
 }
 let qRunning=false;
 async function processQueue(interativo){
+  await reconciliar();
   if(qRunning || !S.fila.length || !ENVIO_URL){ renderQ(); return; }
   qRunning=true; const btn=$("bMail"); if(interativo){ btn.disabled=true; btn.textContent="Enviando…"; }
   let enviados=0, falhou=null;
@@ -735,7 +738,7 @@ async function processQueue(interativo){
         const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(item.payload)});
         const j = await r.json();
         if(!j.ok){ falhou = "servidor: "+(j.erro||"erro"); item.erro=j.erro||"erro"; break; }
-        S.fila = S.fila.filter(x=>x.id!==item.id);
+        S.fila = S.fila.filter(x=>x.id!==item.id); idbDel("fila", item.id);
         const dd = S.dias[item.empresa+"|"+item.dataISO]; const ev = dd && dd.envios.find(x=>x.id===item.id); if(ev){ ev.status="enviado"; ev.recebido=new Date().toISOString(); }
         enviados++; save();
       }catch(e){ falhou="rede"; break; }
@@ -751,6 +754,31 @@ function renderQ(){
   if(n){ const err=S.fila.find(x=>x.erro); $("qTxt").textContent = err ? `${n} envio(s) não aceitos pelo servidor (${err.erro}).` : `${n} envio${n>1?"s":""} guardado${n>1?"s":""} neste aparelho, aguardando internet.`; }
 }
 window.addEventListener("online", ()=>processQueue(false));
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") processQueue(false); });
+
+/* ---------- fila também no IndexedDB, para o service worker enviar com o app fechado ---------- */
+let idbP=null;
+function idb(){ return idbP ||= new Promise((ok,err)=>{ try{ const r=indexedDB.open("apontTerceiros",1);
+  r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains("fila")) db.createObjectStore("fila",{keyPath:"id"}); if(!db.objectStoreNames.contains("entregues")) db.createObjectStore("entregues",{keyPath:"id"}); };
+  r.onsuccess=()=>ok(r.result); r.onerror=()=>err(r.error); }catch(e){ err(e); } }); }
+async function idbTx(store, mode, fn){ try{ const db=await idb(); return await new Promise((ok,err)=>{ const tx=db.transaction(store,mode), st=tx.objectStore(store); const req=fn(st); tx.oncomplete=()=>ok(req&&req.result); tx.onerror=()=>err(tx.error); }); }catch(e){ return null; } }
+const idbPut=(s,v)=>idbTx(s,"readwrite",st=>st.put(v));
+const idbDel=(s,k)=>idbTx(s,"readwrite",st=>st.delete(k));
+const idbAll=s=>idbTx(s,"readonly",st=>st.getAll());
+function pedirEnvioEmSegundoPlano(){ try{ navigator.serviceWorker && navigator.serviceWorker.ready.then(r=>r.sync && r.sync.register("enviar-fila")).catch(()=>{}); }catch(e){} }
+// o que o service worker entregou com o app fechado vira "Entregue" aqui
+async function reconciliar(){
+  const ent = await idbAll("entregues"); if(!ent || !ent.length) { await garantirFilaNoIdb(); return; }
+  ent.forEach(x=>{ S.fila = S.fila.filter(f=>f.id!==x.id);
+    Object.values(S.dias).forEach(dd=>{ const ev=(dd.envios||[]).find(e=>e.id===x.id); if(ev){ ev.status="enviado"; ev.recebido=x.recebido; } });
+    idbDel("entregues", x.id); });
+  save(); await garantirFilaNoIdb();
+  if(tab==="apont" && S.empresa) renderSum(); else if(tab==="hist") renderHist(); renderQ();
+  toast(ent.length>1 ? `${ent.length} envios entregues à usina.` : "Envio entregue à usina.");
+}
+async function garantirFilaNoIdb(){ if(!S.fila.length) return; const tem=new Set(((await idbAll("fila"))||[]).map(x=>x.id));
+  for(const it of S.fila) if(!tem.has(it.id)) await idbPut("fila", {...it, url:ENVIO_URL}); pedirEnvioEmSegundoPlano(); }
+try{ navigator.serviceWorker && navigator.serviceWorker.addEventListener("message", ev=>{ if(ev.data && ev.data.tipo==="fila") reconciliar(); }); }catch(e){}
 setInterval(()=>{ if(S.fila.length && navigator.onLine!==false) processQueue(false); }, 30000);
 
 /* plano B: e-mail do próprio aparelho (Outlook/.eml no computador, compartilhar no celular) */
@@ -780,6 +808,7 @@ const h = location.hash.slice(1).toLowerCase(); const fromHash = Object.keys(SLU
 if(!fromHash){ const e=CAD.empresas.find(x=>x.slug===h); S.empresa = e ? e.nome : null; } else S.empresa = fromHash; // sempre abre na escolha da empresa (a não ser que o link já traga #empresa)
 render();
 fetchCad();
+reconciliar();
 setTimeout(()=>processQueue(false), 1500);
 // funcionar sem internet: guarda a página no aparelho (só no site publicado)
 if("serviceWorker" in navigator && (location.protocol==="https:" && !/claude/.test(location.hostname) || location.hostname==="localhost")){ try{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){} }

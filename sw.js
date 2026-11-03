@@ -1,6 +1,5 @@
-// Guarda o formulário no aparelho para abrir sem internet.
-// Página: tenta a internet (até 4 s) e, se não der, usa a cópia guardada.
-const CACHE = "apont-v2";
+// Guarda o formulário no aparelho para abrir sem internet e envia a fila com o app fechado.
+const CACHE = "apont-v3";
 const ARQS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -24,5 +23,36 @@ self.addEventListener("fetch", e => {
   } else if (u.hostname === "fonts.googleapis.com" || u.hostname === "fonts.gstatic.com") {
     e.respondWith(caches.match(req).then(r => r || fetch(req).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return res; })));
   }
-  // o envio para o Google (script.google.com) não passa por aqui: quem cuida é a fila do formulário
 });
+
+/* ---------- envio em segundo plano (Android/Chrome): roda quando a internet volta, mesmo com o app fechado ---------- */
+function abrirDb() {
+  return new Promise((ok, err) => {
+    const r = indexedDB.open("apontTerceiros", 1);
+    r.onupgradeneeded = () => { const db = r.result;
+      if (!db.objectStoreNames.contains("fila")) db.createObjectStore("fila", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("entregues")) db.createObjectStore("entregues", { keyPath: "id" }); };
+    r.onsuccess = () => ok(r.result); r.onerror = () => err(r.error);
+  });
+}
+const tx = (db, store, mode, fn) => new Promise((ok, err) => { const t = db.transaction(store, mode); const q = fn(t.objectStore(store)); t.oncomplete = () => ok(q && q.result); t.onerror = () => err(t.error); });
+
+async function enviarFila() {
+  const db = await abrirDb();
+  const fila = await tx(db, "fila", "readonly", s => s.getAll());
+  let entregou = 0;
+  for (const item of fila) {
+    const r = await fetch(item.url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(item.payload) }); // sem internet: lança erro e o navegador tenta de novo depois
+    const j = await r.json().catch(() => ({ ok: false }));
+    if (j.ok) {
+      await tx(db, "fila", "readwrite", s => s.delete(item.id));
+      await tx(db, "entregues", "readwrite", s => s.put({ id: item.id, recebido: new Date().toISOString() }));
+      entregou++;
+    }
+  }
+  if (entregou) {
+    const abertos = await self.clients.matchAll({ includeUncontrolled: true });
+    abertos.forEach(c => c.postMessage({ tipo: "fila" }));
+  }
+}
+self.addEventListener("sync", e => { if (e.tag === "enviar-fila") e.waitUntil(enviarFila()); });
