@@ -17,7 +17,7 @@ const SENHA_MESTRE = 'TROQUE_AQUI';             // senha da área do administrad
 const PASTA = 'Apontamentos Terceiros';         // pasta no seu Google Drive
 
 const ABAS = {
-  REGISTRO: ['RECEBIDO EM', 'ID ENVIO', 'EMPRESA', 'DATA', 'ENVIO Nº', 'SITUAÇÃO', 'MOTIVO DO REENVIO', 'ENCARREGADO', 'PESSOAS', 'ARQUIVO'],
+  REGISTRO: ['RECEBIDO EM', 'ID ENVIO', 'EMPRESA', 'DATA', 'ENVIO Nº', 'SITUAÇÃO', 'MOTIVO DO REENVIO', 'ENCARREGADO', 'PESSOAS', 'ARQUIVO', 'ANEXOS'],
   BASE: ['ID ENVIO', 'RECEBIDO EM', 'ENVIO Nº', 'SITUAÇÃO', 'EMPRESA', 'DATA', 'MATRÍCULA', 'COLABORADOR', 'ENTRADA', 'SAÍDA ALMOÇO',
          'VOLTA ALMOÇO', 'SAÍDA', 'TOTAL', 'ORDEM', 'SETOR', 'SOLICITANTE', 'DESCRIÇÃO SERVIÇOS', 'STATUS DA ORDEM', 'OBSERVAÇÃO',
          'ENCARREGADO', 'MOTIVO DO REENVIO'],
@@ -65,15 +65,22 @@ function receberEnvio_(p) {
   const xlsx = Utilities.newBlob(Utilities.base64Decode(p.arquivo),
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', p.nomeArquivo);
 
+  const extras = (p.anexos || []).map(a => Utilities.newBlob(Utilities.base64Decode(a.b64), a.tipo || 'application/octet-stream', a.nome || 'anexo'));
+
   MailApp.sendEmail({
     to: DESTINO,
     subject: p.assunto || ('APONTAMENTO | ' + p.empresa + ' | ' + p.data),
     body: p.corpo || '',
-    attachments: [xlsx],
+    attachments: [xlsx].concat(extras),
     name: 'Apontamento de Terceiros'
   });
 
   const arquivo = pasta_().createFile(xlsx);
+  let linksAnexos = '';
+  if (extras.length) {
+    const sub = subpasta_(pasta_(), 'Anexos');
+    linksAnexos = extras.map(b => { b.setName(p.empresa + ' ' + String(p.data).replace(/\//g, '-') + ' - ' + b.getName()); return sub.createFile(b).getUrl(); }).join('\n');
+  }
   const agora = new Date();
 
   // envios anteriores da mesma empresa + data passam a "SUBSTITUÍDO"
@@ -81,7 +88,7 @@ function receberEnvio_(p) {
   const base = ss.getSheetByName('BASE');
   marcarSubstituidos_(base, 5, 6, 4, p.empresa, p.data);
 
-  reg.appendRow([agora, p.id, p.empresa, "'" + p.data, p.envio || 1, 'VÁLIDO', p.motivo || '', p.encarregado || '', p.pessoas || '', arquivo.getUrl()]);
+  reg.appendRow([agora, p.id, p.empresa, "'" + p.data, p.envio || 1, 'VÁLIDO', p.motivo || '', p.encarregado || '', p.pessoas || '', arquivo.getUrl(), linksAnexos]);
 
   const linhas = (p.linhas || []).map(l => [p.id, agora, p.envio || 1, 'VÁLIDO', p.empresa, "'" + p.data, l.mat ? "'" + l.mat : '', l.nome,
     l.entrada, l.saidaAlm || '', l.voltaAlm || '', l.saida, l.total, l.ordem, l.setor || '', l.solicitante || '', l.desc || '',
@@ -150,6 +157,11 @@ function pasta_() {
   return it.hasNext() ? it.next() : DriveApp.createFolder(PASTA);
 }
 
+function subpasta_(pai, nome) {
+  const it = pai.getFoldersByName(nome);
+  return it.hasNext() ? it.next() : pai.createFolder(nome);
+}
+
 function planilha_() {
   const props = PropertiesService.getScriptProperties();
   const id = props.getProperty('BASE_ID');
@@ -167,6 +179,8 @@ function planilha_() {
       aba.appendRow(ABAS[nome]);
       aba.setFrozenRows(1);
       aba.getRange(1, 1, 1, ABAS[nome].length).setFontWeight('bold').setBackground('#1d6a48').setFontColor('#ffffff');
+    } else if (aba.getLastColumn() < ABAS[nome].length) { // coluna nova numa versão mais recente
+      aba.getRange(1, 1, 1, ABAS[nome].length).setValues([ABAS[nome]]).setFontWeight('bold').setBackground('#1d6a48').setFontColor('#ffffff');
     }
   });
   const sobra = ss.getSheetByName('Página1') || ss.getSheetByName('Sheet1');

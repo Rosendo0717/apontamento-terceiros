@@ -96,6 +96,12 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
 .tscroll{overflow-x:auto}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:.88rem;z-index:20;max-width:min(92vw,520px);box-shadow:0 4px 16px rgba(0,0,0,.25)}
 .picker{display:grid;gap:8px}
+.anx{display:grid;gap:8px;border:1px dashed var(--line);border-radius:8px;padding:10px;background:var(--sunk)}
+.anxlist{display:grid;gap:6px}
+.anxi{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0}
+.anxi img,.anxi .ico{width:42px;height:42px;border-radius:6px;object-fit:cover;flex:none;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:600 .7rem var(--f-mono)}
+.anxi .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem}
+.anxi .tm{font:400 .72rem var(--f-mono);color:var(--muted)}
 .qbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 12px;font-size:.88rem;font-weight:500}
 .picker button{text-align:left;justify-content:flex-start;font-size:1.05rem;min-height:56px}
 @media (max-width:420px){.times{grid-template-columns:1fr 1fr}.times .alm{grid-column:1/-1;min-height:30px}}
@@ -181,6 +187,14 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
     <section class="card" id="sendCard" hidden>
       <h2>Envio <span id="sendChip"></span></h2>
       <p class="hint">O botão “Enviar” manda o apontamento direto para a usina (<span class="mono" id="destLbl" style="user-select:all"></span>) com a planilha do dia em anexo. Sem internet, o envio fica guardado neste aparelho e sai sozinho quando o sinal voltar.</p>
+      <div class="anx">
+        <div class="row" style="justify-content:space-between"><b style="font-size:.9rem">Anexos <span class="hint" style="display:inline;font-weight:400">(opcional: RDO, fotos, PDF…)</span></b><span class="mono hint" id="anxTot" style="display:inline"></span></div>
+        <div class="row">
+          <label class="btn small" for="anxFoto">Tirar foto</label><input type="file" id="anxFoto" accept="image/*" capture="environment" hidden>
+          <label class="btn small" for="anxArq">Escolher arquivo</label><input type="file" id="anxArq" accept="image/*,application/pdf,.pdf,.xlsx,.xls,.csv,.doc,.docx,.txt" multiple hidden>
+        </div>
+        <div id="anxList" class="anxlist"></div>
+      </div>
       <label class="f" id="motivoBox" hidden>Motivo do reenvio (obrigatório)<input id="fMotivo" placeholder="Ex.: corrigi a saída do João, que ficou até 17:30"></label>
       <div class="row"><button class="btn small ghost" id="bMailApp">Enviar pelo e-mail do aparelho</button><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
     </section>
@@ -432,6 +446,7 @@ function renderSum(){
   const ev=day().envios; $("sendCard").hidden = !lin.length; $("destLbl").textContent = DESTINO_EMAIL;
   const ult=ev[ev.length-1], hora=ult?new Date(ult.em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"";
   $("sendChip").innerHTML = !ult ? `<span class="chip warn">Não enviado</span>` : ult.status==="pendente" ? `<span class="chip warn">Aguardando internet · ${hora}</span>` : ult.status==="app" ? `<span class="chip info">Aberto no e-mail do aparelho ${ev.length}x · ${hora}</span>` : `<span class="chip ok">Entregue ${ev.length}x · último ${hora}</span>`;
+  renderAnexos();
   $("motivoBox").hidden = !ev.length; if(document.activeElement!==$("fMotivo")) $("fMotivo").value = day().motivo||"";
   if(!qRunning) $("bMail").textContent = ev.length ? "Reenviar" : "Enviar";
   $("issues").innerHTML = is.map(i=>`<div class="issue ${i[0]}">${esc(i[1])}</div>`).join("");
@@ -557,7 +572,7 @@ document.addEventListener("click", ev=>{
     case "bRepeat": repeat(); break;
     case "bClear": $("clearConfirm").hidden=false; break;
     case "bClearNo": $("clearConfirm").hidden=true; break;
-    case "bClearYes": delete S.dias[dkey()]; $("clearConfirm").hidden=true; save(); renderApont(); toast("Dia apagado"); break;
+    case "bClearYes": (day().anexos||[]).forEach(a=>idbDel("anexos",a.id)); delete S.dias[dkey()]; $("clearConfirm").hidden=true; save(); renderApont(); toast("Dia apagado"); break;
     case "bGen": generate(); break;
     case "bMail": sendMail(); break;
   }
@@ -703,6 +718,7 @@ async function buildEml(blob, fname, subject, body){
     "Content-Transfer-Encoding: base64",
     "",
     wrap76(await b64(blob)),
+    ...(await anexosPayload(day())).flatMap(a=>[`--${bd}`, `Content-Type: ${a.tipo}; name="=?UTF-8?B?${b64txt(a.nome)}?="`, `Content-Disposition: attachment; filename="=?UTF-8?B?${b64txt(a.nome)}?="`, "Content-Transfer-Encoding: base64", "", wrap76(a.b64)]),
     `--${bd}--`, ""
   ].join("\r\n")], {type:"message/rfc822"});
 }
@@ -711,19 +727,66 @@ function payloadLinhas(d){
     return {mat:matOf(l), nome:l.nome, ordem:l.ordem, entrada:hm(l.in), saidaAlm:ov?hm(Math.max(l.in,J.almIni)):"", voltaAlm:ov?hm(Math.min(l.out,J.almFim)):"",
       saida:hm(l.out), total:hm(total(l)), setor:o.setor||"", solicitante:o.solicitante||"", desc:o.desc||"", status:d.status[l.ordem]||o.status||"", obs:l.obs||""}; });
 }
+/* ---------- anexos (fotos, PDF, planilhas) ---------- */
+const ANX_MAX = 8, ANX_TOTAL = 15*1024*1024, ANX_ARQ = 10*1024*1024;
+const kb = n => n>=1048576 ? (n/1048576).toFixed(1).replace(".",",")+" MB" : Math.max(1,Math.round(n/1024))+" KB";
+const anxUrls = {};
+async function comprimirFoto(file){
+  try{
+    const bmp = await createImageBitmap(file); const max=1600, k=Math.min(1, max/Math.max(bmp.width,bmp.height));
+    const cv=document.createElement("canvas"); cv.width=Math.round(bmp.width*k); cv.height=Math.round(bmp.height*k);
+    cv.getContext("2d").drawImage(bmp,0,0,cv.width,cv.height);
+    const b = await new Promise(ok=>cv.toBlob(ok,"image/jpeg",0.75));
+    return b && b.size < file.size ? b : file;
+  }catch(e){ return file; }
+}
+async function addAnexos(files){
+  const d=day(); d.anexos ||= [];
+  for(const f0 of files){
+    if(d.anexos.length>=ANX_MAX){ toast(`No máximo ${ANX_MAX} anexos por dia.`); break; }
+    let f=f0, nome=f0.name||"foto.jpg";
+    if(/^image\/(jpeg|png|webp|heic|heif)/i.test(f0.type) || (!f0.type && /\.(jpe?g|png|heic)$/i.test(nome))){ f=await comprimirFoto(f0); if(f!==f0) nome=nome.replace(/\.[^.]+$/,"")+".jpg"; }
+    if(f.size>ANX_ARQ){ toast(`${nome} é grande demais (máx. 10 MB por arquivo).`); continue; }
+    const tot=d.anexos.reduce((a,x)=>a+x.tam,0); if(tot+f.size>ANX_TOTAL){ toast("Os anexos passaram de 15 MB no total."); break; }
+    const id="anx-"+uid(), tipo=f.type||f0.type||"application/octet-stream";
+    const ok = await idbPut("anexos",{id, blob:f, nome, tipo});
+    if(ok==null){ toast("Não consegui guardar o anexo neste aparelho."); continue; }
+    d.anexos.push({id, nome, tipo, tam:f.size});
+  }
+  save(); renderAnexos();
+}
+async function renderAnexos(){
+  const box=$("anxList"); if(!box) return; const a=day().anexos||[];
+  $("anxTot").textContent = a.length ? `${a.length} · ${kb(a.reduce((s,x)=>s+x.tam,0))}` : "";
+  box.innerHTML = a.map(x=>`<div class="anxi" data-anx="${x.id}">${/^image\//.test(x.tipo)?`<img alt="" data-img="${x.id}">`:`<span class="ico">${esc((x.nome.split(".").pop()||"ARQ").slice(0,4).toUpperCase())}</span>`}
+    <span class="nm">${esc(x.nome)}<br><span class="tm">${kb(x.tam)}</span></span><button class="btn small ghost danger" data-anx-rm="${x.id}">Remover</button></div>`).join("");
+  for(const x of a) if(/^image\//.test(x.tipo)){ const img=box.querySelector(`[data-img="${x.id}"]`);
+    if(!anxUrls[x.id]){ const r=await idbGet("anexos",x.id); if(r&&r.blob) anxUrls[x.id]=URL.createObjectURL(r.blob); }
+    if(img && anxUrls[x.id]) img.src=anxUrls[x.id]; }
+}
+async function anexosPayload(d){
+  const out=[]; for(const x of (d.anexos||[])){ const r=await idbGet("anexos",x.id); if(r&&r.blob) out.push({nome:x.nome, tipo:x.tipo, b64:await b64(r.blob)}); } return out;
+}
+document.addEventListener("change", ev=>{ const t=ev.target; if((t.id==="anxFoto"||t.id==="anxArq") && t.files && t.files.length){ addAnexos([...t.files]); t.value=""; } });
+document.addEventListener("click", ev=>{ const b=ev.target.closest("[data-anx-rm]"); if(!b) return; const id=b.dataset.anxRm, d=day();
+  d.anexos=(d.anexos||[]).filter(x=>x.id!==id); idbDel("anexos",id); if(anxUrls[id]){ URL.revokeObjectURL(anxUrls[id]); delete anxUrls[id]; } save(); renderAnexos(); });
+
 /* fila: cada envio fica guardado aqui até o servidor confirmar */
 async function sendMail(){
   if(!ENVIO_URL) return sendViaApp();
   if(!okToSend()) return;
   const {blob, fname, subject, body, d} = buildDay();
   const id = Date.now().toString(36)+"-"+uid(), envioN = d.envios.length+1, motivo=(d.motivo||"").trim();
-  const payload = {chave:ENVIO_CHAVE, id, empresa:S.empresa, data:curDate.split("-").reverse().join("/"), assunto:subject, corpo:body,
-    nomeArquivo:fname, arquivo:await b64(blob), envio:envioN, motivo:envioN>1?motivo:"", encarregado:S.enc.trim(),
+  const anexos = await anexosPayload(d);
+  const payload = {chave:ENVIO_CHAVE, id, empresa:S.empresa, data:curDate.split("-").reverse().join("/"), assunto:subject,
+    corpo: body + (anexos.length ? `\r\n\r\nAnexos: ${anexos.length} arquivo(s)` : ""),
+    nomeArquivo:fname, arquivo:await b64(blob), anexos, envio:envioN, motivo:envioN>1?motivo:"", encarregado:S.enc.trim(),
     pessoas:new Set(d.linhas.map(pkey)).size, linhas:payloadLinhas(d)};
   d.envios.push({id, em:new Date().toISOString(), motivo:envioN>1?motivo:"", status:"pendente"}); d.motivo="";
-  const item={id, empresa:S.empresa, dataISO:curDate, payload};
-  S.fila.push(item); save(); renderSum();
-  await idbPut("fila", {...item, url:ENVIO_URL}); pedirEnvioEmSegundoPlano();
+  const meta={id, empresa:S.empresa, dataISO:curDate};
+  const guardou = await idbPut("fila", {...meta, payload, url:ENVIO_URL});
+  S.fila.push(guardou!=null ? meta : {...meta, payload}); // sem IndexedDB: guarda tudo aqui mesmo
+  save(); renderSum(); pedirEnvioEmSegundoPlano();
   await processQueue(true);
 }
 let qRunning=false;
@@ -735,7 +798,9 @@ async function processQueue(interativo){
   try{
     for(const item of [...S.fila]){
       try{
-        const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(item.payload)});
+        const payload = item.payload || ((await idbGet("fila", item.id))||{}).payload;
+        if(!payload){ S.fila = S.fila.filter(x=>x.id!==item.id); continue; } // já entregue pelo segundo plano
+        const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload)});
         const j = await r.json();
         if(!j.ok){ falhou = "servidor: "+(j.erro||"erro"); item.erro=j.erro||"erro"; break; }
         S.fila = S.fila.filter(x=>x.id!==item.id); idbDel("fila", item.id);
@@ -758,13 +823,14 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
 
 /* ---------- fila também no IndexedDB, para o service worker enviar com o app fechado ---------- */
 let idbP=null;
-function idb(){ return idbP ||= new Promise((ok,err)=>{ try{ const r=indexedDB.open("apontTerceiros",1);
-  r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains("fila")) db.createObjectStore("fila",{keyPath:"id"}); if(!db.objectStoreNames.contains("entregues")) db.createObjectStore("entregues",{keyPath:"id"}); };
+function idb(){ return idbP ||= new Promise((ok,err)=>{ try{ const r=indexedDB.open("apontTerceiros",2);
+  r.onupgradeneeded=()=>{ const db=r.result; ["fila","entregues","anexos"].forEach(n=>{ if(!db.objectStoreNames.contains(n)) db.createObjectStore(n,{keyPath:"id"}); }); };
   r.onsuccess=()=>ok(r.result); r.onerror=()=>err(r.error); }catch(e){ err(e); } }); }
 async function idbTx(store, mode, fn){ try{ const db=await idb(); return await new Promise((ok,err)=>{ const tx=db.transaction(store,mode), st=tx.objectStore(store); const req=fn(st); tx.oncomplete=()=>ok(req&&req.result); tx.onerror=()=>err(tx.error); }); }catch(e){ return null; } }
 const idbPut=(s,v)=>idbTx(s,"readwrite",st=>st.put(v));
 const idbDel=(s,k)=>idbTx(s,"readwrite",st=>st.delete(k));
 const idbAll=s=>idbTx(s,"readonly",st=>st.getAll());
+const idbGet=(s,k)=>idbTx(s,"readonly",st=>st.get(k));
 function pedirEnvioEmSegundoPlano(){ try{ navigator.serviceWorker && navigator.serviceWorker.ready.then(r=>r.sync && r.sync.register("enviar-fila")).catch(()=>{}); }catch(e){} }
 // o que o service worker entregou com o app fechado vira "Entregue" aqui
 async function reconciliar(){
@@ -777,7 +843,7 @@ async function reconciliar(){
   toast(ent.length>1 ? `${ent.length} envios entregues à usina.` : "Envio entregue à usina.");
 }
 async function garantirFilaNoIdb(){ if(!S.fila.length) return; const tem=new Set(((await idbAll("fila"))||[]).map(x=>x.id));
-  for(const it of S.fila) if(!tem.has(it.id)) await idbPut("fila", {...it, url:ENVIO_URL}); pedirEnvioEmSegundoPlano(); }
+  for(const it of S.fila) if(!tem.has(it.id) && it.payload) await idbPut("fila", {...it, url:ENVIO_URL}); pedirEnvioEmSegundoPlano(); }
 try{ navigator.serviceWorker && navigator.serviceWorker.addEventListener("message", ev=>{ if(ev.data && ev.data.tipo==="fila") reconciliar(); }); }catch(e){}
 setInterval(()=>{ if(S.fila.length && navigator.onLine!==false) processQueue(false); }, 30000);
 
@@ -787,9 +853,11 @@ async function sendViaApp(){
   const {blob, fname, subject, body, d} = buildDay();  // celular: tela de compartilhar com a planilha anexada
   if(isMobile()){
     const file = new File([blob], fname, {type:blob.type});
-    if(navigator.canShare && navigator.canShare({files:[file]})){
+    const extras = (await anexosPayload(d)).map(a=>{ const bin=atob(a.b64), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return new File([u], a.nome, {type:a.tipo}); });
+    const todos = navigator.canShare && navigator.canShare({files:[file,...extras]}) ? [file,...extras] : [file];
+    if(navigator.canShare && navigator.canShare({files:todos})){
       try{ await navigator.clipboard.writeText(DESTINO_EMAIL); }catch(e){}
-      try{ await navigator.share({files:[file], title:subject, text:body}); markSent(d); toast(`Confira se o e-mail foi para ${DESTINO_EMAIL}.`); return; }
+      try{ await navigator.share({files:todos, title:subject, text:body}); markSent(d); toast(`Confira se o e-mail foi para ${DESTINO_EMAIL}.`); return; }
       catch(e){ if(e && e.name==="AbortError"){ toast("Envio cancelado"); return; } }
     }
   }

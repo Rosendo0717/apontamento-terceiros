@@ -1,5 +1,5 @@
 // Guarda o formulário no aparelho para abrir sem internet e envia a fila com o app fechado.
-const CACHE = "apont-v3";
+const CACHE = "apont-v4";
 const ARQS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -28,10 +28,9 @@ self.addEventListener("fetch", e => {
 /* ---------- envio em segundo plano (Android/Chrome): roda quando a internet volta, mesmo com o app fechado ---------- */
 function abrirDb() {
   return new Promise((ok, err) => {
-    const r = indexedDB.open("apontTerceiros", 1);
+    const r = indexedDB.open("apontTerceiros", 2);
     r.onupgradeneeded = () => { const db = r.result;
-      if (!db.objectStoreNames.contains("fila")) db.createObjectStore("fila", { keyPath: "id" });
-      if (!db.objectStoreNames.contains("entregues")) db.createObjectStore("entregues", { keyPath: "id" }); };
+      ["fila", "entregues", "anexos"].forEach(n => { if (!db.objectStoreNames.contains(n)) db.createObjectStore(n, { keyPath: "id" }); }); };
     r.onsuccess = () => ok(r.result); r.onerror = () => err(r.error);
   });
 }
