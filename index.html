@@ -215,10 +215,10 @@ textarea{resize:vertical;min-height:64px}
       <h2>Envio <span id="sendChip"></span></h2>
       <p class="hint">O botão “Enviar” manda o apontamento direto para a usina (<span class="mono" id="destLbl" style="user-select:all"></span>) com a planilha do dia e o RDO em PDF em anexo. Sem internet, o envio fica guardado neste aparelho e sai sozinho quando o sinal voltar.</p>
       <div class="anx" id="anxBox">
-        <div class="row" style="justify-content:space-between"><b style="font-size:.9rem">Fotos e anexos <span class="hint" style="display:inline;font-weight:400">(as fotos entram no RDO)</span></b><span class="mono hint" id="anxTot" style="display:inline"></span></div>
+        <div class="row" style="justify-content:space-between"><b style="font-size:.9rem">Fotos do serviço <span class="hint" style="display:inline;font-weight:400">(entram no RDO em PDF)</span></b><span class="mono hint" id="anxTot" style="display:inline"></span></div>
         <div class="row">
           <label class="btn small" for="anxFoto">Tirar foto</label><input type="file" id="anxFoto" accept="image/*" capture="environment" hidden>
-          <label class="btn small" for="anxArq">Escolher arquivo</label><input type="file" id="anxArq" accept="image/*,application/pdf,.pdf,.xlsx,.xls,.csv,.doc,.docx,.txt" multiple hidden>
+          <label class="btn small" for="anxArq">Escolher da galeria</label><input type="file" id="anxArq" accept="image/*" multiple hidden>
         </div>
         <div id="anxList" class="anxlist"></div>
       </div>
@@ -775,8 +775,9 @@ async function comprimirFoto(file){
 async function addAnexos(files){
   const d=day(); d.anexos ||= [];
   for(const f0 of files){
-    if(d.anexos.length>=ANX_MAX){ toast(`No máximo ${ANX_MAX} anexos por dia.`); break; }
+    if(d.anexos.length>=ANX_MAX){ toast(`No máximo ${ANX_MAX} fotos por dia.`); break; }
     let f=f0, nome=f0.name||"foto.jpg";
+    if(!/^image\//i.test(f0.type||"") && !/\.(jpe?g|png|webp|heic|heif)$/i.test(nome)){ toast(`${nome}: só fotos podem ser anexadas (elas entram no RDO).`); continue; }
     if(/^image\/(jpeg|png|webp|heic|heif)/i.test(f0.type) || (!f0.type && /\.(jpe?g|png|heic)$/i.test(nome))){ f=await comprimirFoto(f0); if(f!==f0) nome=nome.replace(/\.[^.]+$/,"")+".jpg"; }
     if(f.size>ANX_ARQ){ toast(`${nome} é grande demais (máx. 10 MB por arquivo).`); continue; }
     const tot=d.anexos.reduce((a,x)=>a+x.tam,0); if(tot+f.size>ANX_TOTAL){ toast("Os anexos passaram de 15 MB no total."); break; }
@@ -810,10 +811,10 @@ async function sendMail(){
   const {blob, fname, subject, body, d} = buildDay();
   const id = Date.now().toString(36)+"-"+uid(), envioN = d.envios.length+1, motivo=(d.motivo||"").trim();
   const btn=$("bMail"); btn.disabled=true; btn.textContent="Montando RDO…";
-  const anexos = [...await rdoPayload(d, envioN), ...await anexosPayload(d)];
+  const anexos = await rdoPayload(d, envioN); // vai só a planilha + o RDO em PDF (as fotos já estão dentro do PDF)
   btn.disabled=false;
   const payload = {chave:ENVIO_CHAVE, id, empresa:S.empresa, data:curDate.split("-").reverse().join("/"), assunto:subject,
-    corpo: body + (anexos.length ? `\r\n\r\nAnexos: ${anexos.length} arquivo(s)` : ""),
+    corpo: body,
     nomeArquivo:fname, arquivo:await b64(blob), anexos, envio:envioN, motivo:envioN>1?motivo:"", encarregado:S.enc.trim(),
     pessoas:new Set(d.linhas.map(pkey)).size, linhas:payloadLinhas(d)};
   d.envios.push({id, em:new Date().toISOString(), motivo:envioN>1?motivo:"", status:"pendente"}); d.motivo="";
@@ -885,7 +886,7 @@ setInterval(()=>{ if(S.fila.length && navigator.onLine!==false) processQueue(fal
 async function sendViaApp(){
   if(!okToSend()) return;
   const {blob, fname, subject, body, d} = buildDay();  // celular: tela de compartilhar com a planilha anexada
-  const todosAnexos = [...await rdoPayload(d, d.envios.length+1), ...await anexosPayload(d)];
+  const todosAnexos = await rdoPayload(d, d.envios.length+1);
   if(isMobile()){
     const file = new File([blob], fname, {type:blob.type});
     const extras = todosAnexos.map(a=>{ const bin=atob(a.b64), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return new File([u], a.nome, {type:a.tipo}); });
@@ -1167,7 +1168,7 @@ async function buildRdo(d=day(), envioN=d.envios.length+1){
       q.cap.forEach((t,j)=>P.text(x+(fw-q.dw)/2, y+q.dh+13+j*10.5, P.fit(t,"r",8,Math.max(q.dw,fw*.6)), {sz:8, c:COR.mut})); });
     y+=rh;
   }
-  if(falhas.length) para("Não entraram no PDF (formato não suportado neste aparelho): "+falhas.join(", ")+". Elas seguem como anexo no e-mail.", {sz:8, c:COR.mut});
+  if(falhas.length) para("Não foi possível incluir no PDF (formato de foto não suportado neste aparelho): "+falhas.join(", ")+".", {sz:8, c:COR.mut});
 
   /* rodapé de todas as páginas */
   const ger=new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
