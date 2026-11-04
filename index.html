@@ -105,6 +105,27 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
 .qbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 12px;font-size:.88rem;font-weight:500}
 .picker button{text-align:left;justify-content:flex-start;font-size:1.05rem;min-height:56px}
 @media (max-width:420px){.times{grid-template-columns:1fr 1fr}.times .alm{grid-column:1/-1;min-height:30px}}
+/* RDO */
+.rsub{display:grid;gap:10px;padding-top:12px;border-top:1px solid var(--line)}
+.rsub h3{font:600 .82rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.per{display:grid;gap:6px}
+.per .pl{font:600 .78rem var(--f-display);text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:500 .85rem var(--f-body);color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:6px 12px;min-height:38px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ordr{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px;background:var(--sunk);min-width:0}
+.ordr .oh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.ordr .oh b{font:600 .95rem var(--f-mono)}
+.ordr textarea,.ordr input,.ordr select{background:var(--surface)}
+.av{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.av input[type="range"]{padding:0;min-height:36px;border:0;background:transparent;accent-color:var(--accent)}
+.av .pct{font:600 1rem var(--f-mono);min-width:4.2em;text-align:right}
+.av.unset .pct{color:var(--warn);font-size:.8rem}
+textarea{resize:vertical;min-height:64px}
+.chk{display:flex;align-items:center;gap:8px;font-size:.9rem;min-height:40px;cursor:pointer}
+.chk input{width:20px;height:20px;min-height:0;accent-color:var(--accent);flex:none}
+.eqrow{display:grid;grid-template-columns:1fr 84px auto;gap:8px;align-items:end}
+.anxi input{min-height:34px;padding:4px 8px;font-size:.82rem;margin-top:4px}
 @media (prefers-reduced-motion:no-preference){.person,.btn{transition:background .12s,border-color .12s}}
 </style>
 
@@ -179,6 +200,12 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
       <div id="groups"></div>
     </section>
 
+    <section class="card" id="rdoCard" hidden>
+      <h2>RDO do dia <span id="rdoChip"></span></h2>
+      <p class="hint">Relatório diário de obra. Ele é montado com os lançamentos acima e vai em PDF junto com o apontamento.</p>
+      <div id="rdoBody" style="display:grid;gap:14px"></div>
+    </section>
+
     <section class="card" id="issuesCard" hidden>
       <h2>Antes de enviar</h2>
       <div class="issues" id="issues"></div>
@@ -186,9 +213,9 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
 
     <section class="card" id="sendCard" hidden>
       <h2>Envio <span id="sendChip"></span></h2>
-      <p class="hint">O botão “Enviar” manda o apontamento direto para a usina (<span class="mono" id="destLbl" style="user-select:all"></span>) com a planilha do dia em anexo. Sem internet, o envio fica guardado neste aparelho e sai sozinho quando o sinal voltar.</p>
-      <div class="anx">
-        <div class="row" style="justify-content:space-between"><b style="font-size:.9rem">Anexos <span class="hint" style="display:inline;font-weight:400">(opcional: RDO, fotos, PDF…)</span></b><span class="mono hint" id="anxTot" style="display:inline"></span></div>
+      <p class="hint">O botão “Enviar” manda o apontamento direto para a usina (<span class="mono" id="destLbl" style="user-select:all"></span>) com a planilha do dia e o RDO em PDF em anexo. Sem internet, o envio fica guardado neste aparelho e sai sozinho quando o sinal voltar.</p>
+      <div class="anx" id="anxBox">
+        <div class="row" style="justify-content:space-between"><b style="font-size:.9rem">Fotos e anexos <span class="hint" style="display:inline;font-weight:400">(as fotos entram no RDO)</span></b><span class="mono hint" id="anxTot" style="display:inline"></span></div>
         <div class="row">
           <label class="btn small" for="anxFoto">Tirar foto</label><input type="file" id="anxFoto" accept="image/*" capture="environment" hidden>
           <label class="btn small" for="anxArq">Escolher arquivo</label><input type="file" id="anxArq" accept="image/*,application/pdf,.pdf,.xlsx,.xls,.csv,.doc,.docx,.txt" multiple hidden>
@@ -196,7 +223,7 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
         <div id="anxList" class="anxlist"></div>
       </div>
       <label class="f" id="motivoBox" hidden>Motivo do reenvio (obrigatório)<input id="fMotivo" placeholder="Ex.: corrigi a saída do João, que ficou até 17:30"></label>
-      <div class="row"><button class="btn small ghost" id="bMailApp">Enviar pelo e-mail do aparelho</button><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
+      <div class="row"><button class="btn small" id="bRdo">Ver RDO em PDF</button><button class="btn small ghost" id="bMailApp">Enviar pelo e-mail do aparelho</button><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
     </section>
   </div>
 
@@ -261,6 +288,7 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="rdo-assets.js"></script>
 <script>
 const BASE = {"empresas":{"Montec":{"funcionarios":[{"nome":"Ademir Maciel Calixto","mat":"TR109324"},{"nome":"Almir Antonio de Moura","mat":"TR099735"},{"nome":"André Alves dos Santos","mat":"TR105192"},{"nome":"César Alves dos Santos","mat":"TR105179"},{"nome":"Edson Ramos da Rocha","mat":"TR083795"},{"nome":"Edvaldo Brito de Souza","mat":"TR112062"},{"nome":"João de Paula Santos","mat":"TR105997"},{"nome":"Julio Cesar Zonzini Martins","mat":"TR111017"},{"nome":"Marcos Fabiano Palhano Gomes","mat":"TR104273"},{"nome":"Rogério Batista","mat":"TR103624"},{"nome":"Sérgio Alves dos Santos","mat":"TR104676"},{"nome":"Wanderley Ferreira dos Reis","mat":"TR104674"},{"nome":"Yago Carvalho dos Santos","mat":"TR108904"}],"ordens":[]},"Jato Dois Irmãos":{"funcionarios":[{"nome":"Ademar da Paixão"},{"nome":"Bruno C. da Silva"},{"nome":"Carlos M. Silva dos Santos"},{"nome":"Daniel A. Mendonça"},{"nome":"Eduardo de Jesus"},{"nome":"Edvaldo S. Santos"},{"nome":"Elivelto da Silva Sacramento"},{"nome":"José Nauey"},{"nome":"Rodrigo J. O. Queiroz"},{"nome":"Wesley da Silva Sousa"}],"ordens":[]},"Equipe Instalações":{"funcionarios":[],"ordens":[]},"Peraçolli":{"funcionarios":[{"nome":"Robson"},{"nome":"Dislaino"}],"ordens":[]}},"setores":["Caldeira 2","Caldeiraria","ETEL","Evaporação","Fermentação","Fermentação (Destilaria)","Filtro Prensa","Fábrica de Açúcar","Graneleiro","Indústria","Laboratório","Levedura","Moenda","Moenda A","Portaria","Tratamento de Caldo","VLC"],"solicitantes":["Agnaldo","Alessandro","Bruno Ferreira","Danilo Bessa","Everton Pinheiro","Fabiano","Galinia","Jilson","Julio","Lucas Gama","Roberta","Rogério (Elétrica)"]};
 const J = {entrada:420, almIni:690, almFim:750, saida:1008, tol:15}; // minutos: 07:00, 11:30, 12:30, 16:48
@@ -365,7 +393,7 @@ function renderApont(){
   $("dayChip").innerHTML = chip;
   const prev = lastDay(); $("bRepeat").disabled = !prev;
   $("repeatHint").textContent = prev ? "Copia de "+prev.split("-").reverse().join("/") : "Nenhum dia anterior salvo";
-  renderLaunch(); renderGroups(); renderSum();
+  renderLaunch(); renderGroups(); renderRdo(); renderSum();
 }
 
 function renderLaunch(){
@@ -437,6 +465,7 @@ function issues(){
   lin.forEach(l=>{ const fl=lineFlags(l,lin);
     fl.filter(f=>f[0]==="err").forEach(f=>{ if(f[1].startsWith("Hora extra") && (l.obs||"").trim().length>=5) return; out.push(["err", `${l.nome} (${l.ordem}): ${f[1].startsWith("Hora extra")?"hora extra / fora da jornada sem justificativa":f[1].toLowerCase()}.`]); });
   });
+  if(lin.length) rdoIssues().forEach(m=>out.push(["err", "RDO: "+m]));
   return out;
 }
 function renderSum(){
@@ -575,6 +604,7 @@ document.addEventListener("click", ev=>{
     case "bClearYes": (day().anexos||[]).forEach(a=>idbDel("anexos",a.id)); delete S.dias[dkey()]; $("clearConfirm").hidden=true; save(); renderApont(); toast("Dia apagado"); break;
     case "bGen": generate(); break;
     case "bMail": sendMail(); break;
+    case "bRdo": verRdo(); break;
   }
 });
 document.addEventListener("change", ev=>{
@@ -583,7 +613,7 @@ document.addEventListener("change", ev=>{
   if(t.id==="fData"){ if(t.value){ curDate=t.value; splitOpen=null; renderApont(); } return; }
   if(t.id==="spOrd"){ $("spNew").hidden = t.value!=="__new"; return; }
   if(t.closest("#people")){ updLaunchBtn(); return; }
-  if(t.dataset.st){ day().status[t.dataset.st]=t.value; save(); return; }
+  if(t.dataset.st){ day().status[t.dataset.st]=t.value; save(); renderRdo(); renderSum(); return; }
   if(t.id==="dIn"){ const m=toMin(t.value); if(m!=null && isEarly(m)){ t.value=hm(J.entrada); toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } return; }
   const line=t.closest(".line"); if(line && t.dataset.f){ const l=day().linhas.find(x=>x.id===line.dataset.id);
     if(t.dataset.f==="alm") l.alm=t.checked;
@@ -622,7 +652,9 @@ function repeat(){
   const pers = {}; src.linhas.forEach(l=>(pers[pkey(l)] ||= []).push(l));
   Object.values(pers).forEach(ls=>{ const split = ls.length>1;
     ls.forEach(l=>day().linhas.push({...l, id:uid(), obs:"", adj:false, ...(split?{}:{in:J.entrada,out:J.saida,alm:true})})); });
-  day().status = {...src.status}; day().ordens = JSON.parse(JSON.stringify(src.ordens||{})); save(); renderApont(); toast("Copiado de "+p.split("-").reverse().join("/")+". Ajuste quem faltou ou mudou.");
+  day().status = {...src.status}; day().ordens = JSON.parse(JSON.stringify(src.ordens||{}));
+  if(src.rdo && src.rdo.equip && src.rdo.equip.length) rdo().equip = src.rdo.equip.map(e=>({...e, id:uid()})); // equipamentos costumam se repetir
+  save(); renderApont(); toast("Copiado de "+p.split("-").reverse().join("/")+". Ajuste quem faltou ou mudou.");
 }
 
 /* ---------- geração do .xlsx (sem biblioteca) ---------- */
@@ -676,13 +708,13 @@ function buildDay(){
   const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), n=new Set(lin.map(pkey)).size, nOrd=new Set(lin.map(l=>l.ordem)).size;
   const subject = `APONTAMENTO | ${S.empresa} | ${br}`;
   const body = [`Segue em anexo o apontamento de ${S.empresa} do dia ${br} (${WD[new Date(curDate+"T12:00:00").getDay()]}).`, "",
-    `Encarregado: ${S.enc.trim()}`, `Pessoas: ${n} | Ordens: ${nOrd}`,
+    `Encarregado: ${S.enc.trim()}`, `Pessoas: ${n} | Ordens: ${nOrd}`, "RDO do dia em PDF anexo.",
     ...(envioN>1?["", `REENVIO ${envioN} (substitui o envio anterior)`, `Motivo: ${(d.motivo||"").trim()}`]:[]),
     "", "Enviado pelo formulário de Apontamento de Terceiros."].join("\r\n");
   return {blob, fname, subject, body, d};
 }
 const matOf = l => l.mat || (funcs().find(f=>f.nome===l.nome)||{}).mat || "";
-const okToSend = (soPlanilha) => { const is = issues().filter(i=>i[0]==="err" && !(soPlanilha && i[1].includes("motivo do reenvio"))); if(is.length){ renderSum(); $("issuesCard").scrollIntoView({behavior:"smooth"}); toast("Corrija os itens em vermelho antes de enviar"); return false; } return true; };
+const okToSend = (soPlanilha) => { const is = issues().filter(i=>i[0]==="err" && !(soPlanilha && (i[1].includes("motivo do reenvio") || i[1].startsWith("RDO:")))); if(is.length){ renderSum(); $("issuesCard").scrollIntoView({behavior:"smooth"}); toast("Corrija os itens em vermelho antes de enviar"); return false; } return true; };
 function markSent(d){ d.envios.push({id:uid(), em:new Date().toISOString(), motivo:d.envios.length?(d.motivo||"").trim():"", status:"app"}); d.motivo=""; save(); renderSum(); }
 function dlBlob(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},3000); }
 
@@ -698,7 +730,7 @@ const isMobile = () => (navigator.userAgentData && navigator.userAgentData.mobil
 async function b64(blob){ const u=new Uint8Array(await blob.arrayBuffer()); let s=""; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); }
 const b64txt = s => { const u=new TextEncoder().encode(s); let r=""; for(let i=0;i<u.length;i+=0x8000) r+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(r); };
 const wrap76 = s => s.replace(/.{1,76}/g, "$&\r\n");
-async function buildEml(blob, fname, subject, body){
+async function buildEml(blob, fname, subject, body, extras){
   const bd = "----=_Apont_"+uid();
   return new Blob([[
     "X-Unsent: 1",
@@ -718,7 +750,7 @@ async function buildEml(blob, fname, subject, body){
     "Content-Transfer-Encoding: base64",
     "",
     wrap76(await b64(blob)),
-    ...(await anexosPayload(day())).flatMap(a=>[`--${bd}`, `Content-Type: ${a.tipo}; name="=?UTF-8?B?${b64txt(a.nome)}?="`, `Content-Disposition: attachment; filename="=?UTF-8?B?${b64txt(a.nome)}?="`, "Content-Transfer-Encoding: base64", "", wrap76(a.b64)]),
+    ...extras.flatMap(a=>[`--${bd}`, `Content-Type: ${a.tipo}; name="=?UTF-8?B?${b64txt(a.nome)}?="`, `Content-Disposition: attachment; filename="=?UTF-8?B?${b64txt(a.nome)}?="`, "Content-Transfer-Encoding: base64", "", wrap76(a.b64)]),
     `--${bd}--`, ""
   ].join("\r\n")], {type:"message/rfc822"});
 }
@@ -753,13 +785,13 @@ async function addAnexos(files){
     if(ok==null){ toast("Não consegui guardar o anexo neste aparelho."); continue; }
     d.anexos.push({id, nome, tipo, tam:f.size});
   }
-  save(); renderAnexos();
+  save(); renderAnexos(); renderRdo();
 }
 async function renderAnexos(){
   const box=$("anxList"); if(!box) return; const a=day().anexos||[];
   $("anxTot").textContent = a.length ? `${a.length} · ${kb(a.reduce((s,x)=>s+x.tam,0))}` : "";
   box.innerHTML = a.map(x=>`<div class="anxi" data-anx="${x.id}">${/^image\//.test(x.tipo)?`<img alt="" data-img="${x.id}">`:`<span class="ico">${esc((x.nome.split(".").pop()||"ARQ").slice(0,4).toUpperCase())}</span>`}
-    <span class="nm">${esc(x.nome)}<br><span class="tm">${kb(x.tam)}</span></span><button class="btn small ghost danger" data-anx-rm="${x.id}">Remover</button></div>`).join("");
+    <span class="nm">${esc(x.nome)} <span class="tm">${kb(x.tam)}</span>${/^image\//.test(x.tipo)?`<br><input data-anx-leg="${x.id}" value="${esc(x.legenda||"")}" placeholder="Legenda no RDO (ex.: rolo montado)" maxlength="120" aria-label="Legenda da foto ${esc(x.nome)}">`:""}</span><button class="btn small ghost danger" data-anx-rm="${x.id}">Remover</button></div>`).join("");
   for(const x of a) if(/^image\//.test(x.tipo)){ const img=box.querySelector(`[data-img="${x.id}"]`);
     if(!anxUrls[x.id]){ const r=await idbGet("anexos",x.id); if(r&&r.blob) anxUrls[x.id]=URL.createObjectURL(r.blob); }
     if(img && anxUrls[x.id]) img.src=anxUrls[x.id]; }
@@ -769,7 +801,7 @@ async function anexosPayload(d){
 }
 document.addEventListener("change", ev=>{ const t=ev.target; if((t.id==="anxFoto"||t.id==="anxArq") && t.files && t.files.length){ addAnexos([...t.files]); t.value=""; } });
 document.addEventListener("click", ev=>{ const b=ev.target.closest("[data-anx-rm]"); if(!b) return; const id=b.dataset.anxRm, d=day();
-  d.anexos=(d.anexos||[]).filter(x=>x.id!==id); idbDel("anexos",id); if(anxUrls[id]){ URL.revokeObjectURL(anxUrls[id]); delete anxUrls[id]; } save(); renderAnexos(); });
+  d.anexos=(d.anexos||[]).filter(x=>x.id!==id); idbDel("anexos",id); if(anxUrls[id]){ URL.revokeObjectURL(anxUrls[id]); delete anxUrls[id]; } save(); renderAnexos(); renderRdo(); });
 
 /* fila: cada envio fica guardado aqui até o servidor confirmar */
 async function sendMail(){
@@ -777,7 +809,9 @@ async function sendMail(){
   if(!okToSend()) return;
   const {blob, fname, subject, body, d} = buildDay();
   const id = Date.now().toString(36)+"-"+uid(), envioN = d.envios.length+1, motivo=(d.motivo||"").trim();
-  const anexos = await anexosPayload(d);
+  const btn=$("bMail"); btn.disabled=true; btn.textContent="Montando RDO…";
+  const anexos = [...await rdoPayload(d, envioN), ...await anexosPayload(d)];
+  btn.disabled=false;
   const payload = {chave:ENVIO_CHAVE, id, empresa:S.empresa, data:curDate.split("-").reverse().join("/"), assunto:subject,
     corpo: body + (anexos.length ? `\r\n\r\nAnexos: ${anexos.length} arquivo(s)` : ""),
     nomeArquivo:fname, arquivo:await b64(blob), anexos, envio:envioN, motivo:envioN>1?motivo:"", encarregado:S.enc.trim(),
@@ -851,9 +885,10 @@ setInterval(()=>{ if(S.fila.length && navigator.onLine!==false) processQueue(fal
 async function sendViaApp(){
   if(!okToSend()) return;
   const {blob, fname, subject, body, d} = buildDay();  // celular: tela de compartilhar com a planilha anexada
+  const todosAnexos = [...await rdoPayload(d, d.envios.length+1), ...await anexosPayload(d)];
   if(isMobile()){
     const file = new File([blob], fname, {type:blob.type});
-    const extras = (await anexosPayload(d)).map(a=>{ const bin=atob(a.b64), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return new File([u], a.nome, {type:a.tipo}); });
+    const extras = todosAnexos.map(a=>{ const bin=atob(a.b64), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return new File([u], a.nome, {type:a.tipo}); });
     const todos = navigator.canShare && navigator.canShare({files:[file,...extras]}) ? [file,...extras] : [file];
     if(navigator.canShare && navigator.canShare({files:todos})){
       try{ await navigator.clipboard.writeText(DESTINO_EMAIL); }catch(e){}
@@ -863,12 +898,297 @@ async function sendViaApp(){
   }
   // computador: arquivo .eml que abre no Outlook já com a planilha anexa
   try{
-    const eml = await buildEml(blob, fname, subject, body);
+    const eml = await buildEml(blob, fname, subject, body, todosAnexos);
     dlBlob(eml, fname.replace(/\.xlsx$/,".eml")); markSent(d);
     toast("E-mail baixado. Abra o arquivo .eml: o Outlook abre com a planilha anexada. Clique em Enviar.");
     return;
   }catch(e){}
   try{ dlBlob(blob, fname); markSent(d); toast(`Planilha baixada. Anexe num e-mail para ${DESTINO_EMAIL}.`); }catch(e){ toast("Não consegui preparar o envio neste navegador"); }
+}
+
+/* ---------- RDO: relatório diário de obra ---------- */
+const CLIMAS = ["Bom","Nublado","Chuva fraca","Chuva forte"];
+const CONDS = ["Normal","Parcialmente paralisado","Paralisado"];
+const OCORR_TIPOS = ["Falta de material","Aguardando liberação / PT","Interferência de outra equipe","Equipamento com defeito","Paralisação pela usina","Condição insegura","Quase-acidente","Acidente","Outro"];
+const EQUIPS = ["Máquina de solda","Lixadeira / esmerilhadeira","Maçarico / oxicorte","Furadeira","Andaime","Talha / tirfor","Caminhão munck","Guindaste","Plataforma elevatória","Compressor","Hidrojateamento","Gerador","Caminhão"];
+const PERIODOS = [["manha","Manhã",[[360,720]]],["tarde","Tarde",[[720,1080]]],["noite","Noite / madrugada",[[1080,1800],[0,360]]]];
+function rdo(d=day()){ const r = d.rdo ||= {}; r.clima ||= {}; r.cond ||= {}; r.ocorr ||= []; r.equip ||= []; r.ord ||= {}; return r; }
+const periodosDia = (d=day()) => PERIODOS.filter(([,,ws])=>d.linhas.some(l=>ws.some(([a,b])=>l.in<b && l.out>a)));
+const ordensDia = (d=day()) => [...new Set(d.linhas.map(l=>l.ordem))];
+const stOrd = (o, d=day()) => d.status[o] || (d.ordens[o]||{}).status || "Em andamento";
+const avOrd = (o, d=day()) => stOrd(o,d)==="Concluída" ? 100 : (rdo(d).ord[o]||{}).av ?? null;
+function avAnterior(o){ // último avanço informado desta ordem em dias anteriores
+  const ks = Object.keys(S.dias).filter(k=>k.startsWith(S.empresa+"|") && k.split("|")[1]<curDate).sort().reverse();
+  for(const k of ks){ const r=S.dias[k].rdo; const v=r && r.ord && r.ord[o] && r.ord[o].av; if(v!=null) return {v, d:k.split("|")[1]}; }
+  return null;
+}
+function rdoIssues(d=day()){
+  const r=rdo(d), out=[];
+  const falta = periodosDia(d).filter(([k])=>!r.clima[k] || !r.cond[k]).map(p=>p[1].toLowerCase());
+  if(falta.length) out.push(`informe clima e condição de trabalho (${falta.join(", ")}).`);
+  if(periodosDia(d).some(([k])=>r.cond[k] && r.cond[k]!=="Normal") && (r.parada||"").trim().length<5) out.push("explique a paralisação (motivo e horário).");
+  ordensDia(d).forEach(o=>{ if(avOrd(o,d)==null) out.push(`informe o avanço da ordem ${o}.`); });
+  if(!r.semOcorr && !r.ocorr.length) out.push("marque “Sem ocorrências” ou registre uma ocorrência.");
+  r.ocorr.forEach((x,i)=>{ if(!x.tipo || (x.desc||"").trim().length<5) out.push(`complete a ocorrência ${i+1} (tipo e descrição).`); });
+  return out;
+}
+function updRdoChip(){ const n=rdoIssues().length; $("rdoChip").innerHTML = n ? `<span class="chip warn">${n} pendente${n>1?"s":""}</span>` : `<span class="chip ok">Completo</span>`; }
+
+function renderRdo(){
+  const d=day(), lin=d.linhas; $("rdoCard").hidden=!lin.length; if(!lin.length) return;
+  const r=rdo(d), fotos=(d.anexos||[]).filter(a=>/^image\//.test(a.tipo));
+  const seg=(grp,k,opts,val)=>`<div class="seg" role="group">${opts.map(v=>`<button type="button" data-rdo-${grp}="${k}" data-v="${esc(v)}" aria-pressed="${val===v}">${esc(v)}</button>`).join("")}</div>`;
+  const pers = periodosDia(d), parado = pers.some(([k])=>r.cond[k] && r.cond[k]!=="Normal");
+  const ordOpts = sel => `<option value="">Geral (dia todo)</option>`+ordensDia(d).map(o=>`<option ${o===sel?"selected":""}>${esc(o)}</option>`).join("");
+  $("rdoBody").innerHTML = `
+  <div class="rsub" style="border-top:0;padding-top:0"><h3>Condições do dia</h3>
+    ${pers.map(([k,nome])=>`<div class="per"><span class="pl">${nome}</span><span class="hint">Clima</span>${seg("clima",k,CLIMAS,r.clima[k])}<span class="hint">Condição de trabalho</span>${seg("cond",k,CONDS,r.cond[k])}</div>`).join("")}
+    ${parado?`<label class="f">O que parou, por quê e de que horas a que horas<textarea data-rdo-txt="parada" rows="2" placeholder="Ex.: chuva forte das 13:30 às 15:00, serviço em altura suspenso">${esc(r.parada||"")}</textarea></label>`:""}
+  </div>
+  <div class="rsub"><h3>Avanço das ordens</h3>
+    ${ordensDia(d).map(o=>{ const ord=d.ordens[o]||{}, st=stOrd(o,d), av=avOrd(o,d), ant=avAnterior(o), conc=st==="Concluída";
+      return `<div class="ordr" data-ord="${esc(o)}"><div class="oh"><b>${esc(o)}</b><span class="chip ${conc?"ok":"info"}">${esc(st)}</span></div>
+        <span class="hint">${esc(ord.setor||"")}${ord.desc?" · "+esc(ord.desc):""}</span>
+        <div class="av${av==null?" unset":""}"><input type="range" min="0" max="100" step="5" value="${av??(ant?ant.v:0)}" data-ord-av="${esc(o)}" ${conc?"disabled":""} aria-label="Avanço físico da ordem ${esc(o)}"><span class="pct">${av==null?"informe":av+"%"}</span></div>
+        <span class="hint">${conc?"Ordem concluída: avanço 100%. Para mudar, troque o status em Lançamentos do dia.":ant?`Último informado: ${ant.v}% em ${ant.d.split("-").reverse().join("/")}`:"Arraste até o percentual concluído da ordem."}</span>
+        <label class="f">O que foi feito hoje nesta ordem (opcional)<textarea data-ord-feito="${esc(o)}" rows="2" placeholder="Ex.: soldagem das chapas do lado direito, faltou pintura">${esc((r.ord[o]||{}).feito||"")}</textarea></label></div>`; }).join("")}
+  </div>
+  <div class="rsub"><h3>Ocorrências</h3>
+    <label class="chk"><input type="checkbox" id="rdoSemOc" ${r.semOcorr&&!r.ocorr.length?"checked":""} ${r.ocorr.length?"disabled":""}> Sem ocorrências hoje</label>
+    ${r.ocorr.map((x,i)=>`<div class="ordr" data-oc="${x.id}"><div class="oh"><b style="font-family:var(--f-display)">Ocorrência ${i+1}</b><button class="btn small ghost danger" data-rdo="ocDel" data-id="${x.id}">Remover</button></div>
+      <div class="grid"><label class="f">Tipo<select data-oc-f="tipo"><option value="">Escolha…</option>${OCORR_TIPOS.map(t=>`<option ${t===x.tipo?"selected":""}>${esc(t)}</option>`).join("")}</select></label>
+      <label class="f">Ordem<select data-oc-f="ordem">${ordOpts(x.ordem)}</select></label></div>
+      <label class="f">O que aconteceu<textarea data-oc-f="desc" rows="2" placeholder="Ex.: aguardamos a PT de 07:00 às 08:30">${esc(x.desc||"")}</textarea></label></div>`).join("")}
+    <button class="btn small" data-rdo="ocAdd">+ Registrar ocorrência</button>
+  </div>
+  <div class="rsub"><h3>Equipamentos usados <span class="hint">opcional</span></h3>
+    ${r.equip.map(e=>`<div class="eqrow" data-eq="${e.id}"><span style="align-self:center">${esc(e.nome)}</span><input type="number" min="1" max="99" inputmode="numeric" value="${e.qtd}" data-eq-q="${e.id}" aria-label="Quantidade de ${esc(e.nome)}"><button class="btn small ghost danger" data-rdo="eqDel" data-id="${e.id}">Remover</button></div>`).join("")}
+    <div class="eqrow"><label class="f">Equipamento<input id="eqNome" list="eqLista" placeholder="Ex.: Máquina de solda" autocomplete="off"></label><label class="f">Qtd.<input id="eqQtd" type="number" min="1" max="99" value="1" inputmode="numeric"></label><button class="btn small" data-rdo="eqAdd">Adicionar</button></div>
+    <datalist id="eqLista">${EQUIPS.filter(n=>!r.equip.some(e=>e.nome===n)).map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
+  </div>
+  <div class="rsub"><h3>Fotos do serviço <span class="hint">${fotos.length?fotos.length+" no RDO":"opcional"}</span></h3>
+    <p class="hint">${fotos.length?"As fotos do quadro Envio entram no RDO com a legenda que você escrever lá.":"Tire fotos do serviço: elas entram no RDO."}</p>
+    <div class="row"><label class="btn small" for="anxFoto">Tirar foto</label><button class="btn small ghost" data-rdo="verFotos">${fotos.length?"Ver fotos e legendas":"Escolher da galeria"}</button></div>
+  </div>`;
+  updRdoChip();
+}
+
+document.addEventListener("click", ev=>{
+  const b=ev.target.closest("[data-rdo-clima],[data-rdo-cond],[data-rdo]"); if(!b) return;
+  const r=rdo();
+  if(b.dataset.rdoClima) r.clima[b.dataset.rdoClima]=b.dataset.v;
+  else if(b.dataset.rdoCond) r.cond[b.dataset.rdoCond]=b.dataset.v;
+  else switch(b.dataset.rdo){
+    case "ocAdd": r.ocorr.push({id:uid(), tipo:"", ordem:"", desc:""}); r.semOcorr=false; break;
+    case "ocDel": r.ocorr=r.ocorr.filter(x=>x.id!==b.dataset.id); break;
+    case "eqDel": r.equip=r.equip.filter(x=>x.id!==b.dataset.id); break;
+    case "eqAdd": { const n=$("eqNome").value.trim().replace(/\s+/g," "), q=Math.max(1,Math.min(99,parseInt($("eqQtd").value,10)||1));
+      if(n.length<3){ toast("Escreva o nome do equipamento"); $("eqNome").focus(); return; }
+      const ex=r.equip.find(e=>e.nome.toLowerCase()===n.toLowerCase()); if(ex) ex.qtd=q; else r.equip.push({id:uid(), nome:n, qtd:q}); break; }
+    case "verFotos": if((day().anexos||[]).some(a=>/^image\//.test(a.tipo))) $("anxBox").scrollIntoView({behavior:"smooth",block:"center"}); else $("anxArq").click(); return;
+    default: return;
+  }
+  save(); renderRdo(); renderSum();
+  if(b.dataset.rdo==="ocAdd"){ const el=$("rdoBody").querySelector(`[data-oc="${r.ocorr[r.ocorr.length-1].id}"] select`); el && el.focus(); }
+  if(b.dataset.rdo==="eqAdd") $("eqNome").focus();
+});
+document.addEventListener("keydown", ev=>{ if(ev.key==="Enter" && (ev.target.id==="eqNome"||ev.target.id==="eqQtd")){ ev.preventDefault(); document.querySelector('[data-rdo="eqAdd"]').click(); } });
+document.addEventListener("input", ev=>{
+  const t=ev.target; if(!t.closest || !(t.closest("#rdoBody") || t.dataset.anxLeg)) return;
+  const d=day(), r=rdo(d);
+  if(t.dataset.anxLeg){ const a=(d.anexos||[]).find(x=>x.id===t.dataset.anxLeg); if(a){ a.legenda=t.value.trim(); save(); } return; }
+  if(t.dataset.rdoTxt==="parada") r.parada=t.value;
+  else if(t.dataset.ordFeito) (r.ord[t.dataset.ordFeito] ||= {}).feito=t.value;
+  else if(t.dataset.ordAv){ (r.ord[t.dataset.ordAv] ||= {}).av=+t.value; const box=t.closest(".av"); box.classList.remove("unset"); box.querySelector(".pct").textContent=t.value+"%"; }
+  else if(t.dataset.ocF){ const x=r.ocorr.find(o=>o.id===t.closest("[data-oc]").dataset.oc); if(x) x[t.dataset.ocF]=t.value; }
+  else if(t.dataset.eqQ){ const e=r.equip.find(x=>x.id===t.dataset.eqQ); if(e) e.qtd=Math.max(1,Math.min(99,parseInt(t.value,10)||1)); }
+  else return;
+  save(); updRdoChip(); renderSum();
+});
+document.addEventListener("change", ev=>{ const t=ev.target;
+  if(t.id==="rdoSemOc"){ rdo().semOcorr=t.checked; save(); updRdoChip(); renderSum(); }
+  else if(t.dataset && t.dataset.ordAv){ // toque sem arrastar também conta
+    const r=rdo(); (r.ord[t.dataset.ordAv] ||= {}).av=+t.value; save(); renderRdo(); renderSum(); }
+});
+
+/* ---------- PDF do RDO (gerado no aparelho, sem internet, com a marca Lins Agroindustrial) ---------- */
+const COR = {azul:[0,50,160], verde:[0,181,173], azulm:[25,150,220], tinta:[209,234,248], txt:[28,34,48], mut:[96,106,122], ln:[214,219,228], zeb:[246,248,251], alerta:[255,148,33]};
+const CP1252 = "€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ";
+function pdfEnc(s){ let o=""; for(const ch of String(s??"").normalize("NFC")){ let c=ch.codePointAt(0);
+    if(c===9||c===10||c===13) c=32; else if(c<32) continue; else if(c>=127 && c<160) c=63; else if(c>255){ const i=CP1252.indexOf(ch); c = i>=0 ? 128+i : 63; }
+    o+=String.fromCharCode(c); } return o; }
+const b64bytes = s => { const bin=atob(s), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; };
+function novoPdf(){
+  const A=window.RDO_ASSETS; if(!A) throw new Error("Os arquivos do RDO não carregaram. Abra o formulário com internet uma vez.");
+  const PW=595.28, PH=841.89, n=v=>String(Math.round(v*100)/100), col=c=>c.map(v=>n(v/255)).join(" ");
+  const P={W:PW, H:PH, pages:[], imgs:[], cur:null, fonts:{r:b64bytes(A.fonts.r.b64), b:b64bytes(A.fonts.b.b64)}};
+  P.add = () => (P.cur={ops:[], xo:new Set()}, P.pages.push(P.cur), P.cur);
+  P.rect = (x,y,w,h,c) => P.cur.ops.push(`${col(c)} rg ${n(x)} ${n(PH-y-h)} ${n(w)} ${n(h)} re f`);
+  P.line = (x1,y1,x2,y2,c,lw=.5) => P.cur.ops.push(`${col(c)} RG ${n(lw)} w ${n(x1)} ${n(PH-y1)} m ${n(x2)} ${n(PH-y2)} l S`);
+  P.box = (x,y,w,h,c,lw=.5) => P.cur.ops.push(`${col(c)} RG ${n(lw)} w ${n(x)} ${n(PH-y-h)} ${n(w)} ${n(h)} re S`);
+  P.tw = (s,f,sz) => { const e=pdfEnc(s), w=A.fonts[f].w; let t=0; for(let i=0;i<e.length;i++) t+=w[e.charCodeAt(i)-32]||500; return t*sz/1000; };
+  P.text = (x,y,s,o={}) => { const f=o.f||"r", sz=o.sz||9, e=pdfEnc(s); let xx=x;
+    if(o.align==="right") xx=x+o.w-P.tw(s,f,sz); else if(o.align==="center") xx=x+(o.w-P.tw(s,f,sz))/2;
+    P.cur.ops.push(`BT /${f==="b"?"F2":"F1"} ${n(sz)} Tf ${col(o.c||COR.txt)} rg ${n(xx)} ${n(PH-y)} Td (${e.replace(/[\\()]/g,"\\$&")}) Tj ET`); };
+  P.fit = (s,f,sz,w) => { s=String(s??""); if(P.tw(s,f,sz)<=w) return s; while(s.length>1 && P.tw(s+"…",f,sz)>w) s=s.slice(0,-1); return s+"…"; };
+  P.wrap = (s,f,sz,maxW) => { const out=[]; String(s??"").split(/\r?\n/).forEach(par=>{ let line="";
+      par.split(/\s+/).filter(Boolean).forEach(word=>{
+        while(P.tw(word,f,sz)>maxW){ let k=word.length; while(k>1 && P.tw(word.slice(0,k),f,sz)>maxW) k--; if(line){ out.push(line); line=""; } out.push(word.slice(0,k)); word=word.slice(k); }
+        if(!word) return; const t=line?line+" "+word:word; if(P.tw(t,f,sz)<=maxW) line=t; else { out.push(line); line=word; } });
+      out.push(line); });
+    return out; };
+  P.img = (bytes,w,h) => (P.imgs.push({bytes,w,h}), P.imgs.length-1);
+  P.draw = (i,x,y,w,h) => { P.cur.xo.add(i); P.cur.ops.push(`q ${n(w)} 0 0 ${n(h)} ${n(x)} ${n(PH-y-h)} cm /Im${i} Do Q`); };
+  P.build = title => {
+    const L = s => { const u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i)&255; return u; };
+    const objs=[null,null,null]; const obj = parts => (objs.push(parts), objs.length);
+    const pstr = s => "("+pdfEnc(s).replace(/[\\()]/g,"\\$&")+")";
+    const fonte = (k,nome) => { const F=A.fonts[k], bytes=P.fonts[k];
+      const file=obj([`<< /Length ${bytes.length} /Length1 ${bytes.length} >>\nstream\n`, bytes, "\nendstream"]);
+      const desc=obj([`<< /Type /FontDescriptor /FontName /${nome} /Flags 32 /FontBBox [${F.bbox.join(" ")}] /ItalicAngle 0 /Ascent ${F.asc} /Descent ${F.desc} /CapHeight ${F.cap} /StemV ${k==="b"?140:80} /FontFile2 ${file} 0 R >>`]);
+      return obj([`<< /Type /Font /Subtype /TrueType /BaseFont /${nome} /FirstChar 32 /LastChar 255 /Widths [${F.w.join(" ")}] /Encoding /WinAnsiEncoding /FontDescriptor ${desc} 0 R >>`]); };
+    const f1=fonte("r","NotoSans-Regular"), f2=fonte("b","NotoSans-Bold");
+    const im=P.imgs.map(m=>obj([`<< /Type /XObject /Subtype /Image /Width ${m.w} /Height ${m.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${m.bytes.length} >>\nstream\n`, m.bytes, "\nendstream"]));
+    const kids=P.pages.map(pg=>{ const c=L(pg.ops.join("\n"));
+      const cid=obj([`<< /Length ${c.length} >>\nstream\n`, c, "\nendstream"]);
+      return obj([`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> /XObject << ${[...pg.xo].map(i=>`/Im${i} ${im[i]} 0 R`).join(" ")} >> >> /Contents ${cid} 0 R >>`]); });
+    objs[0]=["<< /Type /Catalog /Pages 2 0 R >>"];
+    objs[1]=[`<< /Type /Pages /Kids [${kids.map(k=>k+" 0 R").join(" ")}] /Count ${kids.length} >>`];
+    objs[2]=[`<< /Title ${pstr(title)} /Author (Lins Agroindustrial) /Producer (Apontamento de Terceiros) >>`];
+    const parts=[L("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n")]; let len=parts[0].length; const offs=[];
+    const push = x => { const u = typeof x==="string" ? L(x) : x; parts.push(u); len+=u.length; };
+    objs.forEach((o,i)=>{ offs.push(len); push(`${i+1} 0 obj\n`); o.forEach(push); push("\nendobj\n"); });
+    const xref=len; push(`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join(""));
+    push(`trailer\n<< /Size ${objs.length+1} /Root 1 0 R /Info 3 0 R >>\nstartxref\n${xref}\n%%EOF`);
+    return new Blob(parts, {type:"application/pdf"});
+  };
+  return P;
+}
+async function fotoJpeg(blob){
+  const bmp=await createImageBitmap(blob); const max=1100, k=Math.min(1, max/Math.max(bmp.width,bmp.height));
+  const cv=document.createElement("canvas"); cv.width=Math.max(1,Math.round(bmp.width*k)); cv.height=Math.max(1,Math.round(bmp.height*k));
+  const g=cv.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,cv.width,cv.height); g.drawImage(bmp,0,0,cv.width,cv.height);
+  const b=await new Promise(ok=>cv.toBlob(ok,"image/jpeg",0.72)); if(!b) throw new Error("foto");
+  return {bytes:new Uint8Array(await b.arrayBuffer()), w:cv.width, h:cv.height};
+}
+const rdoNome = (envioN) => `RDO_${empSlug(S.empresa)}_${curDate}${envioN>1?"_REENVIO"+envioN:""}.pdf`;
+
+async function buildRdo(d=day(), envioN=d.envios.length+1){
+  const P=novoPdf(), A=window.RDO_ASSETS, M=40, CW=P.W-2*M, BOT=P.H-52, r=rdo(d), lin=d.linhas;
+  const br=curDate.split("-").reverse().join("/"), wd=WD[new Date(curDate+"T12:00:00").getDay()];
+  const logo=P.img(b64bytes(A.logo.b64), A.logo.w, A.logo.h);
+  const LH=38, LW=LH*A.logo.w/A.logo.h; // largura ≈ 76 mm: acima do mínimo de 75 mm do manual para a versão horizontal
+  let y=0;
+  const cab = primeira => { P.add(); P.draw(logo, M-3, 26, LW, LH);
+    P.text(M, 46, "RELATÓRIO DIÁRIO DE OBRA", {f:"b", sz:primeira?14:11, c:COR.azul, align:"right", w:CW});
+    P.text(M, 60, primeira ? `${br} · ${wd}` : `${S.empresa} · ${br}`, {sz:9, c:COR.mut, align:"right", w:CW});
+    P.rect(M, 74, CW*.82, 3, COR.azul); P.rect(M+CW*.82, 74, CW*.18, 3, COR.verde);
+    y = 92; };
+  const ensure = h => { if(y+h>BOT){ cab(false); return true; } return false; };
+  const sec = t => { ensure(48); y+=8; P.rect(M, y, 3, 13, COR.verde); P.text(M+9, y+10.5, t.toUpperCase(), {f:"b", sz:10.5, c:COR.azul}); y+=22; };
+  const para = (s, o={}) => { const sz=o.sz||9, lh=sz*1.38, f=o.f||"r"; P.wrap(s, f, sz, o.w||CW).forEach(t=>{ ensure(lh); P.text(o.x||M, y+sz, t, {f, sz, c:o.c}); y+=lh; }); };
+  // tabela: cols = [{t, w (fração), a}], linhas = arrays de texto; linha com {b:true} em negrito
+  const table = (cols, rows, o={}) => {
+    const sz=o.sz||8.5, lh=sz*1.32, pad=5, HH=18;
+    const cells = row => cols.map((c,i)=>P.wrap(row[i]??"", row.b?"b":"r", sz, c.w*CW-2*pad));
+    const head = () => { P.rect(M, y, CW, HH, COR.tinta); let x=M; cols.forEach(c=>{ P.text(x+pad, y+12, c.t.toUpperCase(), {f:"b", sz:7, c:COR.azul, align:c.a||"left", w:c.w*CW-2*pad}); x+=c.w*CW; }); y+=HH; };
+    const first = rows.length ? Math.max(...cells(rows[0]).map(l=>l.length))*lh+2*pad : 0;
+    ensure(HH+first); head();
+    rows.forEach((row,ri)=>{ const cs=cells(row), h=Math.max(...cs.map(l=>l.length))*lh+2*pad-2;
+      if(ensure(h)) head();
+      if(row.b) P.rect(M, y, CW, h, COR.zeb);
+      let x=M; cs.forEach((ls,i)=>{ const c=cols[i]; ls.forEach((t,k)=>P.text(x+pad, y+pad+sz*.92+k*lh, t, {f:row.b?"b":"r", sz, c:(row.mut&&row.mut[i])?COR.mut:COR.txt, align:c.a||"left", w:c.w*CW-2*pad})); x+=c.w*CW; });
+      y+=h; P.line(M, y, M+CW, y, COR.ln); });
+    y+=4; };
+
+  /* página 1: identificação */
+  cab(true);
+  const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), nP=new Set(lin.map(pkey)).size, ords=ordensDia(d);
+  const cel=[["Empresa",S.empresa],["Data",`${br} (${wd})`],["Encarregado",S.enc.trim()||"—"],["Efetivo",`${nP} ${nP>1?"pessoas":"pessoa"}`],["Horas-homem",durTxt(hh)],["Ordens",`${ords.length} ${ords.length>1?"ordens":"ordem"}`]];
+  const cw3=CW/3; P.box(M, y, CW, 64, COR.ln, .7); P.line(M, y+32, M+CW, y+32, COR.ln); P.line(M+cw3, y, M+cw3, y+64, COR.ln); P.line(M+2*cw3, y, M+2*cw3, y+64, COR.ln);
+  cel.forEach(([l,v],i)=>{ const x=M+(i%3)*cw3+8, yy=y+(i>2?32:0); P.text(x, yy+11, l.toUpperCase(), {sz:6.8, c:COR.mut}); P.text(x, yy+25, P.fit(v,"b",10.5,cw3-16), {f:"b", sz:10.5}); });
+  y+=72;
+  if(envioN>1){ const ls=P.wrap(`Reenvio ${envioN}: substitui o envio anterior deste dia. Motivo: ${(d.motivo||"").trim()||"—"}`, "r", 8.5, CW-20);
+    const h=ls.length*11.5+10; P.rect(M, y, CW, h, [255,234,210]); P.rect(M, y, 3, h, COR.alerta); ls.forEach((t,k)=>P.text(M+12, y+15+k*11.5, t, {sz:8.5})); y+=h+6; }
+
+  /* condições do dia */
+  sec("Condições do dia");
+  const pers=periodosDia(d);
+  table([{t:"Período",w:.24},{t:"Clima",w:.26},{t:"Condição de trabalho",w:.5}], pers.map(([k,nome])=>[nome, r.clima[k]||"Não informado", r.cond[k]||"Não informado"]));
+  if((r.parada||"").trim() && pers.some(([k])=>r.cond[k] && r.cond[k]!=="Normal")){ para("Paralisação: "+r.parada.trim(), {sz:8.5}); y+=4; }
+
+  /* serviços executados por ordem */
+  sec("Serviços executados");
+  ords.forEach(o=>{
+    const ord=d.ordens[o]||{}, st=stOrd(o,d), av=avOrd(o,d), feito=((r.ord[o]||{}).feito||"").trim(), ls=lin.filter(l=>l.ordem===o).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in);
+    ensure(120);
+    P.rect(M, y, CW, 22, COR.azul);
+    P.text(M+8, y+15, "ORDEM "+o, {f:"b", sz:10, c:[255,255,255]});
+    P.text(M+8+P.tw("ORDEM "+o,"b",10)+10, y+15, P.fit(ord.setor||"", "r", 9, CW*.45), {sz:9, c:[255,255,255]});
+    P.text(M, y+15, st.toUpperCase(), {f:"b", sz:8, c:st==="Concluída"?COR.verde:[255,255,255], align:"right", w:CW-8});
+    y+=30;
+    if(ord.solicitante) para("Solicitante: "+ord.solicitante, {sz:8.5, c:COR.mut});
+    para("Serviço: "+(ord.desc||"—"), {sz:9});
+    y+=3; ensure(20); const bx=M+86, bw=170; P.text(M, y+9, "Avanço físico", {f:"b", sz:8.5});
+    P.rect(bx, y+2, bw, 8, COR.tinta); if(av) P.rect(bx, y+2, bw*Math.min(100,av)/100, 8, COR.azulm);
+    P.text(bx+bw+8, y+9.5, av==null?"não informado":av+"%", {f:"b", sz:9, c:av==null?COR.alerta:COR.txt}); y+=18;
+    if(feito){ para("Feito hoje:", {f:"b", sz:8.5}); para(feito, {sz:9}); }
+    y+=4;
+    const rows=ls.map(l=>{ const ov=almOverlap(l); return [l.nome+(l.obs?"\nObs.: "+l.obs:""), matOf(l)||"—", hm(l.in), hm(l.out)+(l.out>1440?" (+1)":""), ov?hm(Math.max(l.in,J.almIni))+"–"+hm(Math.min(l.out,J.almFim)):"—", durTxt(total(l))]; });
+    const tt=ls.reduce((a,l)=>a+Math.max(0,total(l)),0), np=new Set(ls.map(pkey)).size;
+    rows.push(Object.assign([`Total da ordem · ${np} ${np>1?"pessoas":"pessoa"}`,"","","","",durTxt(tt)], {b:true}));
+    table([{t:"Colaborador",w:.37},{t:"Matrícula",w:.15},{t:"Entrada",w:.11,a:"center"},{t:"Saída",w:.12,a:"center"},{t:"Almoço",w:.13,a:"center"},{t:"Total",w:.12,a:"right"}], rows);
+    y+=10;
+  });
+
+  /* equipamentos */
+  sec("Equipamentos");
+  if(r.equip.length) table([{t:"Equipamento",w:.8},{t:"Quantidade",w:.2,a:"right"}], r.equip.map(e=>[e.nome, String(e.qtd)]));
+  else para("Nenhum equipamento informado.", {sz:9, c:COR.mut});
+
+  /* ocorrências */
+  sec("Ocorrências");
+  if(r.ocorr.length) table([{t:"Tipo",w:.27},{t:"Ordem",w:.16},{t:"O que aconteceu",w:.57}], r.ocorr.map(x=>[x.tipo||"—", x.ordem||"Geral", (x.desc||"").trim()||"—"]));
+  else para(r.semOcorr ? "Sem ocorrências no dia." : "Ocorrências não informadas.", {sz:9, c:COR.mut});
+
+  /* registro fotográfico */
+  const fotos=(d.anexos||[]).filter(a=>/^image\//.test(a.tipo)), prontas=[], falhas=[];
+  for(const a of fotos){ try{ const x=await idbGet("anexos",a.id); if(!x||!x.blob) throw 0; const j=await fotoJpeg(x.blob); prontas.push({...j, a}); }catch(e){ falhas.push(a.nome); } }
+  sec("Registro fotográfico");
+  if(!prontas.length) para(fotos.length ? "Não foi possível incluir as fotos neste aparelho." : "Nenhuma foto anexada.", {sz:9, c:COR.mut});
+  const gap=14, fw=(CW-gap)/2, fmax=210;
+  for(let i=0;i<prontas.length;i+=2){
+    const par=prontas.slice(i,i+2).map((p,k)=>{ const s=Math.min(fw/p.w, fmax/p.h);
+      const cap=P.wrap(`Foto ${i+k+1}${p.a.legenda?" · "+p.a.legenda:""}`, "r", 8, fw).slice(0,3); return {p, dw:p.w*s, dh:p.h*s, cap}; });
+    const rh=Math.max(...par.map(q=>q.dh+6+q.cap.length*10.5))+gap;
+    ensure(rh);
+    par.forEach((q,k)=>{ const x=M+k*(fw+gap), id=P.img(q.p.bytes, q.p.w, q.p.h);
+      P.draw(id, x+(fw-q.dw)/2, y, q.dw, q.dh); P.box(x+(fw-q.dw)/2, y, q.dw, q.dh, COR.ln, .5);
+      q.cap.forEach((t,j)=>P.text(x+(fw-q.dw)/2, y+q.dh+13+j*10.5, P.fit(t,"r",8,Math.max(q.dw,fw*.6)), {sz:8, c:COR.mut})); });
+    y+=rh;
+  }
+  if(falhas.length) para("Não entraram no PDF (formato não suportado neste aparelho): "+falhas.join(", ")+". Elas seguem como anexo no e-mail.", {sz:8, c:COR.mut});
+
+  /* rodapé de todas as páginas */
+  const ger=new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  P.pages.forEach((pg,i)=>{ P.cur=pg; const yb=P.H-36;
+    P.line(M, yb, M+CW, yb, COR.ln);
+    P.text(M, yb+12, `Lins Agroindustrial · RDO ${S.empresa} · ${br}${envioN>1?" · reenvio "+envioN:""}`, {sz:7, c:COR.mut});
+    P.text(M, yb+22, `Gerado em ${ger} pelo formulário de Apontamento de Terceiros`, {sz:6.5, c:COR.mut});
+    P.text(M, yb+12, `Página ${i+1} de ${P.pages.length}`, {f:"b", sz:7, c:COR.azul, align:"right", w:CW}); });
+  return {blob:P.build(`RDO ${S.empresa} ${br}`), nome:rdoNome(envioN)};
+}
+async function rdoPayload(d, envioN){
+  try{ const {blob, nome}=await buildRdo(d, envioN); return [{nome, tipo:"application/pdf", b64:await b64(blob)}]; }
+  catch(e){ console.error(e); toast("Não consegui montar o RDO em PDF: "+(e.message||"erro")+". O apontamento segue sem ele."); return []; }
+}
+async function verRdo(){
+  const b=$("bRdo"); b.disabled=true; b.textContent="Montando…";
+  try{ const {blob, nome}=await buildRdo(day(), day().envios.length+1);
+    if(downloadsP){ const dl=await downloadsP; if(dl){ try{ await dl.save({filename:nome, data:blob}); toast("RDO baixado."); return; }catch(e){ if(e?.code==="declined") return; } } }
+    dlBlob(blob, nome); if(rdoIssues().length) toast("RDO baixado. Ainda há itens pendentes no quadro RDO."); else toast("RDO baixado.");
+  }catch(e){ console.error(e); toast("Não consegui montar o RDO: "+(e.message||"erro")); }
+  finally{ b.disabled=false; b.textContent="Ver RDO em PDF"; }
 }
 
 /* ---------- início ---------- */
