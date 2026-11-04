@@ -1,5 +1,5 @@
 // Guarda o formulário no aparelho para abrir sem internet e envia a fila com o app fechado.
-const CACHE = "apont-v7";
+const CACHE = "apont-v8";
 const ARQS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./rdo-assets.js"];
 
 self.addEventListener("install", e => {

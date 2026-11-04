@@ -11,7 +11,7 @@
  * Não coloque a senha no GitHub (lá o código é público).
  */
 
-const DESTINO = 'gabriel07rosendo@gmail.com';   // para onde vão os e-mails (vários: separe por vírgula)
+const DESTINO = 'pcm@linsagro.com.br';       // para onde vão os e-mails (vários: separe por vírgula)
 const CHAVE = 'apont-terceiros-2026';           // igual à do formulário
 const SENHA_MESTRE = 'TROQUE_AQUI';             // senha da área do administrador (troque antes de implantar)
 const PASTA = 'Apontamentos Terceiros';         // pasta no seu Google Drive
