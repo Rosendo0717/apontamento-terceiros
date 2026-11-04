@@ -1,34 +1,42 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1d6a48"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Apontamento de Terceiros</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0032A0"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Apontamento de Terceiros</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: uma coluna de fichas (dia → lançar equipe → lançamentos), barra de envio fixa no rodapé */
 :root{
-  --bg:#eef0eb; --surface:#ffffff; --sunk:#f6f7f3; --ink:#18201b; --muted:#5a655d; --line:#d6dbd2;
-  --accent:#1d6a48; --accent-soft:#e1efe7; --accent-ink:#ffffff;
-  --warn:#8f5300; --warn-bg:#fdf0d6; --err:#a8231b; --err-bg:#fbe4e1; --info:#2f5d86; --info-bg:#e3edf6;
-  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  /* Identidade Lins Agroindustrial (brand book out/2025): Azul #0032A0, Verde #00B5AD, Azul-médio #1996DC; Noto Sans */
+  --lins-azul:#0032A0; --lins-verde:#00B5AD; --lins-azulm:#1996DC;
+  --bg:#F1F4F9; --surface:#ffffff; --sunk:#F6F8FB; --ink:#1C2230; --muted:#5E6878; --line:#D6DCE6;
+  --accent:#0032A0; --accent-soft:#D1EAF8; --accent-ink:#ffffff;
+  --ok:#007A74; --ok-bg:#CCF0EE;
+  --warn:#8f5300; --warn-bg:#fdf0d6; --err:#a8231b; --err-bg:#fbe4e1; --info:#0B5F93; --info-bg:#D1EAF8;
+  --f-display:"Noto Sans",Verdana,system-ui,sans-serif;
+  --f-body:"Noto Sans",Verdana,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Noto Sans Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
   --r:10px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#111613; --surface:#1a201c; --sunk:#151a17; --ink:#e4ebe6; --muted:#98a59c; --line:#2c3530;
-  --accent:#55c08d; --accent-soft:#1d3328; --accent-ink:#0b1a12;
-  --warn:#f0b65c; --warn-bg:#382a12; --err:#ff8d82; --err-bg:#3a1b18; --info:#8dbbe6; --info-bg:#1a2a3a; color-scheme:dark}}
+  --bg:#0D1322; --surface:#151D31; --sunk:#111829; --ink:#E6ECF5; --muted:#9AA6BC; --line:#27324A;
+  --accent:#1996DC; --accent-soft:#12304D; --accent-ink:#04152B;
+  --ok:#3FD6CE; --ok-bg:#0E3533;
+  --warn:#f0b65c; --warn-bg:#382a12; --err:#ff8d82; --err-bg:#3a1b18; --info:#7CC4F0; --info-bg:#12304D; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#111613; --surface:#1a201c; --sunk:#151a17; --ink:#e4ebe6; --muted:#98a59c; --line:#2c3530;
-  --accent:#55c08d; --accent-soft:#1d3328; --accent-ink:#0b1a12;
-  --warn:#f0b65c; --warn-bg:#382a12; --err:#ff8d82; --err-bg:#3a1b18; --info:#8dbbe6; --info-bg:#1a2a3a; color-scheme:dark}
+  --bg:#0D1322; --surface:#151D31; --sunk:#111829; --ink:#E6ECF5; --muted:#9AA6BC; --line:#27324A;
+  --accent:#1996DC; --accent-soft:#12304D; --accent-ink:#04152B;
+  --ok:#3FD6CE; --ok-bg:#0E3533;
+  --warn:#f0b65c; --warn-bg:#382a12; --err:#ff8d82; --err-bg:#3a1b18; --info:#7CC4F0; --info-bg:#12304D; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{background:var(--bg)}
 body{color:var(--ink);font:15px/1.45 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 120px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 8px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;flex-direction:column;gap:10px}
+header.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--lins-azul) 0 82%,var(--lins-verde) 82% 100%)}
+.logoPlate{background:#ffffff;border-radius:8px;padding:14px 12px;display:flex;justify-content:center}
+.logoPlate img{width:280px;max-width:100%;height:auto;display:block}
 .brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.brand h1{font:700 1.3rem/1.1 var(--f-display);margin:0;letter-spacing:.01em;text-wrap:balance}
+.brand h1{font:700 1.3rem/1.15 var(--f-display);margin:0;letter-spacing:0;text-wrap:balance;color:var(--accent)}
 .brand .sub{font:500 .78rem var(--f-mono);color:var(--muted)}
 .tabs{display:flex;gap:4px;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px}
 .tabs button{flex:1;border:0;background:transparent;color:var(--muted);font:600 .9rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;padding:8px 6px;border-radius:999px;cursor:pointer}
@@ -64,7 +72,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .chip.warn{background:var(--warn-bg);color:var(--warn)}
 .chip.err{background:var(--err-bg);color:var(--err)}
 .chip.info{background:var(--info-bg);color:var(--info)}
-.chip.ok{background:var(--accent-soft);color:var(--accent)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
 .group{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
 .ghead{padding:10px 12px;background:var(--sunk);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
 .ghead .on{font:600 1rem var(--f-mono)}
@@ -143,6 +151,7 @@ textarea{resize:vertical;min-height:64px}
 
   <!-- Seleção de empresa (primeiro acesso) -->
   <section class="card" id="vPick" hidden>
+    <div class="logoPlate" id="logoPlate" hidden><img id="linsLogo" alt="Lins Agroindustrial" width="280" height="43"></div>
     <h2>Qual empresa você representa?</h2>
     <div class="picker" id="pickList"></div>
     <p class="hint">Sua empresa não está na lista? Fale com a usina para fazer o cadastro.</p>
@@ -1201,5 +1210,7 @@ reconciliar();
 setTimeout(()=>processQueue(false), 1500);
 // funcionar sem internet: guarda a página no aparelho (só no site publicado)
 if("serviceWorker" in navigator && (location.protocol==="https:" && !/claude/.test(location.hostname) || location.hostname==="localhost")){ try{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){} }
+
+try{ const L=window.RDO_ASSETS && window.RDO_ASSETS.logo; if(L&&L.b64){ $("linsLogo").src="data:image/jpeg;base64,"+L.b64; $("logoPlate").hidden=false; } }catch(e){}
 </script>
 </body></html>
