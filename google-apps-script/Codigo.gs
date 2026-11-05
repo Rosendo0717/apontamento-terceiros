@@ -14,7 +14,14 @@
 const DESTINO = 'pcm@linsagro.com.br';       // para onde vão os e-mails (vários: separe por vírgula)
 const CHAVE = 'apont-terceiros-2026';           // igual à do formulário
 const SENHA_MESTRE = 'TROQUE_AQUI';             // senha da área do administrador (troque antes de implantar)
-const PASTA = 'Apontamentos Terceiros';         // pasta no seu Google Drive
+const PASTA = 'Apontamentos Terceiros';
+
+// E-mails a mais SÓ para uma empresa (vão em cópia, além do DESTINO).
+// Use o nome da empresa exatamente como está no cadastro. Vários e-mails: separe por vírgula.
+const EMAILS_EXTRAS = {
+  // 'Montec': 'fiscal@exemplo.com.br',
+  // 'Jato Dois Irmãos': 'pessoa1@exemplo.com.br, pessoa2@exemplo.com.br',
+};         // pasta no seu Google Drive
 
 const ABAS = {
   REGISTRO: ['RECEBIDO EM', 'ID ENVIO', 'EMPRESA', 'DATA', 'ENVIO Nº', 'SITUAÇÃO', 'MOTIVO DO REENVIO', 'ENCARREGADO', 'PESSOAS', 'ARQUIVO', 'ANEXOS'],
@@ -69,6 +76,7 @@ function receberEnvio_(p) {
 
   MailApp.sendEmail({
     to: DESTINO,
+    cc: extrasDe_(p.empresa),
     subject: p.assunto || ('APONTAMENTO | ' + p.empresa + ' | ' + p.data),
     body: p.corpo || '',
     attachments: [xlsx].concat(extras),
@@ -142,6 +150,11 @@ function salvarCadastro_(c) {
 }
 
 /* ---------------- apoio ---------------- */
+
+function extrasDe_(empresa) {
+  const k = Object.keys(EMAILS_EXTRAS).find(n => n.trim().toLowerCase() === String(empresa || '').trim().toLowerCase());
+  return k ? String(EMAILS_EXTRAS[k]).split(/[,;\s]+/).filter(e => /@/.test(e)).join(',') : '';
+}
 
 function senhaOk_(s) { return SENHA_MESTRE !== 'TROQUE_AQUI' && s === SENHA_MESTRE; }
 
