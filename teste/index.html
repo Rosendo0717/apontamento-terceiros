@@ -1,0 +1,1324 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0032A0"><link rel="manifest" href="../manifest.webmanifest"><link rel="icon" href="../icon-192.png"><link rel="apple-touch-icon" href="../icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Apontamento de Terceiros</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: uma coluna de fichas (dia → lançar equipe → lançamentos), barra de envio fixa no rodapé */
+:root{
+  /* Identidade Lins Agroindustrial (brand book out/2025): Azul #0032A0, Verde #00B5AD, Azul-médio #1996DC; Noto Sans */
+  --lins-azul:#0032A0; --lins-verde:#00B5AD; --lins-azulm:#1996DC;
+  --bg:#F1F4F9; --surface:#ffffff; --sunk:#F6F8FB; --ink:#1C2230; --muted:#5E6878; --line:#D6DCE6;
+  --accent:#0032A0; --accent-soft:#D1EAF8; --accent-ink:#ffffff;
+  --ok:#007A74; --ok-bg:#CCF0EE;
+  --warn:#8f5300; --warn-bg:#fdf0d6; --err:#a8231b; --err-bg:#fbe4e1; --info:#0B5F93; --info-bg:#D1EAF8;
+  --f-display:"Noto Sans",Verdana,system-ui,sans-serif;
+  --f-body:"Noto Sans",Verdana,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Noto Sans Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1322; --surface:#151D31; --sunk:#111829; --ink:#E6ECF5; --muted:#9AA6BC; --line:#27324A;
+  --accent:#1996DC; --accent-soft:#12304D; --accent-ink:#04152B;
+  --ok:#3FD6CE; --ok-bg:#0E3533;
+  --warn:#f0b65c; --warn-bg:#382a12; --err:#ff8d82; --err-bg:#3a1b18; --info:#7CC4F0; --info-bg:#12304D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1322; --surface:#151D31; --sunk:#111829; --ink:#E6ECF5; --muted:#9AA6BC; --line:#27324A;
+  --accent:#1996DC; --accent-soft:#12304D; --accent-ink:#04152B;
+  --ok:#3FD6CE; --ok-bg:#0E3533;
+  --warn:#f0b65c; --warn-bg:#382a12; --err:#ff8d82; --err-bg:#3a1b18; --info:#7CC4F0; --info-bg:#12304D; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:15px/1.45 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 120px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;flex-direction:column;gap:10px}
+header.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--lins-azul) 0 82%,var(--lins-verde) 82% 100%)}
+.logoPlate{background:#ffffff;border-radius:8px;padding:14px 12px;display:flex;justify-content:center}
+.logoPlate img{width:280px;max-width:100%;height:auto;display:block}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{font:700 1.3rem/1.15 var(--f-display);margin:0;letter-spacing:0;text-wrap:balance;color:var(--accent)}
+.brand .sub{font:500 .78rem var(--f-mono);color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);font:600 .9rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;padding:8px 6px;border-radius:999px;cursor:pointer}
+.tabs button{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:380px){.tabs button{font-size:.76rem;letter-spacing:0;padding:8px 2px}.bar .in{gap:8px}.bar .sum{font-size:.72rem}}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h2{font:600 .8rem var(--f-display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted);font-weight:500;min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 10px;min-height:44px;width:100%;min-width:0}
+input[type="time"]{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:600 .95rem var(--f-display);letter-spacing:.02em;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:10px 14px;min-height:44px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:34px;padding:6px 10px;font-size:.85rem}
+.btn.danger{color:var(--err)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hint{font-size:.8rem;color:var(--muted);margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.ordinfo{background:var(--sunk);border:1px dashed var(--line);border-radius:8px;padding:10px;font-size:.85rem;display:grid;gap:2px}
+.ordinfo b{font-weight:600}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px}
+.person{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);cursor:pointer;min-height:48px}
+.person input{width:20px;height:20px;min-height:0;accent-color:var(--accent);flex:none}
+.person .nm{font-weight:500;line-height:1.2}
+.person .mt{font:400 .72rem var(--f-mono);color:var(--muted)}
+.person.on{border-color:var(--accent);background:var(--accent-soft)}
+.person.used{opacity:.5}
+.chip{display:inline-flex;align-items:center;gap:4px;font:600 .7rem var(--f-display);text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:999px;white-space:nowrap}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.err{background:var(--err-bg);color:var(--err)}
+.chip.info{background:var(--info-bg);color:var(--info)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.group{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.ghead{padding:10px 12px;background:var(--sunk);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.ghead .on{font:600 1rem var(--f-mono)}
+.ghead .ds{font-size:.85rem;color:var(--muted)}
+.ghead select{width:auto;min-height:34px;padding:4px 8px;font-size:.85rem}
+.line{padding:10px 12px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.line:last-child{border-bottom:0}
+.lt{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.lt .nm{font-weight:600}
+.lt .tot{font:600 .95rem var(--f-mono)}
+.times{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.times label.f{font-size:.7rem}
+.alm{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);min-height:44px;cursor:pointer;white-space:nowrap}
+.alm input{width:20px;height:20px;min-height:0;accent-color:var(--accent)}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.split{background:var(--info-bg);border-radius:8px;padding:10px;display:grid;gap:8px}
+.empty{padding:22px 14px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r);font-size:.9rem}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar .in{max-width:760px;margin:0 auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.bar .sum{font:500 .8rem var(--f-mono);color:var(--muted);line-height:1.3}
+.bar .sum b{color:var(--ink);font-size:1rem}
+.issues{display:grid;gap:6px}
+.issue{font-size:.85rem;padding:8px 10px;border-radius:8px}
+.issue.err{background:var(--err-bg);color:var(--err)}
+.issue.warn{background:var(--warn-bg);color:var(--warn)}
+table.list{width:100%;border-collapse:collapse;font-size:.85rem}
+table.list td,table.list th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tscroll{overflow-x:auto}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:.88rem;z-index:20;max-width:min(92vw,520px);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.picker{display:grid;gap:8px}
+.anx{display:grid;gap:8px;border:1px dashed var(--line);border-radius:8px;padding:10px;background:var(--sunk)}
+.anxlist{display:grid;gap:6px}
+.anxi{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0}
+.anxi img,.anxi .ico{width:42px;height:42px;border-radius:6px;object-fit:cover;flex:none;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:600 .7rem var(--f-mono)}
+.anxi .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem}
+.anxi .tm{font:400 .72rem var(--f-mono);color:var(--muted)}
+.qbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 12px;font-size:.88rem;font-weight:500}
+.picker button{text-align:left;justify-content:flex-start;font-size:1.05rem;min-height:56px}
+@media (max-width:420px){.times{grid-template-columns:1fr 1fr}.times .alm{grid-column:1/-1;min-height:30px}}
+/* telas / equipes */
+.steps{display:flex;gap:2px;align-items:flex-start}
+.steps button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:transparent;cursor:pointer;color:var(--muted);font:600 .68rem var(--f-display);padding:2px 0;text-transform:uppercase;letter-spacing:.03em}
+.steps .n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);background:var(--surface);font:700 .85rem var(--f-display);color:var(--muted)}
+.steps .t{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steps button.done .n{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.steps button.cur{color:var(--ink)}
+.steps button.cur .n{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.eqcard{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);display:grid;gap:12px;padding:14px;min-width:0}
+.eqhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.eqhead h3{margin:0;font:700 1.08rem var(--f-display);color:var(--accent)}
+.mchips{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{display:inline-flex;align-items:center;gap:2px;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:2px 2px 2px 10px;font-size:.85rem}
+.mchip button{border:0;background:transparent;color:var(--muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1.05rem;line-height:1}
+details.ind{border-top:1px dashed var(--line);padding-top:6px}
+details.ind summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600;padding:6px 0;min-height:36px}
+.chips .chip{white-space:normal;text-align:left}
+.line,details.ind,.lrows{min-width:0}
+.lrows{display:grid;gap:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);margin-top:6px}
+.pvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.pvgrid>div{display:grid;gap:2px}
+.pvord{border-top:1px solid var(--line);padding-top:8px;line-height:1.7}
+.pvord .chip{vertical-align:middle}
+@media (max-width:420px){.eqrow{grid-template-columns:1fr 72px}.eqrow .btn{grid-column:1/-1}}
+.pvbar{height:8px;background:var(--accent-soft);border-radius:99px;overflow:hidden;margin-top:4px}
+.pvbar span{display:block;height:100%;background:var(--lins-azulm)}
+.bar .in .sum{flex:1;min-width:0;text-align:center}
+/* RDO */
+.rsub{display:grid;gap:10px;padding-top:12px;border-top:1px solid var(--line)}
+.rsub h3{font:600 .82rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.per{display:grid;gap:6px}
+.per .pl{font:600 .78rem var(--f-display);text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:500 .85rem var(--f-body);color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:6px 12px;min-height:38px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ordr{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px;background:var(--sunk);min-width:0}
+.ordr .oh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.ordr .oh b{font:600 .95rem var(--f-mono)}
+.ordr textarea,.ordr input,.ordr select{background:var(--surface)}
+.av{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.av input[type="range"]{padding:0;min-height:36px;border:0;background:transparent;accent-color:var(--accent)}
+.av .pct{font:600 1rem var(--f-mono);min-width:4.2em;text-align:right}
+.av.unset .pct{color:var(--warn);font-size:.8rem}
+textarea{resize:vertical;min-height:64px}
+.chk{display:flex;align-items:center;gap:8px;font-size:.9rem;min-height:40px;cursor:pointer}
+.chk input{width:20px;height:20px;min-height:0;accent-color:var(--accent);flex:none}
+.eqrow{display:grid;grid-template-columns:1fr 84px auto;gap:8px;align-items:end}
+.anxi input{min-height:34px;padding:4px 8px;font-size:.82rem;margin-top:4px}
+@media (prefers-reduced-motion:no-preference){.person,.btn{transition:background .12s,border-color .12s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1 id="hTitle">Apontamento de Terceiros</h1><span class="chip warn" style="align-self:center">VERSÃO DE TESTE</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button id="tabA" role="tab" aria-selected="true" data-tab="apont">Apontamento</button>
+      <button id="tabC" role="tab" aria-selected="false" data-tab="cad">Cadastro</button>
+      <button id="tabH" role="tab" aria-selected="false" data-tab="hist">Enviados</button>
+    </nav>
+  </header>
+
+  <!-- Seleção de empresa (primeiro acesso) -->
+  <section class="card" id="vPick" hidden>
+    <div class="logoPlate" id="logoPlate" hidden><img id="linsLogo" alt="Lins Agroindustrial" width="280" height="43"></div>
+    <h2>Qual empresa você representa?</h2>
+    <div class="picker" id="pickList"></div>
+    <p class="hint">Sua empresa não está na lista? Fale com a usina para fazer o cadastro.</p>
+    <div class="row" style="justify-content:space-between"><span class="hint" id="cadSync"></span><button class="btn small ghost" id="bAdmin">Área do administrador</button></div>
+  </section>
+
+  <div class="qbar" id="qBar" hidden><span id="qTxt"></span><button class="btn small" id="bQTry">Tentar agora</button></div>
+
+  <!-- APONTAMENTO (telas 2 a 5) -->
+  <div id="vApont" class="wrap" hidden>
+    <nav class="steps" id="steps" aria-label="Etapas do apontamento"></nav>
+    <div id="pBody" class="wrap"></div>
+    <input type="file" id="anxFoto" accept="image/*" capture="environment" hidden>
+    <input type="file" id="anxArq" accept="image/*" multiple hidden>
+  </div>
+
+  <!-- CADASTRO -->
+  <div id="vCad" class="wrap" hidden>
+    <section class="card">
+      <h2>Empresa</h2>
+      <div class="row"><strong id="cEmp"></strong><button class="btn small" id="bSwitch">Trocar empresa</button></div>
+    </section>
+    <section class="card">
+      <h2>Funcionários <span class="mono" id="cFCnt"></span></h2>
+      <p class="hint">Para incluir ou tirar alguém da lista, fale com a usina.</p>
+      <div class="tscroll"><table class="list" id="tFunc"></table></div>
+    </section>
+  </div>
+
+  <!-- ADMINISTRADOR -->
+  <div id="vAdmin" class="wrap" hidden>
+    <section class="card" id="admLogin">
+      <h2>Área do administrador</h2>
+      <p class="hint">Aqui você cadastra empresas e funcionários. O cadastro fica salvo no servidor e vale para todos os aparelhos.</p>
+      <label class="f">Senha mestre<input type="password" id="admSenha" autocomplete="current-password"></label>
+      <div class="row"><button class="btn primary" id="bAdmEnter">Entrar</button><button class="btn ghost" id="bAdmBack">Voltar</button></div>
+      <p class="hint" id="admErr" style="color:var(--err)"></p>
+    </section>
+    <div id="admPanel" class="wrap" hidden>
+      <section class="card">
+        <h2>Empresas <span id="admSave"></span></h2>
+        <label class="f">Nova empresa<input id="admNovaEmp" placeholder="Ex.: Metalúrgica Silva" autocomplete="off"></label>
+        <button class="btn small primary" id="bAdmAddEmp">Adicionar empresa</button>
+        <p class="hint" id="admEmpErr" style="color:var(--err)"></p>
+        <div class="tscroll"><table class="list" id="tAdmEmp"></table></div>
+      </section>
+      <section class="card" id="admFuncCard" hidden>
+        <h2><span>Funcionários · <span id="admEmpNome"></span></span><span class="mono" id="admFCnt"></span></h2>
+        <div class="grid">
+          <label class="f">Nome completo<input id="admFNome" placeholder="Nome e sobrenome" autocapitalize="words" autocomplete="off"></label>
+          <label class="f">Matrícula (opcional)<input id="admFMat" class="mono" placeholder="Ex.: TR000000" autocapitalize="characters" autocomplete="off"></label>
+        </div>
+        <button class="btn small primary" id="bAdmAddF">Adicionar funcionário</button>
+        <p class="hint" id="admFErr" style="color:var(--err)"></p>
+        <div class="tscroll"><table class="list" id="tAdmF"></table></div>
+      </section>
+      <div class="row"><button class="btn ghost" id="bAdmOut">Sair da área do administrador</button></div>
+    </div>
+  </div>
+
+  <!-- ENVIADOS -->
+  <div id="vHist" class="wrap" hidden>
+    <section class="card">
+      <h2>Dias salvos neste aparelho</h2>
+      <div class="tscroll"><table class="list" id="tHist"></table></div>
+    </section>
+  </div>
+</div>
+
+<div class="bar" id="bar" hidden>
+  <div class="in">
+    <button class="btn" id="bPrev">Voltar</button>
+    <div class="sum" id="sum"></div>
+    <button class="btn primary" id="bNext">Próximo</button>
+    <button class="btn primary" id="bMail" hidden>Enviar</button>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="../rdo-assets.js"></script>
+<script>
+const BASE = {"empresas":{"Montec":{"funcionarios":[{"nome":"Ademir Maciel Calixto","mat":"TR109324"},{"nome":"Almir Antonio de Moura","mat":"TR099735"},{"nome":"André Alves dos Santos","mat":"TR105192"},{"nome":"César Alves dos Santos","mat":"TR105179"},{"nome":"Edson Ramos da Rocha","mat":"TR083795"},{"nome":"Edvaldo Brito de Souza","mat":"TR112062"},{"nome":"João de Paula Santos","mat":"TR105997"},{"nome":"Julio Cesar Zonzini Martins","mat":"TR111017"},{"nome":"Marcos Fabiano Palhano Gomes","mat":"TR104273"},{"nome":"Rogério Batista","mat":"TR103624"},{"nome":"Sérgio Alves dos Santos","mat":"TR104676"},{"nome":"Wanderley Ferreira dos Reis","mat":"TR104674"},{"nome":"Yago Carvalho dos Santos","mat":"TR108904"}],"ordens":[]},"Jato Dois Irmãos":{"funcionarios":[{"nome":"Ademar da Paixão"},{"nome":"Bruno C. da Silva"},{"nome":"Carlos M. Silva dos Santos"},{"nome":"Daniel A. Mendonça"},{"nome":"Eduardo de Jesus"},{"nome":"Edvaldo S. Santos"},{"nome":"Elivelto da Silva Sacramento"},{"nome":"José Nauey"},{"nome":"Rodrigo J. O. Queiroz"},{"nome":"Wesley da Silva Sousa"}],"ordens":[]},"Equipe Instalações":{"funcionarios":[],"ordens":[]},"Peraçolli":{"funcionarios":[{"nome":"Robson"},{"nome":"Dislaino"}],"ordens":[]}},"setores":["Caldeira 2","Caldeiraria","ETEL","Evaporação","Fermentação","Fermentação (Destilaria)","Filtro Prensa","Fábrica de Açúcar","Graneleiro","Indústria","Laboratório","Levedura","Moenda","Moenda A","Portaria","Tratamento de Caldo","VLC"],"solicitantes":["Agnaldo","Alessandro","Bruno Ferreira","Danilo Bessa","Everton Pinheiro","Fabiano","Galinia","Jilson","Julio","Lucas Gama","Roberta","Rogério (Elétrica)"]};
+const J = {entrada:420, almIni:690, almFim:750, saida:1008, tol:15}; // minutos: 07:00, 11:30, 12:30, 16:48
+const SLUG = {"Montec":"montec","Jato Dois Irmãos":"jato","Equipe Instalações":"equipe","Peraçolli":"peracolli"};
+const KEY = "apontTerceiros.teste"; // versão de TESTE: dados separados do site oficial
+const DESTINO_EMAIL = "pcm@linsagro.com.br";
+const ENVIO_URL = "https://script.google.com/macros/s/AKfycbx9WEiOyHTC7D3sJXGwGubxq1XvGEoe6yznJVnJGeWyxFBLPThwkjELEbksPmmyKCsjHw/exec"; // endereço do Google Apps Script (termina em /exec). Vazio = envio pelo Outlook/.eml
+const ENVIO_CHAVE = "apont-terceiros-2026";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const hm = m => { if(m==null||isNaN(m)) return ""; m=((m%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); };
+const EARLY = 360; // 06:00 — entrada entre 06:00 e 06:59 conta como 07:00; antes disso é serviço de madrugada
+const isEarly = m => m>=EARLY && m<J.entrada;
+const norm = l => { const oc=l.out%1440; l.out = oc<=l.in ? oc+1440 : oc; }; // saída menor que a entrada = terminou no dia seguinte
+const toMin = s => { if(!s) return null; const [h,m]=s.split(":").map(Number); return h*60+m; };
+const durTxt = m => (m<0?"-":"")+Math.floor(Math.abs(m)/60)+"h"+String(Math.abs(m)%60).padStart(2,"0");
+const uid = () => Math.random().toString(36).slice(2,10);
+const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const WD = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+
+let S = { empresa:null, enc:"", dias:{}, fila:[] };
+try { const raw = localStorage.getItem(KEY); if(raw) S = Object.assign(S, JSON.parse(raw)); } catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+S.fila ||= [];
+let curDate = todayISO(), tab = "apont", splitOpen = null;
+
+/* cadastro central (servidor) com cópia neste aparelho para funcionar sem internet */
+const CADKEY = "apontTerceiros.cad";
+const slugify = n => n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || "empresa";
+function cadFromBase(){ return { empresas: Object.keys(BASE.empresas).map(n=>({nome:n, slug:SLUG[n]||slugify(n)})),
+  funcionarios: Object.fromEntries(Object.entries(BASE.empresas).map(([n,e])=>[n, e.funcionarios.map(f=>({nome:f.nome, mat:f.mat||""}))])) }; }
+let CAD = null, cadOrigem = "padrão";
+try { const c = JSON.parse(localStorage.getItem(CADKEY)||"null"); if(c && c.empresas && c.empresas.length){ CAD=c.cad||c; cadOrigem = c.em ? "salvo em "+new Date(c.em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "salvo"; } } catch(e){}
+if(!CAD) CAD = cadFromBase();
+function cacheCad(){ try{ localStorage.setItem(CADKEY, JSON.stringify({...CAD, em:new Date().toISOString()})); }catch(e){} }
+async function fetchCad(){
+  if(!ENVIO_URL) return;
+  try{
+    const r = await fetch(`${ENVIO_URL}?acao=cadastro&chave=${encodeURIComponent(ENVIO_CHAVE)}`);
+    const j = await r.json();
+    if(j.ok && j.empresas && j.empresas.length){ CAD={empresas:j.empresas, funcionarios:j.funcionarios||{}}; cacheCad(); cadOrigem="atualizado agora"; if(!ADM.senha) render(); }
+  }catch(e){ cadOrigem = cadOrigem==="padrão" ? "sem internet · usando a lista padrão" : "sem internet · lista "+cadOrigem; if(!S.empresa && tab!=="admin") renderPick(); }
+}
+function funcs(){ return [...(CAD.funcionarios[S.empresa]||[])].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")); }
+const dkey = (d=curDate) => S.empresa+"|"+d;
+function day(d=curDate){ const x = S.dias[dkey(d)] ||= {linhas:[], status:{}, ordens:{}, envios:[], motivo:"", equipes:[], anexos:[], rdo:{clima:{}, cond:{}, parada:"", noite:false}, v:2};
+  x.ordens ||= {}; x.envios ||= []; x.anexos ||= []; x.status ||= {}; return migrar(x); }
+// ordens existem só dentro do dia em que foram lançadas (sem histórico)
+const ordens = () => Object.values(day().ordens);
+const findOrd = n => day().ordens[n];
+const pkey = l => l.nome;
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true, 3200); }
+
+/* ---------- cálculo ---------- */
+function almOverlap(l){ if(!l.alm) return 0; const a=Math.max(l.in,J.almIni), b=Math.min(l.out,J.almFim); return Math.max(0,b-a); }
+const total = l => (l.out - l.in) - almOverlap(l);
+
+function lineFlags(l, all){
+  const f=[]; const mine = all.filter(x=>pkey(x)===pkey(l) && x.id!==l.id);
+  if(l.out<=l.in) f.push(["err","Saída antes da entrada"]);
+  if(mine.some(x=> l.in < x.out && x.in < l.out)) f.push(["err","Horário sobreposto com outra ordem"]);
+  const cont = mine.some(x=>x.out===l.in || (x.out===J.almIni && l.in===J.almFim));
+  const later = mine.some(x=>x.in>=l.out);
+  const night = l.in < EARLY || l.in >= J.saida || l.out > 1440;
+  if(!night && !cont && l.in > J.entrada+J.tol) f.push(["warn","Entrada após "+hm(J.entrada+J.tol)]);
+  if(night || l.out > J.saida+J.tol) f.push(["err","Hora extra / fora da jornada: justifique"]);
+  else if(!later && l.out < J.saida-J.tol) f.push(["warn","Saída antes de "+hm(J.saida-J.tol)]);
+  if(l.out > 1440) f.push(["info","Termina no dia seguinte"]);
+  if(total(l) > 960) f.push(["warn","Mais de 16h no dia: confira"]);
+  if(l.adj) f.push(["info","Entrada contada 07:00"]);
+  return f;
+}
+
+/* ---------- views ---------- */
+function setTab(t){ tab=t; ["apont","cad","hist"].forEach(x=>{ document.querySelector(`[data-tab="${x}"]`).setAttribute("aria-selected", x===t); });
+  render(); }
+
+function render(){
+  renderQ();
+  if(tab==="admin"){ ["vPick","vApont","vCad","vHist","bar"].forEach(x=>$(x).hidden=true); document.querySelector(".tabs").hidden=true; $("vAdmin").hidden=false; $("hTitle").textContent="Administrador"; renderAdmin(); return; }
+  $("vAdmin").hidden = true;
+  const has = !!S.empresa && allEmp().includes(S.empresa);
+  $("vPick").hidden = has; document.querySelector(".tabs").hidden = !has;
+  $("vApont").hidden = !has || tab!=="apont"; $("vCad").hidden = !has || tab!=="cad"; $("vHist").hidden = !has || tab!=="hist";
+  $("bar").hidden = !has || tab!=="apont";
+  $("hTitle").textContent = has ? S.empresa : "Apontamento de Terceiros";
+  if(!has){ renderPick(); return; }
+  if(tab==="apont") renderApont(); else if(tab==="cad") renderCad(); else renderHist();
+}
+
+function renderPick(){
+  $("pickList").innerHTML = allEmp().map(n=>`<button class="btn" data-emp="${esc(n)}">${esc(n)}</button>`).join("") || `<div class="empty">Nenhuma empresa cadastrada.</div>`;
+  $("cadSync").textContent = "Lista de empresas: "+cadOrigem;
+}
+
+function renderCad(){
+  $("cEmp").textContent = S.empresa;
+  const fs = funcs();
+  $("cFCnt").textContent = fs.length;
+  $("tFunc").innerHTML = `<tr><th>Nome completo</th><th>Matrícula</th></tr>` + fs.map(f=>`<tr><td>${esc(f.nome)}</td><td class="mono">${esc(f.mat||"—")}</td></tr>`).join("");
+}
+function histChip(ev){ const u=ev[ev.length-1]; if(!u) return '<span class="chip warn">Não enviado</span>';
+  return u.status==="pendente" ? '<span class="chip warn">Aguardando internet</span>' : u.status==="app" ? `<span class="chip info">E-mail do aparelho ${ev.length}x</span>` : `<span class="chip ok">Entregue ${ev.length}x</span>`; }
+function renderHist(){
+  const rows = Object.entries(S.dias).filter(([k,v])=>k.startsWith(S.empresa+"|") && v.linhas.length).sort((a,b)=>b[0].localeCompare(a[0]));
+  $("tHist").innerHTML = rows.length ? `<tr><th>Data</th><th>Pessoas</th><th>HH</th><th>Status</th><th></th></tr>` + rows.map(([k,v])=>{ const d=k.split("|")[1];
+    return `<tr><td class="mono">${d.split("-").reverse().join("/")}</td><td>${new Set(v.linhas.map(pkey)).size}</td><td class="mono">${durTxt(v.linhas.reduce((a,l)=>a+Math.max(0,total(l)),0))}</td><td>${histChip(v.envios||[])}</td><td><button class="btn small" data-open="${d}">Abrir</button></td></tr>`; }).join("")
+    : `<tr><td><div class="empty">Nenhum dia salvo ainda.</div></td></tr>`;
+}
+
+function allEmp(){ return CAD.empresas.map(e=>e.nome); }
+function empSlug(n){ const e=CAD.empresas.find(x=>x.nome===n); return ((e&&e.slug)||SLUG[n]||slugify(n)).replace(/-/g,"_").toUpperCase(); }
+
+/* ---------- área do administrador ---------- */
+const ADM = { senha:null, sel:null, conf:null };
+async function admPost(body){
+  const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({chave:ENVIO_CHAVE, ...body})});
+  return r.json();
+}
+async function admLogin(){
+  const s=$("admSenha").value; $("admErr").textContent="";
+  if(!s){ $("admErr").textContent="Digite a senha."; return; }
+  if(!ENVIO_URL){ $("admErr").textContent="O servidor não está configurado."; return; }
+  const b=$("bAdmEnter"); b.disabled=true; b.textContent="Entrando…";
+  try{ const j=await admPost({acao:"login", senha:s});
+    if(j.ok){ ADM.senha=s; $("admSenha").value=""; await fetchCadFresh(); renderAdmin(); }
+    else $("admErr").textContent = j.erro==="senha incorreta" ? "Senha incorreta." : "Não deu certo: "+(j.erro||"erro");
+  }catch(e){ $("admErr").textContent="Sem conexão com o servidor. A área do administrador precisa de internet."; }
+  finally{ b.disabled=false; b.textContent="Entrar"; }
+}
+async function fetchCadFresh(){
+  try{ const r=await fetch(`${ENVIO_URL}?acao=cadastro&chave=${encodeURIComponent(ENVIO_CHAVE)}`); const j=await r.json();
+    if(j.ok && j.empresas && j.empresas.length){ CAD={empresas:j.empresas, funcionarios:j.funcionarios||{}}; cacheCad(); cadOrigem="atualizado agora"; }
+    else if(j.ok){ ADM.vazio=true; } // servidor ainda sem cadastro: o primeiro "salvar" envia a lista atual
+  }catch(e){}
+}
+async function admSave(msg){
+  const el=$("admSave"); el.innerHTML=`<span class="chip info">Salvando…</span>`;
+  try{ const j=await admPost({acao:"salvarCadastro", senha:ADM.senha, cadastro:CAD});
+    if(j.ok){ cacheCad(); cadOrigem="atualizado agora"; el.innerHTML=`<span class="chip ok">Salvo no servidor</span>`; if(msg) toast(msg); }
+    else { el.innerHTML=`<span class="chip err">Não salvou</span>`; toast("O servidor recusou: "+(j.erro||"erro")); if(j.erro==="senha incorreta"){ ADM.senha=null; renderAdmin(); } }
+  }catch(e){ el.innerHTML=`<span class="chip err">Sem internet · não salvou</span>`; toast("Sem internet. A alteração não foi salva no servidor."); }
+}
+function renderAdmin(){
+  const on=!!ADM.senha; $("admLogin").hidden=on; $("admPanel").hidden=!on; if(!on) return;
+  $("tAdmEmp").innerHTML = `<tr><th>Empresa</th><th>Link</th><th>Pessoas</th><th></th></tr>` + CAD.empresas.map(e=>`<tr>
+    <td><b>${esc(e.nome)}</b></td><td class="mono" style="user-select:all">#${esc(e.slug)}</td><td class="mono">${(CAD.funcionarios[e.nome]||[]).length}</td>
+    <td><div class="row"><button class="btn small" data-adm-sel="${esc(e.nome)}">Funcionários</button>
+    <button class="btn small ghost danger" data-adm-rme="${esc(e.nome)}">${ADM.conf==="e:"+e.nome?"Confirmar remoção":"Remover"}</button></div></td></tr>`).join("");
+  const sel = ADM.sel && CAD.empresas.some(e=>e.nome===ADM.sel) ? ADM.sel : null;
+  $("admFuncCard").hidden = !sel; if(!sel) return;
+  const fs=[...(CAD.funcionarios[sel]||[])].sort((a,b)=>a.nome.localeCompare(b.nome,"pt"));
+  $("admEmpNome").textContent=sel; $("admFCnt").textContent=fs.length;
+  $("tAdmF").innerHTML = `<tr><th>Nome completo</th><th>Matrícula</th><th></th></tr>` + fs.map(f=>`<tr><td>${esc(f.nome)}</td>
+    <td><input class="mono" data-adm-mat="${esc(f.nome)}" value="${esc(f.mat||"")}" placeholder="—" style="min-height:34px;padding:4px 8px;max-width:140px" aria-label="Matrícula de ${esc(f.nome)}"></td>
+    <td><button class="btn small ghost danger" data-adm-rmf="${esc(f.nome)}">${ADM.conf==="f:"+f.nome?"Confirmar":"Remover"}</button></td></tr>`).join("");
+}
+function admAddEmp(){
+  const n=$("admNovaEmp").value.trim().replace(/\s+/g," "); $("admEmpErr").textContent="";
+  if(n.length<3){ $("admEmpErr").textContent="Digite o nome da empresa (pelo menos 3 letras)."; return; }
+  if(CAD.empresas.some(e=>e.nome.toLowerCase()===n.toLowerCase())){ $("admEmpErr").textContent="Essa empresa já está cadastrada."; return; }
+  let s=slugify(n), i=2; while(CAD.empresas.some(e=>e.slug===s)) s=slugify(n)+"-"+(i++);
+  CAD.empresas.push({nome:n, slug:s}); CAD.funcionarios[n]=[]; ADM.sel=n; $("admNovaEmp").value="";
+  renderAdmin(); admSave("Empresa "+n+" cadastrada. Agora inclua os funcionários.");
+}
+function admAddF(){
+  const sel=ADM.sel, n=$("admFNome").value.trim().replace(/\s+/g," "), m=$("admFMat").value.trim().toUpperCase(); $("admFErr").textContent="";
+  const fs=(CAD.funcionarios[sel] ||= []);
+  const err = n.split(" ").length<2 ? "Informe nome e sobrenome." : fs.some(f=>f.nome.toLowerCase()===n.toLowerCase()) ? "Esse funcionário já está cadastrado." : (m && fs.some(f=>f.mat===m)) ? "Essa matrícula já está em uso nesta empresa." : "";
+  if(err){ $("admFErr").textContent=err; return; }
+  fs.push({nome:n, mat:m}); $("admFNome").value=""; $("admFMat").value=""; $("admFNome").focus();
+  renderAdmin(); admSave(n+" adicionado.");
+}
+/* ---------- eventos gerais (empresa, abas, administrador) ---------- */
+document.addEventListener("click", ev=>{
+  const t = ev.target.closest("button"); if(!t) return;
+  if(t.dataset.tab) return setTab(t.dataset.tab);
+  if(t.dataset.emp){ S.empresa=t.dataset.emp; save(); tab="apont"; passo=2; render(); window.scrollTo({top:0}); return; }
+  if(t.dataset.open){ curDate=t.dataset.open; passo=podeIr(5)||5; setTab("apont"); return; }
+  if(t.dataset.admSel){ ADM.sel=t.dataset.admSel; ADM.conf=null; renderAdmin(); $("admFuncCard").scrollIntoView({behavior:"smooth"}); return; }
+  if(t.dataset.admRme){ const n=t.dataset.admRme; if(ADM.conf!=="e:"+n){ ADM.conf="e:"+n; renderAdmin(); return; }
+    CAD.empresas=CAD.empresas.filter(e=>e.nome!==n); delete CAD.funcionarios[n]; if(ADM.sel===n) ADM.sel=null; ADM.conf=null; renderAdmin(); admSave("Empresa "+n+" removida."); return; }
+  if(t.dataset.admRmf){ const n=t.dataset.admRmf; if(ADM.conf!=="f:"+n){ ADM.conf="f:"+n; renderAdmin(); return; }
+    CAD.funcionarios[ADM.sel]=(CAD.funcionarios[ADM.sel]||[]).filter(f=>f.nome!==n); ADM.conf=null; renderAdmin(); admSave(n+" removido."); return; }
+  switch(t.id){
+    case "bAdmin": tab="admin"; render(); break;
+    case "bAdmBack": tab="apont"; S.empresa=null; render(); break;
+    case "bAdmOut": ADM.senha=null; ADM.sel=null; tab="apont"; S.empresa=null; render(); fetchCad(); break;
+    case "bAdmEnter": admLogin(); break;
+    case "bAdmAddEmp": admAddEmp(); break;
+    case "bAdmAddF": admAddF(); break;
+    case "bQTry": processQueue(true); break;
+    case "bSwitch": S.empresa=null; save(); render(); break;
+  }
+});
+document.addEventListener("change", ev=>{
+  const t=ev.target;
+  if(t.dataset && t.dataset.admMat!==undefined){ const f=(CAD.funcionarios[ADM.sel]||[]).find(x=>x.nome===t.dataset.admMat); if(f){ f.mat=t.value.trim().toUpperCase(); t.value=f.mat; admSave("Matrícula de "+f.nome+" salva."); } }
+});
+document.addEventListener("keydown", ev=>{ if(ev.key!=="Enter") return; const id=ev.target.id;
+  if(id==="admSenha") admLogin(); else if(id==="admNovaEmp") admAddEmp(); else if(id==="admFNome"||id==="admFMat") admAddF(); });
+
+/* ---------- geração do .xlsx (sem biblioteca) ---------- */
+const CRC = (()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(b){ let c=0xFFFFFFFF; for(let i=0;i<b.length;i++) c = CRC[(c^b[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function zip(files){ const enc=new TextEncoder(), parts=[], cen=[]; let off=0;
+  for(const [name,txt] of files){ const nb=enc.encode(name), data=enc.encode(txt), crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30)); h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true); h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true); h.setUint16(26,nb.length,true);
+    parts.push(new Uint8Array(h.buffer), nb, data);
+    const c=new DataView(new ArrayBuffer(46)); c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true); c.setUint16(28,nb.length,true); c.setUint32(42,off,true);
+    cen.push(new Uint8Array(c.buffer), nb); off += 30+nb.length+data.length; }
+  const csize = cen.reduce((a,b)=>a+b.length,0), e=new DataView(new ArrayBuffer(22)); e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,csize,true); e.setUint32(16,off,true);
+  return new Blob([...parts, ...cen, new Uint8Array(e.buffer)], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}); }
+const xesc = s => String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
+function colL(i){ let s=""; i++; while(i){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; }
+function buildXlsx(rows, head, widths){
+  // estilos: 0 normal, 1 cabeçalho, 2 data, 3 hora, 4 duração
+  const cell=(v,r,c)=>{ const ref=colL(c)+r; if(v==null||v==="") return "";
+    if(typeof v==="object") return `<c r="${ref}" s="${v.s}"><v>${v.v}</v></c>`;
+    if(typeof v==="number") return `<c r="${ref}"><v>${v}</v></c>`;
+    return `<c r="${ref}" t="inlineStr"${r===1?' s="1"':""}><is><t xml:space="preserve">${xesc(v)}</t></is></c>`; };
+  const sd = `<sheetData>`+[head,...rows].map((row,ri)=>`<row r="${ri+1}">${row.map((v,ci)=>cell(v,ri+1,ci)).join("")}</row>`).join("")+`</sheetData>`;
+  const cols = `<cols>`+widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")+`</cols>`;
+  const last = colL(head.length-1)+(rows.length+1);
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>${cols}${sd}<autoFilter ref="A1:${last}"/></worksheet>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="hh:mm"/><numFmt numFmtId="166" formatCode="[h]:mm"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1D6A48"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  return zip([
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="APONTAMENTO" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">APONTAMENTO!$A$1:$${colL(head.length-1)}$${rows.length+1}</definedName></definedNames></workbook>`],
+    ["xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/styles.xml", styles],
+    ["xl/worksheets/sheet1.xml", sheet],
+  ]);
+}
+const serial = iso => (Date.UTC(+iso.slice(0,4), +iso.slice(5,7)-1, +iso.slice(8,10)) - Date.UTC(1899,11,30))/864e5;
+const tv = m => ({s:3, v:(m/1440).toFixed(10)});
+
+let downloadsP = null;
+try { if(window.claude?.use) downloadsP = window.claude.use("downloads").catch(()=>null); } catch(e){}
+
+function buildDay(){
+  const d=day(), head=["EMPRESA","DATA","EQUIPE","MATRÍCULA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","SOLICITANTE","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","OBSERVAÇÃO","ENCARREGADO"];
+  const eqN = l => (d.equipes.find(e=>e.id===l.eq)||{}).n || 0;
+  const lin=[...d.linhas].sort((a,b)=>eqN(a)-eqN(b)||a.nome.localeCompare(b.nome,"pt")||a.in-b.in);
+  const rows = lin.map(l=>{ const o=findOrd(l.ordem)||{}; const ov=almOverlap(l);
+    const ai = ov? Math.max(l.in,J.almIni):null, af = ov? Math.min(l.out,J.almFim):null;
+    return [S.empresa, {s:2,v:serial(curDate)}, eqN(l)?"Equipe "+eqN(l):"", matOf(l), l.nome, tv(l.in), ai!=null?tv(ai):"", af!=null?tv(af):"", tv(l.out%1440), {s:4,v:(total(l)/1440).toFixed(10)}, Number(l.ordem), o.setor||"", o.solicitante||"", o.desc||"", d.status[l.ordem]||o.status||"", l.obs||"", S.enc.trim()]; });
+  const blob = buildXlsx(rows, head, [16,11,11,12,32,9,13,13,9,9,11,22,18,48,16,30,20]);
+  const envioN = d.envios.length+1, br=curDate.split("-").reverse().join("/");
+  const fname = `APONT_${empSlug(S.empresa)}_${curDate}${envioN>1?"_REENVIO"+envioN:""}.xlsx`;
+  const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), n=new Set(lin.map(pkey)).size, nOrd=new Set(lin.map(l=>l.ordem)).size;
+  const subject = `APONTAMENTO | ${S.empresa} | ${br}`;
+  const body = [`Segue em anexo o apontamento de ${S.empresa} do dia ${br} (${WD[new Date(curDate+"T12:00:00").getDay()]}).`, "",
+    `Encarregado: ${S.enc.trim()}`, `Pessoas: ${n} | Ordens: ${nOrd} | Equipes: ${d.equipes.length}`, "",
+    ...d.equipes.map(eq=>`${eqNome(eq)}: ${eq.membros.length} pessoa(s) · ordem(ns) ${eq.ordens.map(o=>o.ordem).join(", ")}`), "",
+    `RDO em PDF anexo: um arquivo por equipe (${d.equipes.length}).`,
+    ...(envioN>1?["", `REENVIO ${envioN} (substitui o envio anterior)`, `Motivo: ${(d.motivo||"").trim()}`]:[]),
+    "", "Enviado pelo formulário de Apontamento de Terceiros."].join("\r\n");
+  return {blob, fname, subject, body, d};
+}
+const matOf = l => l.mat || (funcs().find(f=>f.nome===l.nome)||{}).mat || "";
+const okToSend = (soPlanilha) => { const is = issues().filter(i=>!soPlanilha || i[2]===3);
+  if(is.length){ irPara(5); const c=document.querySelector("#pBody .issues"); c && c.scrollIntoView({behavior:"smooth",block:"center"}); toast(soPlanilha?"Corrija as equipes (tela 3) antes de baixar a planilha":"Corrija os itens em vermelho antes de enviar"); return false; } return true; };
+function markSent(d){ d.envios.push({id:uid(), em:new Date().toISOString(), motivo:d.envios.length?(d.motivo||"").trim():"", status:"app"}); d.motivo=""; save(); renderSum(); }
+function dlBlob(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},3000); }
+
+async function generate(){
+  if(!okToSend(true)) return;
+  const {blob, fname} = buildDay();
+  if(downloadsP){ const dl = await downloadsP; if(dl){ try{ await dl.save({filename:fname, data:blob}); toast(`Planilha ${fname} baixada.`); return; } catch(e){ if(e?.code==="declined") return; } } }
+  try{ dlBlob(blob, fname); toast(`Planilha ${fname} baixada.`); }catch(e){ toast("Não consegui baixar neste navegador"); }
+}
+
+/* ---------- envio por e-mail com a planilha anexa ---------- */
+const isMobile = () => (navigator.userAgentData && navigator.userAgentData.mobile) || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+async function b64(blob){ const u=new Uint8Array(await blob.arrayBuffer()); let s=""; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); }
+const b64txt = s => { const u=new TextEncoder().encode(s); let r=""; for(let i=0;i<u.length;i+=0x8000) r+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(r); };
+const wrap76 = s => s.replace(/.{1,76}/g, "$&\r\n");
+async function buildEml(blob, fname, subject, body, extras){
+  const bd = "----=_Apont_"+uid();
+  return new Blob([[
+    "X-Unsent: 1",
+    `To: ${DESTINO_EMAIL}`,
+    `Subject: =?UTF-8?B?${b64txt(subject)}?=`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/mixed; boundary="${bd}"`,
+    "",
+    `--${bd}`,
+    'Content-Type: text/plain; charset="utf-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    wrap76(b64txt(body)),
+    `--${bd}`,
+    `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; name="${fname}"`,
+    `Content-Disposition: attachment; filename="${fname}"`,
+    "Content-Transfer-Encoding: base64",
+    "",
+    wrap76(await b64(blob)),
+    ...extras.flatMap(a=>[`--${bd}`, `Content-Type: ${a.tipo}; name="=?UTF-8?B?${b64txt(a.nome)}?="`, `Content-Disposition: attachment; filename="=?UTF-8?B?${b64txt(a.nome)}?="`, "Content-Transfer-Encoding: base64", "", wrap76(a.b64)]),
+    `--${bd}--`, ""
+  ].join("\r\n")], {type:"message/rfc822"});
+}
+function payloadLinhas(d){
+  return [...d.linhas].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in).map(l=>{ const o=findOrd(l.ordem)||{}, ov=almOverlap(l);
+    const eq=d.equipes.find(e=>e.id===l.eq);
+    return {equipe:eq?eqNome(eq):"", mat:matOf(l), nome:l.nome, ordem:l.ordem, entrada:hm(l.in), saidaAlm:ov?hm(Math.max(l.in,J.almIni)):"", voltaAlm:ov?hm(Math.min(l.out,J.almFim)):"",
+      saida:hm(l.out), total:hm(total(l)), setor:o.setor||"", solicitante:o.solicitante||"", desc:o.desc||"", status:d.status[l.ordem]||o.status||"", obs:l.obs||""}; });
+}
+/* ---------- anexos (fotos, PDF, planilhas) ---------- */
+const ANX_MAX = 8, ANX_TOTAL = 30*1024*1024, ANX_ARQ = 10*1024*1024;
+const kb = n => n>=1048576 ? (n/1048576).toFixed(1).replace(".",",")+" MB" : Math.max(1,Math.round(n/1024))+" KB";
+const anxUrls = {};
+async function comprimirFoto(file){
+  try{
+    const bmp = await createImageBitmap(file); const max=1600, k=Math.min(1, max/Math.max(bmp.width,bmp.height));
+    const cv=document.createElement("canvas"); cv.width=Math.round(bmp.width*k); cv.height=Math.round(bmp.height*k);
+    cv.getContext("2d").drawImage(bmp,0,0,cv.width,cv.height);
+    const b = await new Promise(ok=>cv.toBlob(ok,"image/jpeg",0.75));
+    return b && b.size < file.size ? b : file;
+  }catch(e){ return file; }
+}
+// descobre se é foto pelo conteúdo do arquivo (alguns celulares mandam sem nome/extensão e sem tipo)
+async function tipoFoto(f){
+  if(/^image\//i.test(f.type||"")) return f.type;
+  try{ const h=new Uint8Array(await f.slice(0,16).arrayBuffer()), s=String.fromCharCode(...h);
+    if(h[0]===0xFF && h[1]===0xD8 && h[2]===0xFF) return "image/jpeg";
+    if(h[0]===0x89 && s.slice(1,4)==="PNG") return "image/png";
+    if(s.slice(0,4)==="RIFF" && s.slice(8,12)==="WEBP") return "image/webp";
+    if(s.slice(4,8)==="ftyp" && /hei[cx]|mif1|msf1|hevc/.test(s.slice(8,16))) return "image/heic";
+  }catch(e){}
+  const ext=(f.name||"").toLowerCase().match(/\.(jpe?g|png|webp|heic|heif)$/); return ext ? "image/"+(ext[1]==="jpg"?"jpeg":ext[1]) : "";
+}
+async function addAnexos(files){
+  const d=day(), eqId=fotoEq; if(!eqId || !findEq(eqId)) return;
+  for(const f0 of files){
+    if(d.anexos.filter(a=>a.eq===eqId).length>=ANX_MAX){ toast(`No máximo ${ANX_MAX} fotos por equipe.`); break; }
+    let f=f0, nome=f0.name||"foto.jpg";
+    const tf=await tipoFoto(f0);
+    if(!tf){ toast(`${nome}: só fotos podem ser anexadas (elas entram no RDO).`); continue; }
+    if(/^image\/(jpeg|png|webp|heic|heif)/i.test(tf)){ f=await comprimirFoto(f0); if(f!==f0) nome=nome.replace(/\.[^.]+$/,"")+".jpg"; }
+    if(!/\.[a-z0-9]{2,5}$/i.test(nome)) nome+= f!==f0 ? ".jpg" : "."+(tf.split("/")[1]||"jpg").replace("jpeg","jpg");
+    if(f.size>ANX_ARQ){ toast(`${nome} é grande demais (máx. 10 MB por arquivo).`); continue; }
+    const tot=d.anexos.reduce((a,x)=>a+x.tam,0); if(tot+f.size>ANX_TOTAL){ toast("As fotos do dia passaram de 30 MB no total."); break; }
+    const id="anx-"+uid(), tipo=(f!==f0 && f.type) ? f.type : tf;
+    const ok = await idbPut("anexos",{id, blob:f, nome, tipo});
+    if(ok==null){ toast("Não consegui guardar o anexo neste aparelho."); continue; }
+    d.anexos.push({id, nome, tipo, tam:f.size, eq:eqId});
+  }
+  save(); renderApont();
+}
+async function renderAnexos(){
+  const box=$("anxList"); if(!box) return; const a=day().anexos||[];
+  $("anxTot").textContent = a.length ? `${a.length} · ${kb(a.reduce((s,x)=>s+x.tam,0))}` : "";
+  box.innerHTML = a.map(x=>`<div class="anxi" data-anx="${x.id}">${/^image\//.test(x.tipo)?`<img alt="" data-img="${x.id}">`:`<span class="ico">${esc((x.nome.split(".").pop()||"ARQ").slice(0,4).toUpperCase())}</span>`}
+    <span class="nm">${esc(x.nome)} <span class="tm">${kb(x.tam)}</span>${/^image\//.test(x.tipo)?`<br><input data-anx-leg="${x.id}" value="${esc(x.legenda||"")}" placeholder="Legenda no RDO (ex.: rolo montado)" maxlength="120" aria-label="Legenda da foto ${esc(x.nome)}">`:""}</span><button class="btn small ghost danger" data-anx-rm="${x.id}">Remover</button></div>`).join("");
+  for(const x of a) if(/^image\//.test(x.tipo)){ const img=box.querySelector(`[data-img="${x.id}"]`);
+    if(!anxUrls[x.id]){ const r=await idbGet("anexos",x.id); if(r&&r.blob) anxUrls[x.id]=URL.createObjectURL(r.blob); }
+    if(img && anxUrls[x.id]) img.src=anxUrls[x.id]; }
+}
+async function anexosPayload(d){
+  const out=[]; for(const x of (d.anexos||[])){ const r=await idbGet("anexos",x.id); if(r&&r.blob) out.push({nome:x.nome, tipo:x.tipo, b64:await b64(r.blob)}); } return out;
+}
+document.addEventListener("change", ev=>{ const t=ev.target; if((t.id==="anxFoto"||t.id==="anxArq") && t.files && t.files.length){ addAnexos([...t.files]); t.value=""; } });
+document.addEventListener("click", ev=>{ const b=ev.target.closest("[data-anx-rm]"); if(!b) return; const id=b.dataset.anxRm, d=day();
+  d.anexos=(d.anexos||[]).filter(x=>x.id!==id); idbDel("anexos",id); if(anxUrls[id]){ URL.revokeObjectURL(anxUrls[id]); delete anxUrls[id]; } save(); renderApont(); });
+
+/* fila: cada envio fica guardado aqui até o servidor confirmar */
+async function sendMail(){
+  if(!ENVIO_URL) return sendViaApp();
+  if(!okToSend()) return;
+  const {blob, fname, subject, body, d} = buildDay();
+  const id = Date.now().toString(36)+"-"+uid(), envioN = d.envios.length+1, motivo=(d.motivo||"").trim();
+  const btn=$("bMail"); btn.disabled=true; btn.textContent="Montando RDO…";
+  const anexos = await rdoPayload(d, envioN); // vai só a planilha + o RDO em PDF (as fotos já estão dentro do PDF)
+  btn.disabled=false;
+  const payload = {chave:ENVIO_CHAVE, id, empresa:S.empresa, data:curDate.split("-").reverse().join("/"), assunto:subject,
+    corpo: body,
+    nomeArquivo:fname, arquivo:await b64(blob), anexos, envio:envioN, motivo:envioN>1?motivo:"", encarregado:S.enc.trim(),
+    pessoas:new Set(d.linhas.map(pkey)).size, linhas:payloadLinhas(d)};
+  d.envios.push({id, em:new Date().toISOString(), motivo:envioN>1?motivo:"", status:"pendente"}); d.motivo="";
+  const meta={id, empresa:S.empresa, dataISO:curDate};
+  const guardou = await idbPut("fila", {...meta, payload, url:ENVIO_URL});
+  S.fila.push(guardou!=null ? meta : {...meta, payload}); // sem IndexedDB: guarda tudo aqui mesmo
+  save(); renderSum(); pedirEnvioEmSegundoPlano();
+  await processQueue(true);
+}
+let qRunning=false;
+async function processQueue(interativo){
+  await reconciliar();
+  if(qRunning || !S.fila.length || !ENVIO_URL){ renderQ(); return; }
+  qRunning=true; const btn=$("bMail"); if(interativo){ btn.disabled=true; btn.textContent="Enviando…"; }
+  let enviados=0, falhou=null;
+  try{
+    for(const item of [...S.fila]){
+      try{
+        const payload = item.payload || ((await idbGet("fila", item.id))||{}).payload;
+        if(!payload){ S.fila = S.fila.filter(x=>x.id!==item.id); continue; } // já entregue pelo segundo plano
+        const r = await fetch(ENVIO_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload)});
+        const j = await r.json();
+        if(!j.ok){ falhou = "servidor: "+(j.erro||"erro"); item.erro=j.erro||"erro"; break; }
+        S.fila = S.fila.filter(x=>x.id!==item.id); idbDel("fila", item.id);
+        const dd = S.dias[item.empresa+"|"+item.dataISO]; const ev = dd && dd.envios.find(x=>x.id===item.id); if(ev){ ev.status="enviado"; ev.recebido=new Date().toISOString(); }
+        enviados++; save();
+      }catch(e){ falhou="rede"; break; }
+    }
+  } finally { qRunning=false; if(interativo) btn.disabled=false; }
+  save(); if(tab==="apont" && S.empresa) renderSum(); else if(tab==="hist") renderHist(); renderQ();
+  if(enviados && !S.fila.length) toast(enviados>1 ? `${enviados} envios entregues à usina.` : `Enviado para ${DESTINO_EMAIL} com a planilha em anexo.`);
+  else if(falhou==="rede" && interativo) toast("Sem internet agora. O envio ficou guardado e sai sozinho quando o sinal voltar.");
+  else if(falhou && falhou!=="rede" && interativo) toast("O servidor não aceitou o envio ("+falhou+"). Avise a usina.");
+}
+function renderQ(){
+  const n=(S.fila||[]).length; $("qBar").hidden = !n || tab==="admin";
+  if(n){ const err=S.fila.find(x=>x.erro); $("qTxt").textContent = err ? `${n} envio(s) não aceitos pelo servidor (${err.erro}).` : `${n} envio${n>1?"s":""} guardado${n>1?"s":""} neste aparelho, aguardando internet.`; }
+}
+window.addEventListener("online", ()=>processQueue(false));
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") processQueue(false); });
+
+/* ---------- fila também no IndexedDB, para o service worker enviar com o app fechado ---------- */
+let idbP=null;
+function idb(){ return idbP ||= new Promise((ok,err)=>{ try{ const r=indexedDB.open("apontTerceiros",2);
+  r.onupgradeneeded=()=>{ const db=r.result; ["fila","entregues","anexos"].forEach(n=>{ if(!db.objectStoreNames.contains(n)) db.createObjectStore(n,{keyPath:"id"}); }); };
+  r.onsuccess=()=>ok(r.result); r.onerror=()=>err(r.error); }catch(e){ err(e); } }); }
+async function idbTx(store, mode, fn){ try{ const db=await idb(); return await new Promise((ok,err)=>{ const tx=db.transaction(store,mode), st=tx.objectStore(store); const req=fn(st); tx.oncomplete=()=>ok(req&&req.result); tx.onerror=()=>err(tx.error); }); }catch(e){ return null; } }
+const idbPut=(s,v)=>idbTx(s,"readwrite",st=>st.put(v));
+const idbDel=(s,k)=>idbTx(s,"readwrite",st=>st.delete(k));
+const idbAll=s=>idbTx(s,"readonly",st=>st.getAll());
+const idbGet=(s,k)=>idbTx(s,"readonly",st=>st.get(k));
+function pedirEnvioEmSegundoPlano(){ try{ navigator.serviceWorker && navigator.serviceWorker.ready.then(r=>r.sync && r.sync.register("enviar-fila")).catch(()=>{}); }catch(e){} }
+// o que o service worker entregou com o app fechado vira "Entregue" aqui
+async function reconciliar(){
+  const ent = await idbAll("entregues"); if(!ent || !ent.length) { await garantirFilaNoIdb(); return; }
+  ent.forEach(x=>{ S.fila = S.fila.filter(f=>f.id!==x.id);
+    Object.values(S.dias).forEach(dd=>{ const ev=(dd.envios||[]).find(e=>e.id===x.id); if(ev){ ev.status="enviado"; ev.recebido=x.recebido; } });
+    idbDel("entregues", x.id); });
+  save(); await garantirFilaNoIdb();
+  if(tab==="apont" && S.empresa) renderSum(); else if(tab==="hist") renderHist(); renderQ();
+  toast(ent.length>1 ? `${ent.length} envios entregues à usina.` : "Envio entregue à usina.");
+}
+async function garantirFilaNoIdb(){ if(!S.fila.length) return; const tem=new Set(((await idbAll("fila"))||[]).map(x=>x.id));
+  for(const it of S.fila) if(!tem.has(it.id) && it.payload) await idbPut("fila", {...it, url:ENVIO_URL}); pedirEnvioEmSegundoPlano(); }
+try{ navigator.serviceWorker && navigator.serviceWorker.addEventListener("message", ev=>{ if(ev.data && ev.data.tipo==="fila") reconciliar(); }); }catch(e){}
+setInterval(()=>{ if(S.fila.length && navigator.onLine!==false) processQueue(false); }, 30000);
+
+/* plano B: e-mail do próprio aparelho (Outlook/.eml no computador, compartilhar no celular) */
+async function sendViaApp(){
+  if(!okToSend()) return;
+  const {blob, fname, subject, body, d} = buildDay();  // celular: tela de compartilhar com a planilha anexada
+  const todosAnexos = await rdoPayload(d, d.envios.length+1);
+  if(isMobile()){
+    const file = new File([blob], fname, {type:blob.type});
+    const extras = todosAnexos.map(a=>{ const bin=atob(a.b64), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return new File([u], a.nome, {type:a.tipo}); });
+    const todos = navigator.canShare && navigator.canShare({files:[file,...extras]}) ? [file,...extras] : [file];
+    if(navigator.canShare && navigator.canShare({files:todos})){
+      try{ await navigator.clipboard.writeText(DESTINO_EMAIL); }catch(e){}
+      try{ await navigator.share({files:todos, title:subject, text:body}); markSent(d); toast(`Confira se o e-mail foi para ${DESTINO_EMAIL}.`); return; }
+      catch(e){ if(e && e.name==="AbortError"){ toast("Envio cancelado"); return; } }
+    }
+  }
+  // computador: arquivo .eml que abre no Outlook já com a planilha anexa
+  try{
+    const eml = await buildEml(blob, fname, subject, body, todosAnexos);
+    dlBlob(eml, fname.replace(/\.xlsx$/,".eml")); markSent(d);
+    toast("E-mail baixado. Abra o arquivo .eml: o Outlook abre com a planilha anexada. Clique em Enviar.");
+    return;
+  }catch(e){}
+  try{ dlBlob(blob, fname); markSent(d); toast(`Planilha baixada. Anexe num e-mail para ${DESTINO_EMAIL}.`); }catch(e){ toast("Não consegui preparar o envio neste navegador"); }
+}
+
+/* ---------- RDO: relatório diário de obra ---------- */
+const CLIMAS = ["Bom","Nublado","Chuva fraca","Chuva forte"];
+const CONDS = ["Normal","Parcialmente paralisado","Paralisado"];
+const OCORR_TIPOS = ["Falta de material","Aguardando liberação / PT","Interferência de outra equipe","Equipamento com defeito","Paralisação pela usina","Condição insegura","Quase-acidente","Acidente","Outro"];
+const EQUIPS = ["Máquina de solda","Lixadeira / esmerilhadeira","Maçarico / oxicorte","Furadeira","Andaime","Talha / tirfor","Caminhão munck","Guindaste","Plataforma elevatória","Compressor","Hidrojateamento","Gerador","Caminhão"];
+const PERIODOS = [["manha","Manhã",[[360,720]]],["tarde","Tarde",[[720,1080]]],["noite","Noite / madrugada",[[1080,1800],[0,360]]]];
+function rdo(d=day()){ const r = d.rdo ||= {}; r.clima ||= {}; r.cond ||= {}; r.ocorr ||= []; r.equip ||= []; r.ord ||= {}; return r; }
+const periodosDia = (d=day()) => PERIODOS.filter(([,,ws])=>d.linhas.some(l=>ws.some(([a,b])=>l.in<b && l.out>a)));
+const ordensDia = (d=day()) => [...new Set(d.linhas.map(l=>l.ordem))];
+const stOrd = (o, d=day()) => d.status[o] || (d.ordens[o]||{}).status || "Em andamento";
+const avOrd = (o, d=day()) => stOrd(o,d)==="Concluída" ? 100 : (rdo(d).ord[o]||{}).av ?? null;
+function avAnterior(o){ // último avanço informado desta ordem em dias anteriores
+  const ks = Object.keys(S.dias).filter(k=>k.startsWith(S.empresa+"|") && k.split("|")[1]<curDate).sort().reverse();
+  for(const k of ks){ const dd=S.dias[k], fontes=[dd.rdo, ...(dd.equipes||[]).map(e=>e.rdo)];
+    for(const r of fontes){ const v=r && r.ord && r.ord[o] && r.ord[o].av; if(v!=null) return {v, d:k.split("|")[1]}; } }
+  return null;
+}
+/* ---------- PDF do RDO (gerado no aparelho, sem internet, com a marca Lins Agroindustrial) ---------- */
+const COR = {azul:[0,50,160], verde:[0,181,173], azulm:[25,150,220], tinta:[209,234,248], txt:[28,34,48], mut:[96,106,122], ln:[214,219,228], zeb:[246,248,251], alerta:[255,148,33]};
+const CP1252 = "€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ";
+function pdfEnc(s){ let o=""; for(const ch of String(s??"").normalize("NFC")){ let c=ch.codePointAt(0);
+    if(c===9||c===10||c===13) c=32; else if(c<32) continue; else if(c>=127 && c<160) c=63; else if(c>255){ const i=CP1252.indexOf(ch); c = i>=0 ? 128+i : 63; }
+    o+=String.fromCharCode(c); } return o; }
+const b64bytes = s => { const bin=atob(s), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; };
+function novoPdf(){
+  const A=window.RDO_ASSETS; if(!A) throw new Error("Os arquivos do RDO não carregaram. Abra o formulário com internet uma vez.");
+  const PW=595.28, PH=841.89, n=v=>String(Math.round(v*100)/100), col=c=>c.map(v=>n(v/255)).join(" ");
+  const P={W:PW, H:PH, pages:[], imgs:[], cur:null, fonts:{r:b64bytes(A.fonts.r.b64), b:b64bytes(A.fonts.b.b64)}};
+  P.add = () => (P.cur={ops:[], xo:new Set()}, P.pages.push(P.cur), P.cur);
+  P.rect = (x,y,w,h,c) => P.cur.ops.push(`${col(c)} rg ${n(x)} ${n(PH-y-h)} ${n(w)} ${n(h)} re f`);
+  P.line = (x1,y1,x2,y2,c,lw=.5) => P.cur.ops.push(`${col(c)} RG ${n(lw)} w ${n(x1)} ${n(PH-y1)} m ${n(x2)} ${n(PH-y2)} l S`);
+  P.box = (x,y,w,h,c,lw=.5) => P.cur.ops.push(`${col(c)} RG ${n(lw)} w ${n(x)} ${n(PH-y-h)} ${n(w)} ${n(h)} re S`);
+  P.tw = (s,f,sz) => { const e=pdfEnc(s), w=A.fonts[f].w; let t=0; for(let i=0;i<e.length;i++) t+=w[e.charCodeAt(i)-32]||500; return t*sz/1000; };
+  P.text = (x,y,s,o={}) => { const f=o.f||"r", sz=o.sz||9, e=pdfEnc(s); let xx=x;
+    if(o.align==="right") xx=x+o.w-P.tw(s,f,sz); else if(o.align==="center") xx=x+(o.w-P.tw(s,f,sz))/2;
+    P.cur.ops.push(`BT /${f==="b"?"F2":"F1"} ${n(sz)} Tf ${col(o.c||COR.txt)} rg ${n(xx)} ${n(PH-y)} Td (${e.replace(/[\\()]/g,"\\$&")}) Tj ET`); };
+  P.fit = (s,f,sz,w) => { s=String(s??""); if(P.tw(s,f,sz)<=w) return s; while(s.length>1 && P.tw(s+"…",f,sz)>w) s=s.slice(0,-1); return s+"…"; };
+  P.wrap = (s,f,sz,maxW) => { const out=[]; String(s??"").split(/\r?\n/).forEach(par=>{ let line="";
+      par.split(/\s+/).filter(Boolean).forEach(word=>{
+        while(P.tw(word,f,sz)>maxW){ let k=word.length; while(k>1 && P.tw(word.slice(0,k),f,sz)>maxW) k--; if(line){ out.push(line); line=""; } out.push(word.slice(0,k)); word=word.slice(k); }
+        if(!word) return; const t=line?line+" "+word:word; if(P.tw(t,f,sz)<=maxW) line=t; else { out.push(line); line=word; } });
+      out.push(line); });
+    return out; };
+  P.img = (bytes,w,h) => (P.imgs.push({bytes,w,h}), P.imgs.length-1);
+  P.draw = (i,x,y,w,h) => { P.cur.xo.add(i); P.cur.ops.push(`q ${n(w)} 0 0 ${n(h)} ${n(x)} ${n(PH-y-h)} cm /Im${i} Do Q`); };
+  P.build = title => {
+    const L = s => { const u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i)&255; return u; };
+    const objs=[null,null,null]; const obj = parts => (objs.push(parts), objs.length);
+    const pstr = s => "("+pdfEnc(s).replace(/[\\()]/g,"\\$&")+")";
+    const fonte = (k,nome) => { const F=A.fonts[k], bytes=P.fonts[k];
+      const file=obj([`<< /Length ${bytes.length} /Length1 ${bytes.length} >>\nstream\n`, bytes, "\nendstream"]);
+      const desc=obj([`<< /Type /FontDescriptor /FontName /${nome} /Flags 32 /FontBBox [${F.bbox.join(" ")}] /ItalicAngle 0 /Ascent ${F.asc} /Descent ${F.desc} /CapHeight ${F.cap} /StemV ${k==="b"?140:80} /FontFile2 ${file} 0 R >>`]);
+      return obj([`<< /Type /Font /Subtype /TrueType /BaseFont /${nome} /FirstChar 32 /LastChar 255 /Widths [${F.w.join(" ")}] /Encoding /WinAnsiEncoding /FontDescriptor ${desc} 0 R >>`]); };
+    const f1=fonte("r","NotoSans-Regular"), f2=fonte("b","NotoSans-Bold");
+    const im=P.imgs.map(m=>obj([`<< /Type /XObject /Subtype /Image /Width ${m.w} /Height ${m.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${m.bytes.length} >>\nstream\n`, m.bytes, "\nendstream"]));
+    const kids=P.pages.map(pg=>{ const c=L(pg.ops.join("\n"));
+      const cid=obj([`<< /Length ${c.length} >>\nstream\n`, c, "\nendstream"]);
+      return obj([`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> /XObject << ${[...pg.xo].map(i=>`/Im${i} ${im[i]} 0 R`).join(" ")} >> >> /Contents ${cid} 0 R >>`]); });
+    objs[0]=["<< /Type /Catalog /Pages 2 0 R >>"];
+    objs[1]=[`<< /Type /Pages /Kids [${kids.map(k=>k+" 0 R").join(" ")}] /Count ${kids.length} >>`];
+    objs[2]=[`<< /Title ${pstr(title)} /Author (Lins Agroindustrial) /Producer (Apontamento de Terceiros) >>`];
+    const parts=[L("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n")]; let len=parts[0].length; const offs=[];
+    const push = x => { const u = typeof x==="string" ? L(x) : x; parts.push(u); len+=u.length; };
+    objs.forEach((o,i)=>{ offs.push(len); push(`${i+1} 0 obj\n`); o.forEach(push); push("\nendobj\n"); });
+    const xref=len; push(`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join(""));
+    push(`trailer\n<< /Size ${objs.length+1} /Root 1 0 R /Info 3 0 R >>\nstartxref\n${xref}\n%%EOF`);
+    return new Blob(parts, {type:"application/pdf"});
+  };
+  return P;
+}
+async function fotoJpeg(blob){
+  const bmp=await createImageBitmap(blob); const max=1100, k=Math.min(1, max/Math.max(bmp.width,bmp.height));
+  const cv=document.createElement("canvas"); cv.width=Math.max(1,Math.round(bmp.width*k)); cv.height=Math.max(1,Math.round(bmp.height*k));
+  const g=cv.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,cv.width,cv.height); g.drawImage(bmp,0,0,cv.width,cv.height);
+  const b=await new Promise(ok=>cv.toBlob(ok,"image/jpeg",0.72)); if(!b) throw new Error("foto");
+  return {bytes:new Uint8Array(await b.arrayBuffer()), w:cv.width, h:cv.height};
+}
+const rdoNome = (envioN, n) => `RDO_${empSlug(S.empresa)}_${curDate}${n?"_EQUIPE"+n:""}${envioN>1?"_REENVIO"+envioN:""}.pdf`;
+// o RDO de cada equipe: as condições do dia + só as pessoas, ordens, ocorrências, equipamentos e fotos da equipe
+const vdEquipe = (d,eq) => ({linhas:d.linhas.filter(l=>l.eq===eq.id), ordens:d.ordens, status:d.status, envios:d.envios, motivo:d.motivo,
+  anexos:(d.anexos||[]).filter(a=>a.eq===eq.id), equipeNome:eqNome(eq), equipeN:eq.n, membros:eq.membros,
+  rdo:{clima:d.rdo.clima, cond:d.rdo.cond, parada:d.rdo.parada, ord:eq.rdo.ord, ocorr:eq.rdo.ocorr, equip:eq.rdo.equip, semOcorr:eq.rdo.semOcorr}});
+
+async function buildRdo(d=day(), envioN=d.envios.length+1){
+  const P=novoPdf(), A=window.RDO_ASSETS, M=40, CW=P.W-2*M, BOT=P.H-52, r=rdo(d), lin=d.linhas;
+  const br=curDate.split("-").reverse().join("/"), wd=WD[new Date(curDate+"T12:00:00").getDay()];
+  const logo=P.img(b64bytes(A.logo.b64), A.logo.w, A.logo.h);
+  const LH=38, LW=LH*A.logo.w/A.logo.h; // largura ≈ 76 mm: acima do mínimo de 75 mm do manual para a versão horizontal
+  let y=0;
+  const cab = primeira => { P.add(); P.draw(logo, M-3, 26, LW, LH);
+    P.text(M, 46, "RELATÓRIO DIÁRIO DE OBRA", {f:"b", sz:primeira?14:11, c:COR.azul, align:"right", w:CW});
+    P.text(M, 60, (primeira ? `${br} · ${wd}` : `${S.empresa} · ${br}`)+(d.equipeNome?" · "+d.equipeNome:""), {sz:9, c:COR.mut, align:"right", w:CW});
+    P.rect(M, 74, CW*.82, 3, COR.azul); P.rect(M+CW*.82, 74, CW*.18, 3, COR.verde);
+    y = 92; };
+  const ensure = h => { if(y+h>BOT){ cab(false); return true; } return false; };
+  const sec = t => { ensure(48); y+=8; P.rect(M, y, 3, 13, COR.verde); P.text(M+9, y+10.5, t.toUpperCase(), {f:"b", sz:10.5, c:COR.azul}); y+=22; };
+  const para = (s, o={}) => { const sz=o.sz||9, lh=sz*1.38, f=o.f||"r"; P.wrap(s, f, sz, o.w||CW).forEach(t=>{ ensure(lh); P.text(o.x||M, y+sz, t, {f, sz, c:o.c}); y+=lh; }); };
+  // tabela: cols = [{t, w (fração), a}], linhas = arrays de texto; linha com {b:true} em negrito
+  const table = (cols, rows, o={}) => {
+    const sz=o.sz||8.5, lh=sz*1.32, pad=5, HH=18;
+    const cells = row => cols.map((c,i)=>P.wrap(row[i]??"", row.b?"b":"r", sz, c.w*CW-2*pad));
+    const head = () => { P.rect(M, y, CW, HH, COR.tinta); let x=M; cols.forEach(c=>{ P.text(x+pad, y+12, c.t.toUpperCase(), {f:"b", sz:7, c:COR.azul, align:c.a||"left", w:c.w*CW-2*pad}); x+=c.w*CW; }); y+=HH; };
+    const first = rows.length ? Math.max(...cells(rows[0]).map(l=>l.length))*lh+2*pad : 0;
+    ensure(HH+first); head();
+    rows.forEach((row,ri)=>{ const cs=cells(row), h=Math.max(...cs.map(l=>l.length))*lh+2*pad-2;
+      if(ensure(h)) head();
+      if(row.b) P.rect(M, y, CW, h, COR.zeb);
+      let x=M; cs.forEach((ls,i)=>{ const c=cols[i]; ls.forEach((t,k)=>P.text(x+pad, y+pad+sz*.92+k*lh, t, {f:row.b?"b":"r", sz, c:(row.mut&&row.mut[i])?COR.mut:COR.txt, align:c.a||"left", w:c.w*CW-2*pad})); x+=c.w*CW; });
+      y+=h; P.line(M, y, M+CW, y, COR.ln); });
+    y+=4; };
+
+  /* página 1: identificação */
+  cab(true);
+  const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), nP=new Set(lin.map(pkey)).size, ords=ordensDia(d);
+  const cel=[["Empresa",S.empresa+(d.equipeNome?" · "+d.equipeNome:"")],["Data",`${br} (${wd})`],["Encarregado",S.enc.trim()||"—"],["Efetivo",`${nP} ${nP>1?"pessoas":"pessoa"}`],["Horas-homem",durTxt(hh)],["Ordens",`${ords.length} ${ords.length>1?"ordens":"ordem"}`]];
+  const cw3=CW/3; P.box(M, y, CW, 64, COR.ln, .7); P.line(M, y+32, M+CW, y+32, COR.ln); P.line(M+cw3, y, M+cw3, y+64, COR.ln); P.line(M+2*cw3, y, M+2*cw3, y+64, COR.ln);
+  cel.forEach(([l,v],i)=>{ const x=M+(i%3)*cw3+8, yy=y+(i>2?32:0); P.text(x, yy+11, l.toUpperCase(), {sz:6.8, c:COR.mut}); P.text(x, yy+25, P.fit(v,"b",10.5,cw3-16), {f:"b", sz:10.5}); });
+  y+=72;
+  if(envioN>1){ const ls=P.wrap(`Reenvio ${envioN}: substitui o envio anterior deste dia. Motivo: ${(d.motivo||"").trim()||"—"}`, "r", 8.5, CW-20);
+    const h=ls.length*11.5+10; P.rect(M, y, CW, h, [255,234,210]); P.rect(M, y, 3, h, COR.alerta); ls.forEach((t,k)=>P.text(M+12, y+15+k*11.5, t, {sz:8.5})); y+=h+6; }
+
+  /* condições do dia */
+  sec("Condições do dia");
+  const pers=periodosDia(d);
+  table([{t:"Período",w:.24},{t:"Clima",w:.26},{t:"Condição de trabalho",w:.5}], pers.map(([k,nome])=>[nome, r.clima[k]||"Não informado", r.cond[k]||"Não informado"]));
+  if((r.parada||"").trim() && pers.some(([k])=>r.cond[k] && r.cond[k]!=="Normal")){ para("Paralisação: "+r.parada.trim(), {sz:8.5}); y+=4; }
+
+  /* serviços executados por ordem */
+  sec("Serviços executados");
+  ords.forEach(o=>{
+    const ord=d.ordens[o]||{}, st=stOrd(o,d), av=avOrd(o,d), feito=((r.ord[o]||{}).feito||"").trim(), ls=lin.filter(l=>l.ordem===o).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in);
+    ensure(120);
+    P.rect(M, y, CW, 22, COR.azul);
+    P.text(M+8, y+15, "ORDEM "+o, {f:"b", sz:10, c:[255,255,255]});
+    P.text(M+8+P.tw("ORDEM "+o,"b",10)+10, y+15, P.fit(ord.setor||"", "r", 9, CW*.45), {sz:9, c:[255,255,255]});
+    P.text(M, y+15, st.toUpperCase(), {f:"b", sz:8, c:st==="Concluída"?COR.verde:[255,255,255], align:"right", w:CW-8});
+    y+=30;
+    if(ord.solicitante) para("Solicitante: "+ord.solicitante, {sz:8.5, c:COR.mut});
+    para("Serviço: "+(ord.desc||"—"), {sz:9});
+    y+=3; ensure(20); const bx=M+86, bw=170; P.text(M, y+9, "Avanço físico", {f:"b", sz:8.5});
+    P.rect(bx, y+2, bw, 8, COR.tinta); if(av) P.rect(bx, y+2, bw*Math.min(100,av)/100, 8, COR.azulm);
+    P.text(bx+bw+8, y+9.5, av==null?"não informado":av+"%", {f:"b", sz:9, c:av==null?COR.alerta:COR.txt}); y+=18;
+    if(feito){ para("Feito hoje:", {f:"b", sz:8.5}); para(feito, {sz:9}); }
+    y+=4;
+    const rows=ls.map(l=>{ const ov=almOverlap(l); return [l.nome+(l.obs?"\nObs.: "+l.obs:""), matOf(l)||"—", hm(l.in), hm(l.out)+(l.out>1440?" (+1)":""), ov?hm(Math.max(l.in,J.almIni))+"–"+hm(Math.min(l.out,J.almFim)):"—", durTxt(total(l))]; });
+    const tt=ls.reduce((a,l)=>a+Math.max(0,total(l)),0), np=new Set(ls.map(pkey)).size;
+    rows.push(Object.assign([`Total da ordem · ${np} ${np>1?"pessoas":"pessoa"}`,"","","","",durTxt(tt)], {b:true}));
+    table([{t:"Colaborador",w:.37},{t:"Matrícula",w:.15},{t:"Entrada",w:.11,a:"center"},{t:"Saída",w:.12,a:"center"},{t:"Almoço",w:.13,a:"center"},{t:"Total",w:.12,a:"right"}], rows);
+    y+=10;
+  });
+
+  /* equipamentos */
+  sec("Equipamentos");
+  if(r.equip.length) table([{t:"Equipamento",w:.8},{t:"Quantidade",w:.2,a:"right"}], r.equip.map(e=>[e.nome, String(e.qtd)]));
+  else para("Nenhum equipamento informado.", {sz:9, c:COR.mut});
+
+  /* ocorrências */
+  sec("Ocorrências");
+  if(r.ocorr.length) table([{t:"Tipo",w:.27},{t:"Ordem",w:.16},{t:"O que aconteceu",w:.57}], r.ocorr.map(x=>[x.tipo||"—", x.ordem||"Geral", (x.desc||"").trim()||"—"]));
+  else para(r.semOcorr ? "Sem ocorrências no dia." : "Ocorrências não informadas.", {sz:9, c:COR.mut});
+
+  /* registro fotográfico */
+  const fotos=(d.anexos||[]).filter(a=>/^image\//.test(a.tipo)), prontas=[], falhas=[];
+  for(const a of fotos){ try{ const x=await idbGet("anexos",a.id); if(!x||!x.blob) throw 0; const j=await fotoJpeg(x.blob); prontas.push({...j, a}); }catch(e){ falhas.push(a.nome); } }
+  sec("Registro fotográfico");
+  if(!prontas.length) para(fotos.length ? "Não foi possível incluir as fotos neste aparelho." : "Nenhuma foto anexada.", {sz:9, c:COR.mut});
+  const gap=14, fw=(CW-gap)/2, fmax=210;
+  for(let i=0;i<prontas.length;i+=2){
+    const par=prontas.slice(i,i+2).map((p,k)=>{ const s=Math.min(fw/p.w, fmax/p.h);
+      const cap=P.wrap(`Foto ${i+k+1}${p.a.legenda?" · "+p.a.legenda:""}`, "r", 8, fw).slice(0,3); return {p, dw:p.w*s, dh:p.h*s, cap}; });
+    const rh=Math.max(...par.map(q=>q.dh+6+q.cap.length*10.5))+gap;
+    ensure(rh);
+    par.forEach((q,k)=>{ const x=M+k*(fw+gap), id=P.img(q.p.bytes, q.p.w, q.p.h);
+      P.draw(id, x+(fw-q.dw)/2, y, q.dw, q.dh); P.box(x+(fw-q.dw)/2, y, q.dw, q.dh, COR.ln, .5);
+      q.cap.forEach((t,j)=>P.text(x+(fw-q.dw)/2, y+q.dh+13+j*10.5, P.fit(t,"r",8,Math.max(q.dw,fw*.6)), {sz:8, c:COR.mut})); });
+    y+=rh;
+  }
+  if(falhas.length) para("Não foi possível incluir no PDF (formato de foto não suportado neste aparelho): "+falhas.join(", ")+".", {sz:8, c:COR.mut});
+
+  /* rodapé de todas as páginas */
+  const ger=new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  P.pages.forEach((pg,i)=>{ P.cur=pg; const yb=P.H-36;
+    P.line(M, yb, M+CW, yb, COR.ln);
+    P.text(M, yb+12, `Lins Agroindustrial · RDO ${S.empresa}${d.equipeNome?" · "+d.equipeNome:""} · ${br}${envioN>1?" · reenvio "+envioN:""}`, {sz:7, c:COR.mut});
+    P.text(M, yb+22, `Gerado em ${ger} pelo formulário de Apontamento de Terceiros`, {sz:6.5, c:COR.mut});
+    P.text(M, yb+12, `Página ${i+1} de ${P.pages.length}`, {f:"b", sz:7, c:COR.azul, align:"right", w:CW}); });
+  return {blob:P.build(`RDO ${S.empresa}${d.equipeNome?" "+d.equipeNome:""} ${br}`), nome:rdoNome(envioN, d.equipeN)};
+}
+async function rdoPayload(d, envioN){
+  const out=[];
+  for(const eq of d.equipes){
+    try{ const {blob, nome}=await buildRdo(vdEquipe(d,eq), envioN); out.push({nome, tipo:"application/pdf", b64:await b64(blob)}); }
+    catch(e){ console.error(e); toast(`Não consegui montar o RDO da ${eqNome(eq)}: `+(e.message||"erro")+". O apontamento segue sem ele."); }
+  }
+  return out;
+}
+async function verRdo(eqId){
+  const d=day(), eq=findEq(eqId); if(!eq) return;
+  try{ const {blob, nome}=await buildRdo(vdEquipe(d,eq), d.envios.length+1);
+    if(downloadsP){ const dl=await downloadsP; if(dl){ try{ await dl.save({filename:nome, data:blob}); toast("RDO baixado."); return; }catch(e){ if(e?.code==="declined") return; } } }
+    dlBlob(blob, nome); toast(issues4().length ? "RDO baixado. Ainda há itens pendentes na tela 4." : "RDO baixado.");
+  }catch(e){ console.error(e); toast("Não consegui montar o RDO: "+(e.message||"erro")); }
+}
+
+/* ================= FLUXO EM TELAS (2 a 5) ================= */
+let passo = 2, fotoEq = null, confLimpar = null, confRm = null;
+const PASSOS = [[1,"Empresa"],[2,"Início"],[3,"Equipes"],[4,"Avanço"],[5,"Revisão"]];
+const eqNome = eq => "Equipe "+eq.n;
+const linhasEq = (d,eq) => d.linhas.filter(l=>l.eq===eq.id);
+const hhDe = ls => ls.reduce((a,l)=>a+Math.max(0,total(l)),0);
+const temNoite = l => l.in < EARLY || l.out > 1080;
+const findEq = id => day().equipes.find(e=>e.id===id);
+
+function novaEquipe(d){ const eq={id:"eq-"+uid(), n:d.equipes.length+1, membros:[], ordens:[], rdo:{ord:{}, ocorr:[], equip:[], semOcorr:false}}; d.equipes.push(eq); return eq; }
+function renumerar(d){ d.equipes.forEach((e,i)=>e.n=i+1); }
+function novaOrdem(eq){
+  const o={k:uid(), ordem:"", setor:"", solicitante:"", desc:"", status:"Em andamento", in:J.entrada, out:J.saida, alm:true};
+  const ult=eq.ordens[eq.ordens.length-1];
+  if(ult){
+    if(ult.out===J.saida && ult.in<J.almIni){ ult.out=J.almIni; ult.alm=false; toast("A ordem anterior ficou de "+hm(ult.in)+" às 11:30 e a nova de 12:30 às 16:48. Ajuste se for diferente."); }
+    o.in = ult.out===J.almIni ? J.almFim : ult.out; o.out = o.in<J.saida ? J.saida : o.in+60; o.alm = o.in<J.almIni;
+  }
+  eq.ordens.push(o); return o;
+}
+// cada pessoa × ordem da equipe vira uma linha do apontamento
+function syncEquipe(d, eq){
+  eq.ordens.forEach(o=>{ if(o.ordem){ d.ordens[o.ordem]={ordem:o.ordem, setor:o.setor, solicitante:o.solicitante, desc:o.desc, status:o.status}; d.status[o.ordem]=o.status; } });
+  d.linhas = d.linhas.filter(l=> l.eq!==eq.id || (eq.membros.includes(l.nome) && eq.ordens.some(o=>o.k===l.ok)));
+  eq.ordens.forEach(o=>eq.membros.forEach(nome=>{
+    let l=d.linhas.find(x=>x.eq===eq.id && x.ok===o.k && x.nome===nome);
+    if(!l){ const f=funcs().find(x=>x.nome===nome)||{}; l={id:uid(), eq:eq.id, ok:o.k, nome, mat:f.mat||"", obs:"", adj:false, custom:false}; d.linhas.push(l); }
+    l.ordem=o.ordem;
+    if(!l.custom){ l.in=o.in; l.out=o.out; l.alm=o.alm; l.adj=!!o.adj; }
+  }));
+}
+function syncTudo(d=day()){ d.equipes.forEach(eq=>syncEquipe(d,eq)); d.linhas=d.linhas.filter(l=>d.equipes.some(e=>e.id===l.eq)); }
+
+// dias salvos no formato antigo (sem equipes): cada ordem vira uma equipe
+function migrar(d){
+  if(d.v===2) return d;
+  d.equipes ||= [];
+  if(!d.equipes.length && d.linhas.length){
+    const old = d.rdo || {}, by = {};
+    d.linhas.forEach(l=>(by[l.ordem] ||= []).push(l));
+    Object.entries(by).forEach(([o,ls],i)=>{
+      const eq=novaEquipe(d), info=d.ordens[o]||{}, f=ls[0];
+      const ord={k:uid(), ordem:o, setor:info.setor||"", solicitante:info.solicitante||"", desc:info.desc||"", status:d.status[o]||info.status||"Em andamento", in:f.in, out:f.out, alm:!!f.alm};
+      eq.ordens.push(ord);
+      ls.forEach(l=>{ if(!eq.membros.includes(l.nome)) eq.membros.push(l.nome); l.eq=eq.id; l.ok=ord.k; l.custom=(l.in!==f.in||l.out!==f.out||!!l.alm!==!!f.alm); });
+      if(old.ord && old.ord[o]) eq.rdo.ord[o]={...old.ord[o]};
+      if(i===0){ eq.rdo.ocorr=old.ocorr||[]; eq.rdo.equip=old.equip||[]; eq.rdo.semOcorr=!!old.semOcorr; (d.anexos||[]).forEach(a=>{ if(!a.eq) a.eq=eq.id; }); }
+    });
+  }
+  d.rdo ||= {}; d.rdo = {clima:d.rdo.clima||{}, cond:d.rdo.cond||{}, parada:d.rdo.parada||"", noite:!!d.rdo.noite};
+  d.v=2; return d;
+}
+
+/* ---------- validação por tela ---------- */
+function periodosT2(d=day()){ const noite = d.rdo.noite || d.linhas.some(temNoite); return PERIODOS.filter(([k])=>k!=="noite" || noite); }
+function issues2(d=day()){
+  const out=[], diff=Math.round((new Date(curDate+"T12:00:00") - new Date(todayISO()+"T12:00:00"))/864e5), r=d.rdo;
+  if(diff>0) out.push("A data está no futuro. Confira o dia trabalhado.");
+  if(!(S.enc||"").trim()) out.push("Preencha o nome do encarregado.");
+  const falta=periodosT2(d).filter(([k])=>!r.clima[k]||!r.cond[k]).map(p=>p[1].toLowerCase());
+  if(falta.length) out.push(`Informe clima e condição de trabalho (${falta.join(", ")}).`);
+  if(periodosT2(d).some(([k])=>r.cond[k] && r.cond[k]!=="Normal") && (r.parada||"").trim().length<5) out.push("Explique a paralisação (motivo e horário).");
+  return out;
+}
+function issues3(d=day()){
+  const out=[];
+  if(!d.equipes.length) out.push("Crie pelo menos uma equipe.");
+  d.equipes.forEach(eq=>{ const nm=eqNome(eq);
+    if(!eq.membros.length) out.push(`${nm}: coloque pelo menos uma pessoa.`);
+    if(!eq.ordens.length) out.push(`${nm}: adicione pelo menos uma ordem.`);
+    eq.ordens.forEach((o,i)=>{ const e=ordErr(o); if(e) out.push(`${nm}, ordem ${o.ordem||i+1}: ${e.charAt(0).toLowerCase()+e.slice(1)}`); });
+  });
+  d.linhas.forEach(l=>{ const eq=d.equipes.find(e=>e.id===l.eq); lineFlags(l,d.linhas).filter(f=>f[0]==="err").forEach(f=>{
+    if(f[1].startsWith("Hora extra") && (l.obs||"").trim().length>=5) return;
+    out.push(`${eq?eqNome(eq)+" · ":""}${l.nome} (${l.ordem||"sem ordem"}): ${f[1].startsWith("Hora extra")?"hora extra / fora da jornada sem justificativa":f[1].toLowerCase()}.`); }); });
+  if(d.linhas.some(temNoite) && !d.rdo.noite){ out.push("Tem trabalho à noite/madrugada: volte à tela 2 e preencha as condições da noite."); }
+  return out;
+}
+function issues4(d=day()){
+  const out=[];
+  d.equipes.forEach(eq=>{ const nm=eqNome(eq), r=eq.rdo;
+    eq.ordens.forEach(o=>{ if(o.ordem && o.status!=="Concluída" && (r.ord[o.ordem]||{}).av==null) out.push(`${nm}: informe o avanço da ordem ${o.ordem}.`); });
+    if(!r.semOcorr && !r.ocorr.length) out.push(`${nm}: marque “Sem ocorrências” ou registre uma ocorrência.`);
+    r.ocorr.forEach((x,i)=>{ if(!x.tipo || (x.desc||"").trim().length<5) out.push(`${nm}: complete a ocorrência ${i+1} (tipo e descrição).`); });
+  });
+  return out;
+}
+const issuesPasso = p => p===2 ? issues2() : p===3 ? issues3() : p===4 ? issues4() : [];
+// usado pelo envio: [tipo, texto, tela]
+function issues(){
+  const d=day(), out=[];
+  issues2(d).forEach(m=>out.push(["err",m,2])); issues3(d).forEach(m=>out.push(["err",m,3])); issues4(d).forEach(m=>out.push(["err","RDO: "+m,4]));
+  if(d.envios.length && (d.motivo||"").trim().length<5) out.push(["err",`Este dia já foi enviado ${d.envios.length}x. Escreva o motivo do reenvio abaixo.`,5]);
+  return out;
+}
+function podeIr(p){ for(let i=2;i<p;i++) if(issuesPasso(i).length) return i; return 0; }
+
+/* ---------- desenho das telas ---------- */
+function renderApont(){
+  day(); syncTudo();
+  $("steps").innerHTML = PASSOS.map(([n,t])=>`<button type="button" data-step="${n}" class="${n===passo?"cur":(n<passo?"done":"")}" ${n===passo?'aria-current="step"':""}><span class="n">${n<passo?"✓":n}</span><span class="t">${t}</span></button>`).join("");
+  const box=$("pBody");
+  box.innerHTML = passo===2 ? html2() : passo===3 ? html3() : passo===4 ? html4() : html5();
+  if(passo===4) carregarMiniaturas();
+  updateBar();
+}
+function limparHTML(p, txt){
+  return confLimpar===p ? `<div class="split"><span>${txt}</span><div class="row"><button class="btn small danger" data-limpar-ok="${p}">Apagar</button><button class="btn small" data-limpar-no>Cancelar</button></div></div>`
+    : `<div class="row" style="justify-content:flex-end"><button class="btn small ghost danger" data-limpar="${p}">Limpar tela</button></div>`;
+}
+function errosHTML(p){ const e=issuesPasso(p); return e.length ? `<section class="card"><h2>Falta para continuar</h2><div class="issues">${e.map(m=>`<div class="issue err">${esc(m)}</div>`).join("")}</div></section>` : ""; }
+
+function html2(){
+  const d=day(), r=d.rdo, dt=new Date(curDate+"T12:00:00"), diff=Math.round((dt - new Date(todayISO()+"T12:00:00"))/864e5);
+  let chip=`<span class="chip ok">${WD[dt.getDay()]}</span>`;
+  if(diff>0) chip=`<span class="chip err">Data no futuro</span>`; else if(diff<-10) chip=`<span class="chip warn">Há ${-diff} dias · confira</span>`;
+  const prev=lastDay(), noiteObrig=d.linhas.some(temNoite);
+  const seg=(grp,k,opts,val)=>`<div class="seg" role="group">${opts.map(v=>`<button type="button" data-${grp}="${k}" data-v="${esc(v)}" aria-pressed="${val===v}">${esc(v)}</button>`).join("")}</div>`;
+  const parado=periodosT2(d).some(([k])=>r.cond[k] && r.cond[k]!=="Normal");
+  return `<section class="card"><h2>Dia trabalhado ${chip}</h2>
+    <div class="grid"><label class="f">Data<input type="date" id="fData" value="${curDate}"></label>
+    <label class="f">Encarregado<input type="text" id="fEnc" value="${esc(S.enc||"")}" placeholder="Seu nome" autocomplete="name"></label></div>
+    <div class="row"><button class="btn small" id="bRepeat" ${prev?"":"disabled"}>Repetir último dia</button><span class="hint">${prev?"Copia as equipes e ordens de "+prev.split("-").reverse().join("/"):"Nenhum dia anterior salvo"}</span></div></section>
+  <section class="card"><h2>Condições do dia</h2>
+    ${periodosT2(d).map(([k,nome])=>`<div class="per"><span class="pl">${nome}</span><span class="hint">Clima</span>${seg("cl",k,CLIMAS,r.clima[k])}<span class="hint">Condição de trabalho</span>${seg("cn",k,CONDS,r.cond[k])}</div>`).join("")}
+    <label class="chk"><input type="checkbox" id="fNoite" ${r.noite||noiteObrig?"checked":""} ${noiteObrig?"disabled":""}> Teve trabalho à noite / madrugada${noiteObrig?" (tem equipe com horário à noite)":""}</label>
+    ${parado?`<label class="f">O que parou, por quê e de que horas a que horas<textarea id="fParada" rows="2" placeholder="Ex.: chuva forte das 13:30 às 15:00, serviço em altura suspenso">${esc(r.parada||"")}</textarea></label>`:""}
+    ${limparHTML(2,"Apagar o encarregado e as condições do dia?")}
+  </section>${errosHTML(2)}`;
+}
+
+function html3(){
+  const d=day(), fs=funcs(), used=usedFull();
+  const naEq = nome => d.equipes.filter(e=>e.membros.includes(nome)).map(eqNome);
+  const disp=fs.filter(f=>!used.has(f.nome));
+  const setOpts=sel=>`<option value="">Escolha…</option>`+BASE.setores.map(s=>`<option ${s===sel?"selected":""}>${esc(s)}</option>`).join("");
+  const solOpts=sel=>`<option value="">Escolha…</option>`+BASE.solicitantes.map(s=>`<option ${s===sel?"selected":""}>${esc(s)}</option>`).join("");
+  const dispHTML = !fs.length ? `<div class="empty">Nenhum funcionário cadastrado para esta empresa. Fale com a usina.</div>`
+    : !disp.length ? `<div class="empty">Todo mundo já está numa equipe com o dia completo.</div>`
+    : `<div class="people" id="people">${disp.map(f=>{ const em=naEq(f.nome); return `<label class="person"><input type="checkbox" value="${esc(f.nome)}"><span><span class="nm">${esc(f.nome)}</span>${f.mat||em.length?`<br><span class="mt">${[f.mat, em.length?"já na "+em.join(", "):""].filter(Boolean).map(esc).join(" · ")}</span>`:""}</span></label>`; }).join("")}</div>
+      <div class="row"><button class="btn small ghost" id="bTodosDisp">Marcar todos</button><button class="btn small primary" id="bNovaEq">Criar equipe com os marcados</button>${d.equipes.map(e=>`<button class="btn small" data-colocar="${e.id}">Colocar na ${eqNome(e)}</button>`).join("")}</div>`;
+  const eqHTML = d.equipes.map(eq=>{ const ls=linhasEq(d,eq);
+    return `<div class="eqcard" data-eqc="${eq.id}">
+      <div class="eqhead"><h3>${eqNome(eq)}</h3><span class="row"><span class="chip info">${eq.membros.length} ${eq.membros.length===1?"pessoa":"pessoas"} · ${durTxt(hhDe(ls))}</span>
+        <button class="btn small ghost danger" data-rmeq="${eq.id}">${confRm==="eq:"+eq.id?"Confirmar remoção":"Remover equipe"}</button></span></div>
+      <div class="mchips">${eq.membros.map(n=>`<span class="mchip">${esc(n)}<button type="button" data-rmm="${eq.id}" data-nome="${esc(n)}" aria-label="Tirar ${esc(n)} da equipe">×</button></span>`).join("") || `<span class="hint">Marque pessoas acima e toque em “Colocar na ${eqNome(eq)}”.</span>`}</div>
+      ${eq.ordens.map((o,i)=>{ const lo=ls.filter(l=>l.ok===o.k).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")), alerta=lo.some(l=>l.custom||lineFlags(l,d.linhas).some(f=>f[0]!=="info"));
+        return `<div class="ordr" data-ok="${o.k}">
+        <div class="oh"><b style="font-family:var(--f-display)">Ordem ${i+1}</b><button class="btn small ghost danger" data-rmord="${eq.id}" data-k="${o.k}">${confRm==="o:"+o.k?"Confirmar":"Remover ordem"}</button></div>
+        <div class="grid">
+          <label class="f">Nº da ordem<input data-eo="ordem" data-eq="${eq.id}" data-k="${o.k}" value="${esc(o.ordem)}" inputmode="numeric" maxlength="8" placeholder="40500000" class="mono"></label>
+          <label class="f">Setor<select data-eo="setor" data-eq="${eq.id}" data-k="${o.k}">${setOpts(o.setor)}</select></label>
+          <label class="f">Solicitante<select data-eo="solicitante" data-eq="${eq.id}" data-k="${o.k}">${solOpts(o.solicitante)}</select></label>
+          <label class="f">Status<select data-eo="status" data-eq="${eq.id}" data-k="${o.k}"><option ${o.status==="Em andamento"?"selected":""}>Em andamento</option><option ${o.status==="Concluída"?"selected":""}>Concluída</option></select></label>
+        </div>
+        <label class="f">Descrição do serviço<input data-eo="desc" data-eq="${eq.id}" data-k="${o.k}" value="${esc(o.desc)}" placeholder="Ex.: Confeccionar chuveiro para os prés 06 e 07"></label>
+        <div class="times">
+          <label class="f">Entrada da equipe<input type="time" step="60" data-et="in" data-eq="${eq.id}" data-k="${o.k}" value="${hm(o.in)}"></label>
+          <label class="f">Saída da equipe<input type="time" step="60" data-et="out" data-eq="${eq.id}" data-k="${o.k}" value="${hm(o.out)}"></label>
+          <label class="alm"><input type="checkbox" data-et="alm" data-eq="${eq.id}" data-k="${o.k}" ${o.alm?"checked":""}> Almoço ${hm(J.almIni)}–${hm(J.almFim)}</label>
+        </div>
+        ${lo.length?`<details class="ind" ${alerta?"open":""}><summary>Horário de cada pessoa (${lo.length})${alerta?" · tem ajuste ou aviso":""}</summary><div class="lrows">${lo.map(l=>lineHTML(l,d.linhas)).join("")}</div></details>`:""}
+      </div>`; }).join("")}
+      <button class="btn small" data-addord="${eq.id}">+ Adicionar ordem nesta equipe</button>
+    </div>`; }).join("");
+  return `<section class="card"><h2>Pessoas disponíveis <span class="mono">${disp.length}</span></h2>
+      <p class="hint">Marque quem trabalhou junto e crie a equipe. Quem já está com o dia completo sai desta lista.</p>${dispHTML}</section>
+    ${eqHTML || `<div class="empty">Nenhuma equipe ainda. Marque as pessoas acima e toque em “Criar equipe com os marcados”.</div>`}
+    <section class="card">${limparHTML(3,"Apagar todas as equipes e ordens? O que foi preenchido na tela 4 (avanço, ocorrências, equipamentos e fotos) também será apagado.")}</section>
+    ${errosHTML(3)}`;
+}
+function lineHTML(l, all){
+  const fl=lineFlags(l,all), needObs=fl.some(f=>f[1].startsWith("Hora extra"));
+  return `<div class="line" data-id="${l.id}">
+    <div class="lt"><span class="nm">${esc(l.nome)}</span><span class="tot">${durTxt(total(l))}</span></div>
+    <div class="times">
+      <label class="f">Entrada<input type="time" step="60" data-f="in" value="${hm(l.in)}"></label>
+      <label class="f">Saída<input type="time" step="60" data-f="out" value="${hm(l.out)}"></label>
+      <label class="alm"><input type="checkbox" data-f="alm" ${l.alm?"checked":""}> Almoço</label>
+    </div>
+    ${fl.length?`<div class="chips">${fl.map(f=>`<span class="chip ${f[0]}">${esc(f[1])}</span>`).join("")}</div>`:""}
+    ${needObs||l.obs?`<label class="f">Justificativa / observação<input data-f="obs" value="${esc(l.obs||"")}" placeholder="Ex.: término da montagem do rolo, autorizado por…"></label>`:""}
+    ${l.custom?`<div class="row"><button class="btn small ghost" data-reset="${l.id}">Voltar ao horário da equipe</button></div>`:""}
+  </div>`;
+}
+
+function html4(){
+  const d=day();
+  if(!d.equipes.length) return `<div class="empty">Monte as equipes na tela 3 primeiro.</div>`;
+  return d.equipes.map(eq=>{ const r=eq.rdo, pend=issues4({equipes:[eq]}).length, fotos=(d.anexos||[]).filter(a=>a.eq===eq.id);
+    const ordOpts=sel=>`<option value="">Geral (dia todo)</option>`+eq.ordens.filter(o=>o.ordem).map(o=>`<option ${o.ordem===sel?"selected":""}>${esc(o.ordem)}</option>`).join("");
+    return `<div class="eqcard">
+    <div class="eqhead"><h3>${eqNome(eq)}</h3>${pend?`<span class="chip warn">${pend} pendente${pend>1?"s":""}</span>`:`<span class="chip ok">Completo</span>`}</div>
+    <p class="hint">${eq.membros.map(esc).join(", ")}</p>
+    <div class="rsub" style="border-top:0;padding-top:0"><h3>Avanço das ordens</h3>
+      ${eq.ordens.filter(o=>o.ordem).map(o=>{ const conc=o.status==="Concluída", av=conc?100:(r.ord[o.ordem]||{}).av, ant=avAnterior(o.ordem);
+        return `<div class="ordr"><div class="oh"><b>${esc(o.ordem)}</b><span class="chip ${conc?"ok":"info"}">${esc(o.status)}</span></div>
+        <span class="hint">${esc(o.setor)}${o.desc?" · "+esc(o.desc):""}</span>
+        <div class="av${av==null?" unset":""}"><input type="range" min="0" max="100" step="5" value="${av??(ant?ant.v:0)}" data-av="${eq.id}" data-o="${esc(o.ordem)}" ${conc?"disabled":""} aria-label="Avanço físico da ordem ${esc(o.ordem)}"><span class="pct">${av==null?"informe":av+"%"}</span></div>
+        <span class="hint">${conc?"Ordem concluída: avanço 100%. Para mudar, troque o status na tela 3.":ant?`Último informado: ${ant.v}% em ${ant.d.split("-").reverse().join("/")}`:"Arraste até o percentual concluído da ordem."}</span>
+        <label class="f">O que foi feito hoje nesta ordem (opcional)<textarea data-feito="${eq.id}" data-o="${esc(o.ordem)}" rows="2" placeholder="Ex.: soldagem das chapas do lado direito, faltou pintura">${esc((r.ord[o.ordem]||{}).feito||"")}</textarea></label></div>`; }).join("")}
+    </div>
+    <div class="rsub"><h3>Ocorrências</h3>
+      <label class="chk"><input type="checkbox" data-semoc="${eq.id}" ${r.semOcorr&&!r.ocorr.length?"checked":""} ${r.ocorr.length?"disabled":""}> Sem ocorrências hoje</label>
+      ${r.ocorr.map((x,i)=>`<div class="ordr" data-oc="${x.id}"><div class="oh"><b style="font-family:var(--f-display)">Ocorrência ${i+1}</b><button class="btn small ghost danger" data-ocdel="${eq.id}" data-id="${x.id}">Remover</button></div>
+        <div class="grid"><label class="f">Tipo<select data-ocf="tipo" data-eq="${eq.id}" data-id="${x.id}"><option value="">Escolha…</option>${OCORR_TIPOS.map(t=>`<option ${t===x.tipo?"selected":""}>${esc(t)}</option>`).join("")}</select></label>
+        <label class="f">Ordem<select data-ocf="ordem" data-eq="${eq.id}" data-id="${x.id}">${ordOpts(x.ordem)}</select></label></div>
+        <label class="f">O que aconteceu<textarea data-ocf="desc" data-eq="${eq.id}" data-id="${x.id}" rows="2" placeholder="Ex.: aguardamos a PT de 07:00 às 08:30">${esc(x.desc||"")}</textarea></label></div>`).join("")}
+      <button class="btn small" data-ocadd="${eq.id}">+ Registrar ocorrência</button>
+    </div>
+    <div class="rsub"><h3>Equipamentos usados <span class="hint">opcional</span></h3>
+      ${r.equip.map(e=>`<div class="eqrow"><span style="align-self:center">${esc(e.nome)}</span><input type="number" min="1" max="99" inputmode="numeric" value="${e.qtd}" data-eqq="${eq.id}" data-id="${e.id}" aria-label="Quantidade de ${esc(e.nome)}"><button class="btn small ghost danger" data-eqdel="${eq.id}" data-id="${e.id}">Remover</button></div>`).join("")}
+      <div class="eqrow"><label class="f">Equipamento<input id="eqNome-${eq.id}" list="eqLista-${eq.id}" placeholder="Ex.: Máquina de solda" autocomplete="off"></label><label class="f">Qtd.<input id="eqQtd-${eq.id}" type="number" min="1" max="99" value="1" inputmode="numeric"></label><button class="btn small" data-eqadd="${eq.id}">Adicionar</button></div>
+      <datalist id="eqLista-${eq.id}">${EQUIPS.filter(n=>!r.equip.some(e=>e.nome===n)).map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
+    </div>
+    <div class="rsub"><h3>Fotos do serviço <span class="hint">${fotos.length?fotos.length+" no RDO":"opcional"}</span></h3>
+      <div class="row"><button class="btn small" data-foto="${eq.id}">Tirar foto</button><button class="btn small" data-galeria="${eq.id}">Escolher da galeria</button></div>
+      <div class="anxlist">${fotos.map(x=>`<div class="anxi"><img alt="" data-img="${x.id}"><span class="nm">${esc(x.nome)} <span class="tm">${kb(x.tam)}</span><br><input data-anx-leg="${x.id}" value="${esc(x.legenda||"")}" placeholder="Legenda no RDO (ex.: rolo montado)" maxlength="120" aria-label="Legenda da foto ${esc(x.nome)}"></span><button class="btn small ghost danger" data-anx-rm="${x.id}">Remover</button></div>`).join("")}</div>
+    </div>
+  </div>`; }).join("") + `<section class="card">${limparHTML(4,"Apagar avanço, ocorrências, equipamentos e fotos de todas as equipes?")}</section>${errosHTML(4)}`;
+}
+async function carregarMiniaturas(){
+  for(const img of document.querySelectorAll("[data-img]")){ const id=img.dataset.img;
+    if(!anxUrls[id]){ const r=await idbGet("anexos",id); if(r&&r.blob) anxUrls[id]=URL.createObjectURL(r.blob); }
+    if(anxUrls[id]) img.src=anxUrls[id]; }
+}
+
+function html5(){
+  const d=day(), all=issues(), lin=d.linhas, ev=d.envios;
+  const ult=ev[ev.length-1], hora=ult?new Date(ult.em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"";
+  const chip = !ult ? `<span class="chip warn">Não enviado</span>` : ult.status==="pendente" ? `<span class="chip warn">Aguardando internet · ${hora}</span>` : ult.status==="app" ? `<span class="chip info">Aberto no e-mail do aparelho ${ev.length}x · ${hora}</span>` : `<span class="chip ok">Entregue ${ev.length}x · último ${hora}</span>`;
+  const r=d.rdo;
+  return `<section class="card"><h2>Resumo do dia</h2>
+      <div class="pvgrid"><div><span class="hint">Data</span><b>${curDate.split("-").reverse().join("/")}</b></div><div><span class="hint">Encarregado</span><b>${esc(S.enc||"—")}</b></div>
+      <div><span class="hint">Pessoas</span><b>${new Set(lin.map(pkey)).size}</b></div><div><span class="hint">Horas-homem</span><b>${durTxt(hhDe(lin))}</b></div></div>
+      <p class="hint">${periodosT2(d).map(([k,n])=>`${n}: ${esc(r.clima[k]||"—")}, ${esc(r.cond[k]||"—")}`).join(" · ")}</p></section>
+    ${d.equipes.map(eq=>{ const ls=linhasEq(d,eq), rr=eq.rdo;
+      return `<div class="eqcard"><div class="eqhead"><h3>${eqNome(eq)}</h3><span class="chip info">${eq.membros.length} ${eq.membros.length===1?"pessoa":"pessoas"} · ${durTxt(hhDe(ls))}</span></div>
+      <p class="hint">${eq.membros.map(esc).join(", ")}</p>
+      ${eq.ordens.map(o=>{ const av=o.status==="Concluída"?100:(rr.ord[o.ordem]||{}).av; return `<div class="pvord"><b class="mono">${esc(o.ordem||"—")}</b> <span class="chip ${o.status==="Concluída"?"ok":"info"}">${esc(o.status)}</span> <span class="mono">${hm(o.in)}–${hm(o.out)}</span><br><span class="hint">${esc(o.setor)}${o.desc?" · "+esc(o.desc):""}</span>${av!=null?`<div class="pvbar"><span style="width:${av}%"></span></div><span class="hint">Avanço ${av}%</span>`:""}</div>`; }).join("")}
+      <p class="hint">${rr.ocorr.length?rr.ocorr.length+" ocorrência(s)":(rr.semOcorr?"Sem ocorrências":"Ocorrências não informadas")} · ${rr.equip.length?rr.equip.map(e=>e.qtd+"× "+esc(e.nome)).join(", "):"sem equipamentos"} · ${(d.anexos||[]).filter(a=>a.eq===eq.id).length} foto(s)</p>
+      <div class="row"><button class="btn small" data-ver-rdo="${eq.id}">Ver RDO da ${eqNome(eq)} em PDF</button></div></div>`; }).join("")}
+    ${all.length?`<section class="card"><h2>Antes de enviar</h2><div class="issues">${all.map(i=>`<div class="issue err">${esc(i[1])} ${i[2]<5?`<button class="btn small" data-goto="${i[2]}" style="margin-left:6px">Ir para a tela ${i[2]}</button>`:""}</div>`).join("")}</div></section>`:""}
+    <section class="card"><h2>Envio ${chip}</h2>
+      <p class="hint">O botão “Enviar” manda para a usina (<span class="mono" style="user-select:all">${esc(DESTINO_EMAIL)}</span>) <b>uma planilha com todas as pessoas</b> e <b>um RDO em PDF por equipe</b> (${d.equipes.length}). Sem internet, o envio fica guardado neste aparelho e sai sozinho quando o sinal voltar.</p>
+      ${ev.length?`<label class="f">Motivo do reenvio (obrigatório)<input id="fMotivo" value="${esc(d.motivo||"")}" placeholder="Ex.: corrigi a saída do João, que ficou até 17:30"></label>`:""}
+      <div class="row"><button class="btn small ghost" id="bMailApp">Enviar pelo e-mail do aparelho</button><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
+    </section>`;
+}
+function updateBar(){
+  const d=day(), lin=d.linhas;
+  $("bPrev").textContent = passo===2 ? "Trocar empresa" : "Voltar";
+  $("bNext").hidden = passo===5; $("bMail").hidden = passo!==5;
+  $("sum").innerHTML = lin.length ? `<b>${durTxt(hhDe(lin))}</b> HH<br>${new Set(lin.map(pkey)).size} pessoas · ${d.equipes.length} equipe${d.equipes.length===1?"":"s"}` : `<span>Tela ${passo} de 5</span>`;
+  if(!qRunning) $("bMail").textContent = d.envios.length ? "Reenviar" : "Enviar";
+}
+function renderSum(){ if(tab==="apont" && S.empresa && !$("vApont").hidden){ if(passo===5) renderApont(); else updateBar(); } }
+function irPara(p){
+  if(p<2){ S.empresa=null; save(); render(); return; }
+  if(p>passo){ const bloq=podeIr(p); if(bloq){ passo=bloq; confLimpar=null; renderApont(); window.scrollTo({top:0,behavior:"smooth"}); toast("Complete esta tela antes de seguir."); return; } }
+  passo=p; confLimpar=null; confRm=null; renderApont(); window.scrollTo({top:0,behavior:"smooth"});
+}
+function proximo(){
+  const e=issuesPasso(passo);
+  if(e.length){ renderApont(); const c=[...document.querySelectorAll("#pBody .issues")].pop(); c && c.scrollIntoView({behavior:"smooth",block:"center"}); toast(e.length===1?e[0]:`Faltam ${e.length} itens para continuar.`); return; }
+  irPara(passo+1);
+}
+function limparTela(p){
+  const d=day();
+  if(p===2){ d.rdo={clima:{}, cond:{}, parada:"", noite:false}; S.enc=""; }
+  if(p===3){ (d.anexos||[]).forEach(a=>idbDel("anexos",a.id)); d.anexos=[]; d.equipes=[]; d.linhas=[]; d.ordens={}; d.status={}; }
+  if(p===4){ d.equipes.forEach(eq=>eq.rdo={ord:{}, ocorr:[], equip:[], semOcorr:false}); (d.anexos||[]).forEach(a=>idbDel("anexos",a.id)); d.anexos=[]; }
+  confLimpar=null; save(); renderApont(); toast("Tela limpa.");
+}
+function repeat(){
+  const p=lastDay(); if(!p) return; const src=migrar(S.dias[S.empresa+"|"+p]), d=day();
+  if(d.equipes.length){ toast("Este dia já tem equipes. Use “Limpar tela” na tela 3 antes de repetir."); return; }
+  src.equipes.forEach(se=>{ const eq=novaEquipe(d); eq.membros=[...se.membros]; eq.ordens=se.ordens.map(o=>({...o, k:uid()}));
+    eq.rdo.equip=(se.rdo.equip||[]).map(e=>({...e, id:uid()})); });
+  d.rdo.noite=!!(src.rdo&&src.rdo.noite);
+  syncTudo(d); save(); passo=3; renderApont(); window.scrollTo({top:0}); toast("Equipes e ordens copiadas de "+p.split("-").reverse().join("/")+". Confira quem faltou ou mudou.");
+}
+function lastDay(){ const ks = Object.keys(S.dias).filter(k=>k.startsWith(S.empresa+"|") && (S.dias[k].linhas.length || (S.dias[k].equipes||[]).length)).map(k=>k.split("|")[1]).filter(x=>x<curDate).sort(); return ks.pop()||null; }
+function usedFull(){ const s=new Set(), by={}; day().linhas.forEach(l=>{ (by[pkey(l)] ||= []).push(l); });
+  Object.entries(by).forEach(([k,ls])=>{ const mn=Math.min(...ls.map(l=>l.in)), mx=Math.max(...ls.map(l=>l.out)); if(mn<=J.entrada+J.tol && mx>=J.saida-J.tol) s.add(k); }); return s; }
+function ordErr(o){ return !/^\d{8}$/.test(o.ordem||"") ? "A ordem precisa ter 8 dígitos." : !o.setor ? "Escolha o setor da ordem." : (o.desc||"").trim().length<5 ? "Descreva o serviço da ordem." : ""; }
+function marcados(){ return [...document.querySelectorAll("#people input:checked")].map(x=>x.value); }
+function colocar(eq, nomes){
+  if(!nomes.length){ toast("Marque as pessoas na lista de disponíveis."); return false; }
+  nomes.forEach(n=>{ if(!eq.membros.includes(n)) eq.membros.push(n); });
+  if(!eq.ordens.length) novaOrdem(eq);
+  return true;
+}
+
+/* ---------- eventos do fluxo ---------- */
+document.addEventListener("click", ev=>{
+  const t=ev.target.closest("button"); if(!t || !t.closest("#vApont, #bar")) return;
+  const d=day(), ds=t.dataset;
+  if(ds.step){ irPara(+ds.step); return; }
+  if(ds.goto){ irPara(+ds.goto); return; }
+  if(ds.limpar){ confLimpar=+ds.limpar; renderApont(); return; }
+  if(ds.limparOk){ limparTela(+ds.limparOk); return; }
+  if(t.hasAttribute("data-limpar-no")){ confLimpar=null; renderApont(); return; }
+  if(ds.cl!==undefined || ds.cn!==undefined){ (ds.cl!==undefined ? d.rdo.clima : d.rdo.cond)[ds.cl??ds.cn]=ds.v; save(); renderApont(); return; }
+  if(ds.colocar){ if(colocar(findEq(ds.colocar), marcados())){ syncTudo(d); save(); renderApont(); toast("Pessoas colocadas na "+eqNome(findEq(ds.colocar))+"."); } return; }
+  if(ds.rmm){ const eq=findEq(ds.rmm); eq.membros=eq.membros.filter(n=>n!==ds.nome); syncTudo(d); save(); renderApont(); return; }
+  if(ds.rmeq){ if(confRm!=="eq:"+ds.rmeq){ confRm="eq:"+ds.rmeq; renderApont(); return; }
+    (d.anexos||[]).filter(a=>a.eq===ds.rmeq).forEach(a=>idbDel("anexos",a.id)); d.anexos=(d.anexos||[]).filter(a=>a.eq!==ds.rmeq);
+    d.equipes=d.equipes.filter(e=>e.id!==ds.rmeq); renumerar(d); confRm=null; syncTudo(d); save(); renderApont(); toast("Equipe removida."); return; }
+  if(ds.addord){ novaOrdem(findEq(ds.addord)); syncTudo(d); save(); renderApont(); return; }
+  if(ds.rmord){ if(confRm!=="o:"+ds.k){ confRm="o:"+ds.k; renderApont(); return; }
+    const eq=findEq(ds.rmord); eq.ordens=eq.ordens.filter(o=>o.k!==ds.k); confRm=null; syncTudo(d); save(); renderApont(); return; }
+  if(ds.reset){ const l=d.linhas.find(x=>x.id===ds.reset); if(l){ l.custom=false; l.obs=""; } syncTudo(d); save(); renderApont(); return; }
+  if(ds.ocadd){ const r=findEq(ds.ocadd).rdo; r.ocorr.push({id:uid(), tipo:"", ordem:"", desc:""}); r.semOcorr=false; save(); renderApont(); return; }
+  if(ds.ocdel){ const r=findEq(ds.ocdel).rdo; r.ocorr=r.ocorr.filter(x=>x.id!==ds.id); save(); renderApont(); return; }
+  if(ds.eqdel){ const r=findEq(ds.eqdel).rdo; r.equip=r.equip.filter(x=>x.id!==ds.id); save(); renderApont(); return; }
+  if(ds.eqadd){ const r=findEq(ds.eqadd).rdo, n=$("eqNome-"+ds.eqadd).value.trim().replace(/\s+/g," "), q=Math.max(1,Math.min(99,parseInt($("eqQtd-"+ds.eqadd).value,10)||1));
+    if(n.length<3){ toast("Escreva o nome do equipamento"); $("eqNome-"+ds.eqadd).focus(); return; }
+    const ex=r.equip.find(e=>e.nome.toLowerCase()===n.toLowerCase()); if(ex) ex.qtd=q; else r.equip.push({id:uid(), nome:n, qtd:q}); save(); renderApont(); $("eqNome-"+ds.eqadd).focus(); return; }
+  if(ds.foto){ fotoEq=ds.foto; $("anxFoto").click(); return; }
+  if(ds.galeria){ fotoEq=ds.galeria; $("anxArq").click(); return; }
+  if(ds.verRdo){ verRdo(ds.verRdo); return; }
+  switch(t.id){
+    case "bPrev": irPara(passo-1); break;
+    case "bNext": proximo(); break;
+    case "bRepeat": repeat(); break;
+    case "bTodosDisp": document.querySelectorAll("#people input").forEach(i=>i.checked=true); document.querySelectorAll("#people .person").forEach(p=>p.classList.add("on")); break;
+    case "bNovaEq": { const nomes=marcados(); if(!nomes.length){ toast("Marque as pessoas na lista de disponíveis."); return; }
+      const eq=novaEquipe(d); colocar(eq, nomes); syncTudo(d); save(); renderApont(); const c=document.querySelector(`[data-eqc="${eq.id}"]`); c && c.scrollIntoView({behavior:"smooth",block:"start"}); toast(eqNome(eq)+" criada. Preencha a ordem."); break; }
+    case "bGen": generate(); break;
+    case "bMail": sendMail(); break;
+    case "bMailApp": sendViaApp(); break;
+  }
+});
+document.addEventListener("change", ev=>{
+  const t=ev.target; if(!t.closest || !t.closest("#vApont")) return; const d=day(), ds=t.dataset;
+  if(t.closest("#people")){ t.closest(".person").classList.toggle("on", t.checked); return; }
+  if(t.id==="fData"){ if(t.value){ curDate=t.value; confLimpar=null; renderApont(); } return; }
+  if(t.id==="fNoite"){ d.rdo.noite=t.checked; save(); renderApont(); return; }
+  if(ds.eo){ const o=findEq(ds.eq).ordens.find(x=>x.k===ds.k); let v=t.value.trim(); if(ds.eo==="ordem") v=v.replace(/\D/g,"").slice(0,8); if(ds.eo==="desc") v=v.replace(/\s+/g," ");
+    o[ds.eo]=v;
+    if(ds.eo==="ordem" && v && d.ordens[v] && !o.setor){ const i=d.ordens[v]; o.setor=i.setor; o.solicitante=i.solicitante; o.desc=i.desc; o.status=i.status||o.status; } // mesma ordem já usada noutra equipe hoje
+    syncTudo(d); save(); renderApont(); return; }
+  if(ds.et){ const o=findEq(ds.eq).ordens.find(x=>x.k===ds.k);
+    if(ds.et==="alm") o.alm=t.checked;
+    else { let m=toMin(t.value); if(m==null) return; if(ds.et==="in"){ if(isEarly(m)){ m=J.entrada; o.adj=true; toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } else o.adj=false; }
+      o[ds.et]=m; const oc=o.out%1440; o.out = oc<=o.in ? oc+1440 : oc; }
+    syncTudo(d); save(); renderApont(); return; }
+  const line=t.closest(".line"); if(line && ds.f){ const l=d.linhas.find(x=>x.id===line.dataset.id); if(!l) return;
+    if(ds.f==="alm"){ l.alm=t.checked; l.custom=true; }
+    if(ds.f==="in"||ds.f==="out"){ let m=toMin(t.value); if(m==null) return;
+      if(ds.f==="in" && isEarly(m)){ m=J.entrada; l.adj=true; toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } else if(ds.f==="in") l.adj=false;
+      l[ds.f]=m; norm(l); l.custom=true; }
+    if(ds.f==="obs") l.obs=t.value.trim();
+    save(); setTimeout(renderApont,0); return; }
+  if(ds.semoc){ findEq(ds.semoc).rdo.semOcorr=t.checked; save(); renderApont(); return; }
+  if(ds.av){ const r=findEq(ds.av).rdo; (r.ord[ds.o] ||= {}).av=+t.value; save(); renderApont(); return; }
+  if(ds.ocf && t.tagName==="SELECT"){ const x=findEq(ds.eq).rdo.ocorr.find(o=>o.id===ds.id); if(x){ x[ds.ocf]=t.value; save(); renderApont(); } return; }
+});
+document.addEventListener("input", ev=>{
+  const t=ev.target; if(!t.closest || !t.closest("#vApont")) return; const d=day(), ds=t.dataset;
+  if(t.id==="fEnc"){ S.enc=t.value; save(); return; }
+  if(t.id==="fParada"){ d.rdo.parada=t.value; save(); return; }
+  if(t.id==="fMotivo"){ d.motivo=t.value; save(); return; }
+  if(ds.eo==="ordem"){ const v=t.value.replace(/\D/g,""); if(v!==t.value) t.value=v; return; }
+  if(ds.feito){ (findEq(ds.feito).rdo.ord[ds.o] ||= {}).feito=t.value; save(); return; }
+  if(ds.av){ (findEq(ds.av).rdo.ord[ds.o] ||= {}).av=+t.value; const b=t.closest(".av"); b.classList.remove("unset"); b.querySelector(".pct").textContent=t.value+"%"; save(); return; }
+  if(ds.ocf && t.tagName!=="SELECT"){ const x=findEq(ds.eq).rdo.ocorr.find(o=>o.id===ds.id); if(x){ x[ds.ocf]=t.value; save(); } return; }
+  if(ds.eqq){ const e=findEq(ds.eqq).rdo.equip.find(x=>x.id===ds.id); if(e){ e.qtd=Math.max(1,Math.min(99,parseInt(t.value,10)||1)); save(); } return; }
+  if(ds.anxLeg){ const a=(d.anexos||[]).find(x=>x.id===ds.anxLeg); if(a){ a.legenda=t.value.trim(); save(); } return; }
+});
+document.addEventListener("keydown", ev=>{ if(ev.key==="Enter" && ev.target.id && ev.target.id.startsWith("eqNome-")){ ev.preventDefault(); document.querySelector(`[data-eqadd="${ev.target.id.slice(7)}"]`).click(); } });
+
+
+/* ---------- início ---------- */
+const h = location.hash.slice(1).toLowerCase(); const fromHash = Object.keys(SLUG).find(n=>SLUG[n]===h);
+if(!fromHash){ const e=CAD.empresas.find(x=>x.slug===h); S.empresa = e ? e.nome : null; } else S.empresa = fromHash; // sempre abre na escolha da empresa (a não ser que o link já traga #empresa)
+render();
+fetchCad();
+reconciliar();
+setTimeout(()=>processQueue(false), 1500);
+// funcionar sem internet: guarda a página no aparelho (só no site publicado)
+if("serviceWorker" in navigator && (location.protocol==="https:" && !/claude/.test(location.hostname) || location.hostname==="localhost")){ try{ navigator.serviceWorker.register("../sw.js").catch(()=>{}); }catch(e){} }
+
+try{ const L=window.RDO_ASSETS && window.RDO_ASSETS.logo; if(L&&L.b64){ $("linsLogo").src="data:image/jpeg;base64,"+L.b64; $("logoPlate").hidden=false; } }catch(e){}
+</script>
+</body></html>
