@@ -1019,6 +1019,7 @@ function issues4(d=day()){
     eq.ordens.forEach(o=>{ if(o.ordem && o.status!=="Concluída" && (r.ord[o.ordem]||{}).av==null) out.push(`${nm}: informe o avanço da ordem ${o.ordem}.`); });
     if(!r.semOcorr && !r.ocorr.length) out.push(`${nm}: marque “Sem ocorrências” ou registre uma ocorrência.`);
     r.ocorr.forEach((x,i)=>{ if(!x.tipo || (x.desc||"").trim().length<5) out.push(`${nm}: complete a ocorrência ${i+1} (tipo e descrição).`); });
+    if(!(d.anexos||[]).some(a=>a.eq===eq.id && /^image\//.test(a.tipo))) out.push(`${nm}: tire pelo menos uma foto do serviço.`);
   });
   return out;
 }
@@ -1124,7 +1125,7 @@ function lineHTML(l, all){
 function html4(){
   const d=day();
   if(!d.equipes.length) return `<div class="empty">Monte as equipes na tela 3 primeiro.</div>`;
-  return d.equipes.map(eq=>{ const r=eq.rdo, pend=issues4({equipes:[eq]}).length, fotos=(d.anexos||[]).filter(a=>a.eq===eq.id);
+  return d.equipes.map(eq=>{ const r=eq.rdo, pend=issues4({equipes:[eq], anexos:d.anexos}).length, fotos=(d.anexos||[]).filter(a=>a.eq===eq.id);
     const ordOpts=sel=>`<option value="">Geral (dia todo)</option>`+eq.ordens.filter(o=>o.ordem).map(o=>`<option ${o.ordem===sel?"selected":""}>${esc(o.ordem)}</option>`).join("");
     return `<div class="eqcard">
     <div class="eqhead"><h3>${eqNome(eq)}</h3>${pend?`<span class="chip warn">${pend} pendente${pend>1?"s":""}</span>`:`<span class="chip ok">Completo</span>`}</div>
@@ -1150,7 +1151,7 @@ function html4(){
       <div class="eqrow"><label class="f">Equipamento<input id="eqNome-${eq.id}" list="eqLista-${eq.id}" placeholder="Ex.: Máquina de solda" autocomplete="off"></label><label class="f">Qtd.<input id="eqQtd-${eq.id}" type="number" min="1" max="99" value="1" inputmode="numeric"></label><button class="btn small" data-eqadd="${eq.id}">Adicionar</button></div>
       <datalist id="eqLista-${eq.id}">${EQUIPS.filter(n=>!r.equip.some(e=>e.nome===n)).map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
     </div>
-    <div class="rsub"><h3>Fotos do serviço <span class="hint">${fotos.length?fotos.length+" no RDO":"opcional"}</span></h3>
+    <div class="rsub"><h3>Fotos do serviço <span class="hint">${fotos.length?fotos.length+" no RDO":"obrigatório · pelo menos 1"}</span></h3>
       <div class="row"><button class="btn small" data-foto="${eq.id}">Tirar foto</button><button class="btn small" data-galeria="${eq.id}">Escolher da galeria</button></div>
       <div class="anxlist">${fotos.map(x=>`<div class="anxi"><img alt="" data-img="${x.id}"><span class="nm">${esc(x.nome)} <span class="tm">${kb(x.tam)}</span><br><input data-anx-leg="${x.id}" value="${esc(x.legenda||"")}" placeholder="Legenda no RDO (ex.: rolo montado)" maxlength="120" aria-label="Legenda da foto ${esc(x.nome)}"></span><button class="btn small ghost danger" data-anx-rm="${x.id}">Remover</button></div>`).join("")}</div>
     </div>

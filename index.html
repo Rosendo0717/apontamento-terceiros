@@ -113,6 +113,33 @@ table.list th{font:600 .72rem var(--f-display);text-transform:uppercase;letter-s
 .qbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 12px;font-size:.88rem;font-weight:500}
 .picker button{text-align:left;justify-content:flex-start;font-size:1.05rem;min-height:56px}
 @media (max-width:420px){.times{grid-template-columns:1fr 1fr}.times .alm{grid-column:1/-1;min-height:30px}}
+/* telas / equipes */
+.steps{display:flex;gap:2px;align-items:flex-start}
+.steps button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:transparent;cursor:pointer;color:var(--muted);font:600 .68rem var(--f-display);padding:2px 0;text-transform:uppercase;letter-spacing:.03em}
+.steps .n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);background:var(--surface);font:700 .85rem var(--f-display);color:var(--muted)}
+.steps .t{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steps button.done .n{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.steps button.cur{color:var(--ink)}
+.steps button.cur .n{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.eqcard{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);display:grid;gap:12px;padding:14px;min-width:0}
+.eqhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.eqhead h3{margin:0;font:700 1.08rem var(--f-display);color:var(--accent)}
+.mchips{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{display:inline-flex;align-items:center;gap:2px;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:2px 2px 2px 10px;font-size:.85rem}
+.mchip button{border:0;background:transparent;color:var(--muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1.05rem;line-height:1}
+details.ind{border-top:1px dashed var(--line);padding-top:6px}
+details.ind summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600;padding:6px 0;min-height:36px}
+.chips .chip{white-space:normal;text-align:left}
+.line,details.ind,.lrows{min-width:0}
+.lrows{display:grid;gap:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);margin-top:6px}
+.pvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.pvgrid>div{display:grid;gap:2px}
+.pvord{border-top:1px solid var(--line);padding-top:8px;line-height:1.7}
+.pvord .chip{vertical-align:middle}
+@media (max-width:420px){.eqrow{grid-template-columns:1fr 72px}.eqrow .btn{grid-column:1/-1}}
+.pvbar{height:8px;background:var(--accent-soft);border-radius:99px;overflow:hidden;margin-top:4px}
+.pvbar span{display:block;height:100%;background:var(--lins-azulm)}
+.bar .in .sum{flex:1;min-width:0;text-align:center}
 /* RDO */
 .rsub{display:grid;gap:10px;padding-top:12px;border-top:1px solid var(--line)}
 .rsub h3{font:600 .82rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -160,80 +187,12 @@ textarea{resize:vertical;min-height:64px}
 
   <div class="qbar" id="qBar" hidden><span id="qTxt"></span><button class="btn small" id="bQTry">Tentar agora</button></div>
 
-  <!-- APONTAMENTO -->
+  <!-- APONTAMENTO (telas 2 a 5) -->
   <div id="vApont" class="wrap" hidden>
-    <section class="card">
-      <h2>Dia trabalhado <span id="dayChip"></span></h2>
-      <div class="grid">
-        <label class="f">Data<input type="date" id="fData"></label>
-        <label class="f">Encarregado<input type="text" id="fEnc" placeholder="Seu nome" autocomplete="name"></label>
-      </div>
-      <div class="row">
-        <button class="btn small" id="bRepeat">Repetir último dia</button>
-        <button class="btn small ghost danger" id="bClear">Limpar dia</button>
-        <span class="hint" id="repeatHint"></span>
-      </div>
-      <div id="clearConfirm" class="split" hidden>
-        <span>Apagar todos os lançamentos deste dia?</span>
-        <div class="row"><button class="btn small danger" id="bClearYes">Apagar</button><button class="btn small" id="bClearNo">Cancelar</button></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Lançar equipe numa ordem</h2>
-      <div class="grid">
-        <label class="f">Nº da ordem<input id="noNum" inputmode="numeric" maxlength="8" placeholder="40500000" class="mono"></label>
-        <label class="f">Setor<select id="noSetor"></select></label>
-        <label class="f">Solicitante<select id="noSol"></select></label>
-        <label class="f">Status<select id="noSt"><option>Em andamento</option><option>Concluída</option></select></label>
-      </div>
-      <label class="f">Descrição do serviço<input id="noDesc" placeholder="Ex.: Confeccionar chuveiro para os prés 06 e 07"></label>
-      <p class="hint" id="noErr" style="color:var(--err)"></p>
-      <div id="peopleBox">
-        <div class="row" style="justify-content:space-between">
-          <span class="hint">Quem trabalhou nesta ordem?</span>
-          <button class="btn small ghost" id="bAll">Marcar todos livres</button>
-        </div>
-        <div class="people" id="people"></div>
-        <div class="times" style="margin-top:10px">
-          <label class="f">Entrada<input type="time" id="dIn" step="60"></label>
-          <label class="f">Saída<input type="time" id="dOut" step="60"></label>
-          <label class="alm"><input type="checkbox" id="dAlm" checked> Almoço <span class="mono" id="almLbl"></span></label>
-        </div>
-        <button class="btn primary" id="bLaunch" style="width:100%;margin-top:10px" disabled>Lançar</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Lançamentos do dia <span class="mono" id="cntLbl"></span></h2>
-      <div id="groups"></div>
-    </section>
-
-    <section class="card" id="rdoCard" hidden>
-      <h2>RDO do dia <span id="rdoChip"></span></h2>
-      <p class="hint">Relatório diário de obra. Ele é montado com os lançamentos acima e vai em PDF junto com o apontamento.</p>
-      <div id="rdoBody" style="display:grid;gap:14px"></div>
-    </section>
-
-    <section class="card" id="issuesCard" hidden>
-      <h2>Antes de enviar</h2>
-      <div class="issues" id="issues"></div>
-    </section>
-
-    <section class="card" id="sendCard" hidden>
-      <h2>Envio <span id="sendChip"></span></h2>
-      <p class="hint">O botão “Enviar” manda o apontamento direto para a usina (<span class="mono" id="destLbl" style="user-select:all"></span>) com a planilha do dia e o RDO em PDF em anexo. Sem internet, o envio fica guardado neste aparelho e sai sozinho quando o sinal voltar.</p>
-      <div class="anx" id="anxBox">
-        <div class="row" style="justify-content:space-between"><b style="font-size:.9rem">Fotos do serviço <span class="hint" style="display:inline;font-weight:400">(entram no RDO em PDF)</span></b><span class="mono hint" id="anxTot" style="display:inline"></span></div>
-        <div class="row">
-          <label class="btn small" for="anxFoto">Tirar foto</label><input type="file" id="anxFoto" accept="image/*" capture="environment" hidden>
-          <label class="btn small" for="anxArq">Escolher da galeria</label><input type="file" id="anxArq" accept="image/*" multiple hidden>
-        </div>
-        <div id="anxList" class="anxlist"></div>
-      </div>
-      <label class="f" id="motivoBox" hidden>Motivo do reenvio (obrigatório)<input id="fMotivo" placeholder="Ex.: corrigi a saída do João, que ficou até 17:30"></label>
-      <div class="row"><button class="btn small" id="bRdo">Ver RDO em PDF</button><button class="btn small ghost" id="bMailApp">Enviar pelo e-mail do aparelho</button><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
-    </section>
+    <nav class="steps" id="steps" aria-label="Etapas do apontamento"></nav>
+    <div id="pBody" class="wrap"></div>
+    <input type="file" id="anxFoto" accept="image/*" capture="environment" hidden>
+    <input type="file" id="anxArq" accept="image/*" multiple hidden>
   </div>
 
   <!-- CADASTRO -->
@@ -291,8 +250,10 @@ textarea{resize:vertical;min-height:64px}
 
 <div class="bar" id="bar" hidden>
   <div class="in">
+    <button class="btn" id="bPrev">Voltar</button>
     <div class="sum" id="sum"></div>
-    <button class="btn primary" id="bMail">Enviar</button>
+    <button class="btn primary" id="bNext">Próximo</button>
+    <button class="btn primary" id="bMail" hidden>Enviar</button>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -344,7 +305,8 @@ async function fetchCad(){
 }
 function funcs(){ return [...(CAD.funcionarios[S.empresa]||[])].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")); }
 const dkey = (d=curDate) => S.empresa+"|"+d;
-function day(d=curDate){ const x = S.dias[dkey(d)] ||= {linhas:[], status:{}, ordens:{}, envios:[], motivo:""}; x.ordens ||= {}; x.envios ||= []; return x; }
+function day(d=curDate){ const x = S.dias[dkey(d)] ||= {linhas:[], status:{}, ordens:{}, envios:[], motivo:"", equipes:[], anexos:[], rdo:{clima:{}, cond:{}, parada:"", noite:false}, v:2};
+  x.ordens ||= {}; x.envios ||= []; x.anexos ||= []; x.status ||= {}; return migrar(x); }
 // ordens existem só dentro do dia em que foram lançadas (sem histórico)
 const ordens = () => Object.values(day().ordens);
 const findOrd = n => day().ordens[n];
@@ -392,102 +354,6 @@ function render(){
 function renderPick(){
   $("pickList").innerHTML = allEmp().map(n=>`<button class="btn" data-emp="${esc(n)}">${esc(n)}</button>`).join("") || `<div class="empty">Nenhuma empresa cadastrada.</div>`;
   $("cadSync").textContent = "Lista de empresas: "+cadOrigem;
-}
-
-function renderApont(){
-  $("fData").value = curDate; $("fEnc").value = S.enc || "";
-  const dt = new Date(curDate+"T12:00:00"), diff = Math.round((new Date(curDate+"T12:00:00") - new Date(todayISO()+"T12:00:00"))/864e5);
-  let chip = `<span class="chip ok">${WD[dt.getDay()]}</span>`;
-  if(diff>0) chip = `<span class="chip err">Data no futuro</span>`; else if(diff<-10) chip = `<span class="chip warn">Há ${-diff} dias · confira</span>`;
-  $("dayChip").innerHTML = chip;
-  const prev = lastDay(); $("bRepeat").disabled = !prev;
-  $("repeatHint").textContent = prev ? "Copia de "+prev.split("-").reverse().join("/") : "Nenhum dia anterior salvo";
-  renderLaunch(); renderGroups(); renderRdo(); renderSum();
-}
-
-function renderLaunch(){
-  fillNewOrd();
-  const o = $("noNum").value.trim();
-  const used = usedFull(), lin = day().linhas, keep = new Set([...$("people").querySelectorAll("input:checked")].map(x=>x.value));
-  $("people").innerHTML = funcs().map(f=>{ const k=f.nome, inThis = lin.some(l=>pkey(l)===k && l.ordem===o), u=used.has(k);
-    return `<label class="person${u?" used":""}" data-k="${esc(k)}"><input type="checkbox" value="${esc(k)}" ${u||inThis?"disabled":(keep.has(k)?"checked":"")}><span><span class="nm">${esc(f.nome)}</span>${f.mat||inThis||u?`<br><span class="mt">${[f.mat, inThis?"já nesta ordem":(u?"já lançado":"")].filter(Boolean).map(esc).join(" · ")}</span>`:""}</span></label>`; }).join("") || `<div class="empty">Nenhum funcionário cadastrado para esta empresa. Fale com a usina.</div>`;
-  if(!$("dIn").value){ $("dIn").value=hm(J.entrada); $("dOut").value=hm(J.saida); }
-  $("almLbl").textContent = hm(J.almIni)+"–"+hm(J.almFim);
-  updLaunchBtn();
-}
-function usedFull(){ const s=new Set(); const by={}; day().linhas.forEach(l=>{ (by[pkey(l)] ||= []).push(l); });
-  Object.entries(by).forEach(([k,ls])=>{ const mn=Math.min(...ls.map(l=>l.in)), mx=Math.max(...ls.map(l=>l.out)); if(mn<=J.entrada+J.tol && mx>=J.saida-J.tol) s.add(k); }); return s; }
-function updLaunchBtn(){ const n = $("people").querySelectorAll("input:checked").length; $("bLaunch").disabled = !n; $("bLaunch").textContent = n ? `Lançar ${n} ${n>1?"pessoas":"pessoa"} nesta ordem` : "Marque quem trabalhou";
-  $("people").querySelectorAll(".person").forEach(p=>p.classList.toggle("on", p.querySelector("input").checked)); }
-
-function fillNewOrd(){
-  if($("noSetor").options.length) return;
-  $("noSetor").innerHTML = `<option value="">Escolha…</option>`+BASE.setores.map(s=>`<option>${esc(s)}</option>`).join("");
-  $("noSol").innerHTML = `<option value="">Escolha…</option>`+BASE.solicitantes.map(s=>`<option>${esc(s)}</option>`).join("");
-}
-
-function renderGroups(){
-  const d = day(), lin = d.linhas;
-  $("cntLbl").textContent = lin.length ? new Set(lin.map(pkey)).size+" pessoas" : "";
-  if(!lin.length){ $("groups").innerHTML = `<div class="empty">Nada lançado ainda. Preencha a ordem acima e marque a equipe, ou use “Repetir último dia”.</div>`; return; }
-  const by = {}; lin.forEach(l=>(by[l.ordem] ||= []).push(l));
-  $("groups").innerHTML = `<div style="display:grid;gap:10px">` + Object.entries(by).map(([o,ls])=>{ const ord=findOrd(o)||{setor:"",desc:""}; const st=d.status[o]||ord.status||"Em andamento";
-    return `<div class="group"><div class="ghead"><div style="min-width:0"><div class="on">${esc(o)} <span class="chip info">${esc(ord.setor)}</span></div><div class="ds">${esc(ord.desc)}</div></div>
-      <select data-st="${esc(o)}" aria-label="Status da ordem ${esc(o)}"><option ${st==="Em andamento"?"selected":""}>Em andamento</option><option ${st==="Concluída"?"selected":""}>Concluída</option></select></div>
-      ${ls.sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in).map(l=>lineHTML(l,lin)).join("")}</div>`; }).join("") + `</div>`;
-}
-function lineHTML(l, all){
-  const fl = lineFlags(l, all), t = total(l), needObs = fl.some(f=>f[1].startsWith("Hora extra"));
-  const opts = ordens().filter(o=>o.ordem!==l.ordem).map(o=>`<option value="${esc(o.ordem)}">${esc(o.ordem)} · ${esc(o.setor)}</option>`).join("") + `<option value="__new">+ Nova ordem</option>`;
-  const setOpts = BASE.setores.map(s=>`<option>${esc(s)}</option>`).join(""), solOpts = BASE.solicitantes.map(s=>`<option>${esc(s)}</option>`).join("");
-  return `<div class="line" data-id="${l.id}">
-    <div class="lt"><span><span class="nm">${esc(l.nome)}</span></span><span class="tot">${durTxt(t)}</span></div>
-    <div class="times">
-      <label class="f">Entrada<input type="time" step="60" data-f="in" value="${hm(l.in)}"></label>
-      <label class="f">Saída<input type="time" step="60" data-f="out" value="${hm(l.out)}"></label>
-      <label class="alm"><input type="checkbox" data-f="alm" ${l.alm?"checked":""}> Almoço</label>
-    </div>
-    ${fl.length?`<div class="chips">${fl.map(f=>`<span class="chip ${f[0]}">${esc(f[1])}</span>`).join("")}</div>`:""}
-    ${needObs||l.obs?`<label class="f">Justificativa / observação<input data-f="obs" value="${esc(l.obs||"")}" placeholder="Ex.: término da montagem do rolo, autorizado por…"></label>`:""}
-    ${splitOpen===l.id?`<div class="split">
-        <span>Trocou de ordem no meio do dia</span>
-        <div class="grid"><label class="f">Horário da troca<input type="time" step="60" id="spAt" value="${hm(l.in<J.almIni&&l.out>J.almFim?J.almIni:Math.round((l.in+l.out)/2))}"></label>
-        <label class="f">Foi para a ordem<select id="spOrd"><option value="">Escolha…</option>${opts}</select></label></div>
-        <div id="spNew" class="grid" hidden>
-          <label class="f">Nº da ordem<input id="spNum" inputmode="numeric" maxlength="8" class="mono" placeholder="40500000"></label>
-          <label class="f">Setor<select id="spSetor"><option value="">Escolha…</option>${setOpts}</select></label>
-          <label class="f">Solicitante<select id="spSol"><option value="">Escolha…</option>${solOpts}</select></label>
-          <label class="f">Descrição do serviço<input id="spDesc"></label>
-        </div>
-        <div class="row"><button class="btn small primary" data-a="spOk">Dividir</button><button class="btn small" data-a="spNo">Cancelar</button></div></div>`:""}
-    <div class="row"><button class="btn small ghost" data-a="split">Dividir em 2 ordens</button><button class="btn small ghost danger" data-a="del">Remover</button></div>
-  </div>`;
-}
-
-function issues(){
-  const out=[], d=day(), lin=d.linhas;
-  const diff = Math.round((new Date(curDate+"T12:00:00") - new Date(todayISO()+"T12:00:00"))/864e5);
-  if(!lin.length) out.push(["err","Nenhum lançamento no dia."]);
-  if(diff>0) out.push(["err","A data está no futuro. Confira o dia trabalhado."]);
-  if(!(S.enc||"").trim()) out.push(["err","Preencha o nome do encarregado."]);
-  if(d.envios.length && (d.motivo||"").trim().length<5) out.push(["err",`Este dia já foi enviado ${d.envios.length}x. Escreva o motivo do reenvio no quadro Envio.`]);
-  lin.forEach(l=>{ const fl=lineFlags(l,lin);
-    fl.filter(f=>f[0]==="err").forEach(f=>{ if(f[1].startsWith("Hora extra") && (l.obs||"").trim().length>=5) return; out.push(["err", `${l.nome} (${l.ordem}): ${f[1].startsWith("Hora extra")?"hora extra / fora da jornada sem justificativa":f[1].toLowerCase()}.`]); });
-  });
-  if(lin.length) rdoIssues().forEach(m=>out.push(["err", "RDO: "+m]));
-  return out;
-}
-function renderSum(){
-  const lin=day().linhas, hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), n=new Set(lin.map(pkey)).size, o=new Set(lin.map(l=>l.ordem)).size;
-  $("sum").innerHTML = `<b>${durTxt(hh)}</b> HH<br>${n} pessoas · ${o} ordens${day().envios.length?" · enviado "+day().envios.length+"x":""}`;
-  const is = issues(); $("issuesCard").hidden = !lin.length || !is.length;
-  const ev=day().envios; $("sendCard").hidden = !lin.length; $("destLbl").textContent = DESTINO_EMAIL;
-  const ult=ev[ev.length-1], hora=ult?new Date(ult.em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"";
-  $("sendChip").innerHTML = !ult ? `<span class="chip warn">Não enviado</span>` : ult.status==="pendente" ? `<span class="chip warn">Aguardando internet · ${hora}</span>` : ult.status==="app" ? `<span class="chip info">Aberto no e-mail do aparelho ${ev.length}x · ${hora}</span>` : `<span class="chip ok">Entregue ${ev.length}x · último ${hora}</span>`;
-  renderAnexos();
-  $("motivoBox").hidden = !ev.length; if(document.activeElement!==$("fMotivo")) $("fMotivo").value = day().motivo||"";
-  if(!qRunning) $("bMail").textContent = ev.length ? "Reenviar" : "Enviar";
-  $("issues").innerHTML = is.map(i=>`<div class="issue ${i[0]}">${esc(i[1])}</div>`).join("");
 }
 
 function renderCad(){
@@ -568,33 +434,17 @@ function admAddF(){
   fs.push({nome:n, mat:m}); $("admFNome").value=""; $("admFMat").value=""; $("admFNome").focus();
   renderAdmin(); admSave(n+" adicionado.");
 }
-function lastDay(){ const ks = Object.keys(S.dias).filter(k=>k.startsWith(S.empresa+"|") && S.dias[k].linhas.length).map(k=>k.split("|")[1]).filter(d=>d<curDate).sort(); return ks.pop()||null; }
-
-/* ---------- eventos ---------- */
+/* ---------- eventos gerais (empresa, abas, administrador) ---------- */
 document.addEventListener("click", ev=>{
   const t = ev.target.closest("button"); if(!t) return;
   if(t.dataset.tab) return setTab(t.dataset.tab);
-  if(t.dataset.emp){ S.empresa=t.dataset.emp; save(); tab="apont"; render(); return; }
-  if(t.dataset.open){ curDate=t.dataset.open; setTab("apont"); return; }
+  if(t.dataset.emp){ S.empresa=t.dataset.emp; save(); tab="apont"; passo=2; render(); window.scrollTo({top:0}); return; }
+  if(t.dataset.open){ curDate=t.dataset.open; passo=podeIr(5)||5; setTab("apont"); return; }
   if(t.dataset.admSel){ ADM.sel=t.dataset.admSel; ADM.conf=null; renderAdmin(); $("admFuncCard").scrollIntoView({behavior:"smooth"}); return; }
   if(t.dataset.admRme){ const n=t.dataset.admRme; if(ADM.conf!=="e:"+n){ ADM.conf="e:"+n; renderAdmin(); return; }
     CAD.empresas=CAD.empresas.filter(e=>e.nome!==n); delete CAD.funcionarios[n]; if(ADM.sel===n) ADM.sel=null; ADM.conf=null; renderAdmin(); admSave("Empresa "+n+" removida."); return; }
   if(t.dataset.admRmf){ const n=t.dataset.admRmf; if(ADM.conf!=="f:"+n){ ADM.conf="f:"+n; renderAdmin(); return; }
     CAD.funcionarios[ADM.sel]=(CAD.funcionarios[ADM.sel]||[]).filter(f=>f.nome!==n); ADM.conf=null; renderAdmin(); admSave(n+" removido."); return; }
-  const line = t.closest(".line"); if(line && t.dataset.a){ const lin=day().linhas, l=lin.find(x=>x.id===line.dataset.id);
-    if(t.dataset.a==="del"){ lin.splice(lin.indexOf(l),1); }
-    if(t.dataset.a==="split"){ splitOpen = splitOpen===l.id?null:l.id; }
-    if(t.dataset.a==="spNo"){ splitOpen=null; }
-    if(t.dataset.a==="spOk"){ let at=toMin($("spAt").value); if(at!=null && l.out>1440 && at<=l.in) at+=1440; let o=$("spOrd").value;
-      if(!o){ toast("Escolha a ordem para onde ele foi"); return; }
-      if(!(at>l.in && at<l.out)){ toast("O horário da troca precisa estar entre "+hm(l.in)+" e "+hm(l.out)); return; }
-      if(o==="__new"){ const nw={ordem:$("spNum").value.trim(), setor:$("spSetor").value, solicitante:$("spSol").value, desc:$("spDesc").value.trim(), status:"Em andamento"};
-        const err=ordErr(nw); if(err){ toast(err); return; }
-        if(nw.ordem===l.ordem){ toast("É a mesma ordem da primeira parte"); return; }
-        if(!day().ordens[nw.ordem]){ day().ordens[nw.ordem]=nw; day().status[nw.ordem]=nw.status; } o=nw.ordem; }
-      const outOrig=l.out; let bIn=at; if(at===J.almIni) bIn=J.almFim;
-      l.out=at; lin.push({...l, id:uid(), ordem:o, in:bIn, out:outOrig, obs:"", adj:false}); splitOpen=null; toast(`${l.nome} dividido: ${hm(l.in)}–${hm(at)} e ${hm(bIn)}–${hm(outOrig)}`); }
-    save(); renderApont(); return; }
   switch(t.id){
     case "bAdmin": tab="admin"; render(); break;
     case "bAdmBack": tab="apont"; S.empresa=null; render(); break;
@@ -603,68 +453,15 @@ document.addEventListener("click", ev=>{
     case "bAdmAddEmp": admAddEmp(); break;
     case "bAdmAddF": admAddF(); break;
     case "bQTry": processQueue(true); break;
-    case "bMailApp": sendViaApp(); break;
     case "bSwitch": S.empresa=null; save(); render(); break;
-    case "bAll": $("people").querySelectorAll("input:not(:disabled)").forEach(i=>i.checked=true); updLaunchBtn(); break;
-    case "bLaunch": launch(); break;
-    case "bRepeat": repeat(); break;
-    case "bClear": $("clearConfirm").hidden=false; break;
-    case "bClearNo": $("clearConfirm").hidden=true; break;
-    case "bClearYes": (day().anexos||[]).forEach(a=>idbDel("anexos",a.id)); delete S.dias[dkey()]; $("clearConfirm").hidden=true; save(); renderApont(); toast("Dia apagado"); break;
-    case "bGen": generate(); break;
-    case "bMail": sendMail(); break;
-    case "bRdo": verRdo(); break;
   }
 });
 document.addEventListener("change", ev=>{
   const t=ev.target;
-  if(t.dataset.admMat!==undefined){ const f=(CAD.funcionarios[ADM.sel]||[]).find(x=>x.nome===t.dataset.admMat); if(f){ f.mat=t.value.trim().toUpperCase(); t.value=f.mat; admSave("Matrícula de "+f.nome+" salva."); } return; }
-  if(t.id==="fData"){ if(t.value){ curDate=t.value; splitOpen=null; renderApont(); } return; }
-  if(t.id==="spOrd"){ $("spNew").hidden = t.value!=="__new"; return; }
-  if(t.closest("#people")){ updLaunchBtn(); return; }
-  if(t.dataset.st){ day().status[t.dataset.st]=t.value; save(); renderRdo(); renderSum(); return; }
-  if(t.id==="dIn"){ const m=toMin(t.value); if(m!=null && isEarly(m)){ t.value=hm(J.entrada); toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } return; }
-  const line=t.closest(".line"); if(line && t.dataset.f){ const l=day().linhas.find(x=>x.id===line.dataset.id);
-    if(t.dataset.f==="alm") l.alm=t.checked;
-    if(t.dataset.f==="in"||t.dataset.f==="out"){ let m=toMin(t.value); if(m==null) return;
-      if(t.dataset.f==="in" && isEarly(m)){ m=J.entrada; l.adj=true; toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } else if(t.dataset.f==="in") l.adj=false;
-      l[t.dataset.f]=m; norm(l); }
-    if(t.dataset.f==="obs") l.obs=t.value.trim();
-    save(); setTimeout(renderApont,0); }
+  if(t.dataset && t.dataset.admMat!==undefined){ const f=(CAD.funcionarios[ADM.sel]||[]).find(x=>x.nome===t.dataset.admMat); if(f){ f.mat=t.value.trim().toUpperCase(); t.value=f.mat; admSave("Matrícula de "+f.nome+" salva."); } }
 });
 document.addEventListener("keydown", ev=>{ if(ev.key!=="Enter") return; const id=ev.target.id;
   if(id==="admSenha") admLogin(); else if(id==="admNovaEmp") admAddEmp(); else if(id==="admFNome"||id==="admFMat") admAddF(); });
-document.addEventListener("input", ev=>{ if(ev.target.id==="fEnc"){ S.enc=ev.target.value; save(); renderSum(); }
-  if(ev.target.id==="fMotivo"){ day().motivo=ev.target.value; save(); renderSum(); }
-  if(ev.target.id==="noNum"){ const v=ev.target.value.replace(/\D/g,""); if(v!==ev.target.value) ev.target.value=v;
-    const d=day().ordens[v]; if(d){ $("noSetor").value=d.setor; $("noSol").value=d.solicitante||""; $("noDesc").value=d.desc; $("noSt").value=day().status[v]||d.status; }
-    $("noErr").textContent=""; renderLaunch(); } });
-
-function ordErr(o){ return !/^\d{8}$/.test(o.ordem) ? "A ordem precisa ter 8 dígitos." : !o.setor ? "Escolha o setor da ordem." : (o.desc||"").length<5 ? "Descreva o serviço da ordem." : ""; }
-function launch(){
-  const ord={ordem:$("noNum").value.trim(), setor:$("noSetor").value, solicitante:$("noSol").value, desc:$("noDesc").value.trim().replace(/\s+/g," "), status:$("noSt").value};
-  const err=ordErr(ord); $("noErr").textContent=err; if(err){ $("noNum").scrollIntoView({behavior:"smooth",block:"center"}); return; }
-  const o=ord.ordem; day().ordens[o]=ord; day().status[o]=ord.status;
-  let i=toMin($("dIn").value), out=toMin($("dOut").value); const alm=$("dAlm").checked;
-  if(i==null||out==null||out===i){ toast("Confira entrada e saída"); return; }
-  let adj=false; if(isEarly(i)){ i=J.entrada; adj=true; }
-  if(out<=i) out+=1440; // terminou no dia seguinte (madrugada)
-  const ks=[...$("people").querySelectorAll("input:checked")].map(x=>x.value), fs=funcs();
-  ks.forEach(k=>{ const f=fs.find(x=>x.nome===k); day().linhas.push({id:uid(), mat:f.mat||"", nome:f.nome, ordem:o, in:i, out, alm, obs:"", adj}); });
-  save();
-  ["noNum","noDesc","dIn"].forEach(x=>$(x).value=""); $("noSetor").value=""; $("noSol").value=""; $("noSt").value="Em andamento"; renderApont(); toast(`${ks.length} lançados na ordem ${o}`);
-  $("groups").scrollIntoView({behavior:"smooth", block:"start"});
-}
-function repeat(){
-  const p=lastDay(); if(!p) return; const src=S.dias[S.empresa+"|"+p];
-  if(day().linhas.length){ toast("Este dia já tem lançamentos. Use “Limpar dia” antes de repetir."); return; }
-  const pers = {}; src.linhas.forEach(l=>(pers[pkey(l)] ||= []).push(l));
-  Object.values(pers).forEach(ls=>{ const split = ls.length>1;
-    ls.forEach(l=>day().linhas.push({...l, id:uid(), obs:"", adj:false, ...(split?{}:{in:J.entrada,out:J.saida,alm:true})})); });
-  day().status = {...src.status}; day().ordens = JSON.parse(JSON.stringify(src.ordens||{}));
-  if(src.rdo && src.rdo.equip && src.rdo.equip.length) rdo().equip = src.rdo.equip.map(e=>({...e, id:uid()})); // equipamentos costumam se repetir
-  save(); renderApont(); toast("Copiado de "+p.split("-").reverse().join("/")+". Ajuste quem faltou ou mudou.");
-}
 
 /* ---------- geração do .xlsx (sem biblioteca) ---------- */
 const CRC = (()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
@@ -706,24 +503,28 @@ let downloadsP = null;
 try { if(window.claude?.use) downloadsP = window.claude.use("downloads").catch(()=>null); } catch(e){}
 
 function buildDay(){
-  const d=day(), head=["EMPRESA","DATA","MATRÍCULA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","SOLICITANTE","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","OBSERVAÇÃO","ENCARREGADO"];
-  const lin=[...d.linhas].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in);
+  const d=day(), head=["EMPRESA","DATA","EQUIPE","MATRÍCULA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","SOLICITANTE","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","OBSERVAÇÃO","ENCARREGADO"];
+  const eqN = l => (d.equipes.find(e=>e.id===l.eq)||{}).n || 0;
+  const lin=[...d.linhas].sort((a,b)=>eqN(a)-eqN(b)||a.nome.localeCompare(b.nome,"pt")||a.in-b.in);
   const rows = lin.map(l=>{ const o=findOrd(l.ordem)||{}; const ov=almOverlap(l);
     const ai = ov? Math.max(l.in,J.almIni):null, af = ov? Math.min(l.out,J.almFim):null;
-    return [S.empresa, {s:2,v:serial(curDate)}, matOf(l), l.nome, tv(l.in), ai!=null?tv(ai):"", af!=null?tv(af):"", tv(l.out%1440), {s:4,v:(total(l)/1440).toFixed(10)}, Number(l.ordem), o.setor||"", o.solicitante||"", o.desc||"", d.status[l.ordem]||o.status||"", l.obs||"", S.enc.trim()]; });
-  const blob = buildXlsx(rows, head, [16,11,12,32,9,13,13,9,9,11,22,18,48,16,30,20]);
+    return [S.empresa, {s:2,v:serial(curDate)}, eqN(l)?"Equipe "+eqN(l):"", matOf(l), l.nome, tv(l.in), ai!=null?tv(ai):"", af!=null?tv(af):"", tv(l.out%1440), {s:4,v:(total(l)/1440).toFixed(10)}, Number(l.ordem), o.setor||"", o.solicitante||"", o.desc||"", d.status[l.ordem]||o.status||"", l.obs||"", S.enc.trim()]; });
+  const blob = buildXlsx(rows, head, [16,11,11,12,32,9,13,13,9,9,11,22,18,48,16,30,20]);
   const envioN = d.envios.length+1, br=curDate.split("-").reverse().join("/");
   const fname = `APONT_${empSlug(S.empresa)}_${curDate}${envioN>1?"_REENVIO"+envioN:""}.xlsx`;
   const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), n=new Set(lin.map(pkey)).size, nOrd=new Set(lin.map(l=>l.ordem)).size;
   const subject = `APONTAMENTO | ${S.empresa} | ${br}`;
   const body = [`Segue em anexo o apontamento de ${S.empresa} do dia ${br} (${WD[new Date(curDate+"T12:00:00").getDay()]}).`, "",
-    `Encarregado: ${S.enc.trim()}`, `Pessoas: ${n} | Ordens: ${nOrd}`, "RDO do dia em PDF anexo.",
+    `Encarregado: ${S.enc.trim()}`, `Pessoas: ${n} | Ordens: ${nOrd} | Equipes: ${d.equipes.length}`, "",
+    ...d.equipes.map(eq=>`${eqNome(eq)}: ${eq.membros.length} pessoa(s) · ordem(ns) ${eq.ordens.map(o=>o.ordem).join(", ")}`), "",
+    `RDO em PDF anexo: um arquivo por equipe (${d.equipes.length}).`,
     ...(envioN>1?["", `REENVIO ${envioN} (substitui o envio anterior)`, `Motivo: ${(d.motivo||"").trim()}`]:[]),
     "", "Enviado pelo formulário de Apontamento de Terceiros."].join("\r\n");
   return {blob, fname, subject, body, d};
 }
 const matOf = l => l.mat || (funcs().find(f=>f.nome===l.nome)||{}).mat || "";
-const okToSend = (soPlanilha) => { const is = issues().filter(i=>i[0]==="err" && !(soPlanilha && (i[1].includes("motivo do reenvio") || i[1].startsWith("RDO:")))); if(is.length){ renderSum(); $("issuesCard").scrollIntoView({behavior:"smooth"}); toast("Corrija os itens em vermelho antes de enviar"); return false; } return true; };
+const okToSend = (soPlanilha) => { const is = issues().filter(i=>!soPlanilha || i[2]===3);
+  if(is.length){ irPara(5); const c=document.querySelector("#pBody .issues"); c && c.scrollIntoView({behavior:"smooth",block:"center"}); toast(soPlanilha?"Corrija as equipes (tela 3) antes de baixar a planilha":"Corrija os itens em vermelho antes de enviar"); return false; } return true; };
 function markSent(d){ d.envios.push({id:uid(), em:new Date().toISOString(), motivo:d.envios.length?(d.motivo||"").trim():"", status:"app"}); d.motivo=""; save(); renderSum(); }
 function dlBlob(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},3000); }
 
@@ -765,11 +566,12 @@ async function buildEml(blob, fname, subject, body, extras){
 }
 function payloadLinhas(d){
   return [...d.linhas].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in).map(l=>{ const o=findOrd(l.ordem)||{}, ov=almOverlap(l);
-    return {mat:matOf(l), nome:l.nome, ordem:l.ordem, entrada:hm(l.in), saidaAlm:ov?hm(Math.max(l.in,J.almIni)):"", voltaAlm:ov?hm(Math.min(l.out,J.almFim)):"",
+    const eq=d.equipes.find(e=>e.id===l.eq);
+    return {equipe:eq?eqNome(eq):"", mat:matOf(l), nome:l.nome, ordem:l.ordem, entrada:hm(l.in), saidaAlm:ov?hm(Math.max(l.in,J.almIni)):"", voltaAlm:ov?hm(Math.min(l.out,J.almFim)):"",
       saida:hm(l.out), total:hm(total(l)), setor:o.setor||"", solicitante:o.solicitante||"", desc:o.desc||"", status:d.status[l.ordem]||o.status||"", obs:l.obs||""}; });
 }
 /* ---------- anexos (fotos, PDF, planilhas) ---------- */
-const ANX_MAX = 8, ANX_TOTAL = 15*1024*1024, ANX_ARQ = 10*1024*1024;
+const ANX_MAX = 8, ANX_TOTAL = 30*1024*1024, ANX_ARQ = 10*1024*1024;
 const kb = n => n>=1048576 ? (n/1048576).toFixed(1).replace(".",",")+" MB" : Math.max(1,Math.round(n/1024))+" KB";
 const anxUrls = {};
 async function comprimirFoto(file){
@@ -781,21 +583,34 @@ async function comprimirFoto(file){
     return b && b.size < file.size ? b : file;
   }catch(e){ return file; }
 }
+// descobre se é foto pelo conteúdo do arquivo (alguns celulares mandam sem nome/extensão e sem tipo)
+async function tipoFoto(f){
+  if(/^image\//i.test(f.type||"")) return f.type;
+  try{ const h=new Uint8Array(await f.slice(0,16).arrayBuffer()), s=String.fromCharCode(...h);
+    if(h[0]===0xFF && h[1]===0xD8 && h[2]===0xFF) return "image/jpeg";
+    if(h[0]===0x89 && s.slice(1,4)==="PNG") return "image/png";
+    if(s.slice(0,4)==="RIFF" && s.slice(8,12)==="WEBP") return "image/webp";
+    if(s.slice(4,8)==="ftyp" && /hei[cx]|mif1|msf1|hevc/.test(s.slice(8,16))) return "image/heic";
+  }catch(e){}
+  const ext=(f.name||"").toLowerCase().match(/\.(jpe?g|png|webp|heic|heif)$/); return ext ? "image/"+(ext[1]==="jpg"?"jpeg":ext[1]) : "";
+}
 async function addAnexos(files){
-  const d=day(); d.anexos ||= [];
+  const d=day(), eqId=fotoEq; if(!eqId || !findEq(eqId)) return;
   for(const f0 of files){
-    if(d.anexos.length>=ANX_MAX){ toast(`No máximo ${ANX_MAX} fotos por dia.`); break; }
+    if(d.anexos.filter(a=>a.eq===eqId).length>=ANX_MAX){ toast(`No máximo ${ANX_MAX} fotos por equipe.`); break; }
     let f=f0, nome=f0.name||"foto.jpg";
-    if(!/^image\//i.test(f0.type||"") && !/\.(jpe?g|png|webp|heic|heif)$/i.test(nome)){ toast(`${nome}: só fotos podem ser anexadas (elas entram no RDO).`); continue; }
-    if(/^image\/(jpeg|png|webp|heic|heif)/i.test(f0.type) || (!f0.type && /\.(jpe?g|png|heic)$/i.test(nome))){ f=await comprimirFoto(f0); if(f!==f0) nome=nome.replace(/\.[^.]+$/,"")+".jpg"; }
+    const tf=await tipoFoto(f0);
+    if(!tf){ toast(`${nome}: só fotos podem ser anexadas (elas entram no RDO).`); continue; }
+    if(/^image\/(jpeg|png|webp|heic|heif)/i.test(tf)){ f=await comprimirFoto(f0); if(f!==f0) nome=nome.replace(/\.[^.]+$/,"")+".jpg"; }
+    if(!/\.[a-z0-9]{2,5}$/i.test(nome)) nome+= f!==f0 ? ".jpg" : "."+(tf.split("/")[1]||"jpg").replace("jpeg","jpg");
     if(f.size>ANX_ARQ){ toast(`${nome} é grande demais (máx. 10 MB por arquivo).`); continue; }
-    const tot=d.anexos.reduce((a,x)=>a+x.tam,0); if(tot+f.size>ANX_TOTAL){ toast("Os anexos passaram de 15 MB no total."); break; }
-    const id="anx-"+uid(), tipo=f.type||f0.type||"application/octet-stream";
+    const tot=d.anexos.reduce((a,x)=>a+x.tam,0); if(tot+f.size>ANX_TOTAL){ toast("As fotos do dia passaram de 30 MB no total."); break; }
+    const id="anx-"+uid(), tipo=(f!==f0 && f.type) ? f.type : tf;
     const ok = await idbPut("anexos",{id, blob:f, nome, tipo});
     if(ok==null){ toast("Não consegui guardar o anexo neste aparelho."); continue; }
-    d.anexos.push({id, nome, tipo, tam:f.size});
+    d.anexos.push({id, nome, tipo, tam:f.size, eq:eqId});
   }
-  save(); renderAnexos(); renderRdo();
+  save(); renderApont();
 }
 async function renderAnexos(){
   const box=$("anxList"); if(!box) return; const a=day().anexos||[];
@@ -811,7 +626,7 @@ async function anexosPayload(d){
 }
 document.addEventListener("change", ev=>{ const t=ev.target; if((t.id==="anxFoto"||t.id==="anxArq") && t.files && t.files.length){ addAnexos([...t.files]); t.value=""; } });
 document.addEventListener("click", ev=>{ const b=ev.target.closest("[data-anx-rm]"); if(!b) return; const id=b.dataset.anxRm, d=day();
-  d.anexos=(d.anexos||[]).filter(x=>x.id!==id); idbDel("anexos",id); if(anxUrls[id]){ URL.revokeObjectURL(anxUrls[id]); delete anxUrls[id]; } save(); renderAnexos(); renderRdo(); });
+  d.anexos=(d.anexos||[]).filter(x=>x.id!==id); idbDel("anexos",id); if(anxUrls[id]){ URL.revokeObjectURL(anxUrls[id]); delete anxUrls[id]; } save(); renderApont(); });
 
 /* fila: cada envio fica guardado aqui até o servidor confirmar */
 async function sendMail(){
@@ -929,98 +744,10 @@ const stOrd = (o, d=day()) => d.status[o] || (d.ordens[o]||{}).status || "Em and
 const avOrd = (o, d=day()) => stOrd(o,d)==="Concluída" ? 100 : (rdo(d).ord[o]||{}).av ?? null;
 function avAnterior(o){ // último avanço informado desta ordem em dias anteriores
   const ks = Object.keys(S.dias).filter(k=>k.startsWith(S.empresa+"|") && k.split("|")[1]<curDate).sort().reverse();
-  for(const k of ks){ const r=S.dias[k].rdo; const v=r && r.ord && r.ord[o] && r.ord[o].av; if(v!=null) return {v, d:k.split("|")[1]}; }
+  for(const k of ks){ const dd=S.dias[k], fontes=[dd.rdo, ...(dd.equipes||[]).map(e=>e.rdo)];
+    for(const r of fontes){ const v=r && r.ord && r.ord[o] && r.ord[o].av; if(v!=null) return {v, d:k.split("|")[1]}; } }
   return null;
 }
-function rdoIssues(d=day()){
-  const r=rdo(d), out=[];
-  const falta = periodosDia(d).filter(([k])=>!r.clima[k] || !r.cond[k]).map(p=>p[1].toLowerCase());
-  if(falta.length) out.push(`informe clima e condição de trabalho (${falta.join(", ")}).`);
-  if(periodosDia(d).some(([k])=>r.cond[k] && r.cond[k]!=="Normal") && (r.parada||"").trim().length<5) out.push("explique a paralisação (motivo e horário).");
-  ordensDia(d).forEach(o=>{ if(avOrd(o,d)==null) out.push(`informe o avanço da ordem ${o}.`); });
-  if(!r.semOcorr && !r.ocorr.length) out.push("marque “Sem ocorrências” ou registre uma ocorrência.");
-  r.ocorr.forEach((x,i)=>{ if(!x.tipo || (x.desc||"").trim().length<5) out.push(`complete a ocorrência ${i+1} (tipo e descrição).`); });
-  return out;
-}
-function updRdoChip(){ const n=rdoIssues().length; $("rdoChip").innerHTML = n ? `<span class="chip warn">${n} pendente${n>1?"s":""}</span>` : `<span class="chip ok">Completo</span>`; }
-
-function renderRdo(){
-  const d=day(), lin=d.linhas; $("rdoCard").hidden=!lin.length; if(!lin.length) return;
-  const r=rdo(d), fotos=(d.anexos||[]).filter(a=>/^image\//.test(a.tipo));
-  const seg=(grp,k,opts,val)=>`<div class="seg" role="group">${opts.map(v=>`<button type="button" data-rdo-${grp}="${k}" data-v="${esc(v)}" aria-pressed="${val===v}">${esc(v)}</button>`).join("")}</div>`;
-  const pers = periodosDia(d), parado = pers.some(([k])=>r.cond[k] && r.cond[k]!=="Normal");
-  const ordOpts = sel => `<option value="">Geral (dia todo)</option>`+ordensDia(d).map(o=>`<option ${o===sel?"selected":""}>${esc(o)}</option>`).join("");
-  $("rdoBody").innerHTML = `
-  <div class="rsub" style="border-top:0;padding-top:0"><h3>Condições do dia</h3>
-    ${pers.map(([k,nome])=>`<div class="per"><span class="pl">${nome}</span><span class="hint">Clima</span>${seg("clima",k,CLIMAS,r.clima[k])}<span class="hint">Condição de trabalho</span>${seg("cond",k,CONDS,r.cond[k])}</div>`).join("")}
-    ${parado?`<label class="f">O que parou, por quê e de que horas a que horas<textarea data-rdo-txt="parada" rows="2" placeholder="Ex.: chuva forte das 13:30 às 15:00, serviço em altura suspenso">${esc(r.parada||"")}</textarea></label>`:""}
-  </div>
-  <div class="rsub"><h3>Avanço das ordens</h3>
-    ${ordensDia(d).map(o=>{ const ord=d.ordens[o]||{}, st=stOrd(o,d), av=avOrd(o,d), ant=avAnterior(o), conc=st==="Concluída";
-      return `<div class="ordr" data-ord="${esc(o)}"><div class="oh"><b>${esc(o)}</b><span class="chip ${conc?"ok":"info"}">${esc(st)}</span></div>
-        <span class="hint">${esc(ord.setor||"")}${ord.desc?" · "+esc(ord.desc):""}</span>
-        <div class="av${av==null?" unset":""}"><input type="range" min="0" max="100" step="5" value="${av??(ant?ant.v:0)}" data-ord-av="${esc(o)}" ${conc?"disabled":""} aria-label="Avanço físico da ordem ${esc(o)}"><span class="pct">${av==null?"informe":av+"%"}</span></div>
-        <span class="hint">${conc?"Ordem concluída: avanço 100%. Para mudar, troque o status em Lançamentos do dia.":ant?`Último informado: ${ant.v}% em ${ant.d.split("-").reverse().join("/")}`:"Arraste até o percentual concluído da ordem."}</span>
-        <label class="f">O que foi feito hoje nesta ordem (opcional)<textarea data-ord-feito="${esc(o)}" rows="2" placeholder="Ex.: soldagem das chapas do lado direito, faltou pintura">${esc((r.ord[o]||{}).feito||"")}</textarea></label></div>`; }).join("")}
-  </div>
-  <div class="rsub"><h3>Ocorrências</h3>
-    <label class="chk"><input type="checkbox" id="rdoSemOc" ${r.semOcorr&&!r.ocorr.length?"checked":""} ${r.ocorr.length?"disabled":""}> Sem ocorrências hoje</label>
-    ${r.ocorr.map((x,i)=>`<div class="ordr" data-oc="${x.id}"><div class="oh"><b style="font-family:var(--f-display)">Ocorrência ${i+1}</b><button class="btn small ghost danger" data-rdo="ocDel" data-id="${x.id}">Remover</button></div>
-      <div class="grid"><label class="f">Tipo<select data-oc-f="tipo"><option value="">Escolha…</option>${OCORR_TIPOS.map(t=>`<option ${t===x.tipo?"selected":""}>${esc(t)}</option>`).join("")}</select></label>
-      <label class="f">Ordem<select data-oc-f="ordem">${ordOpts(x.ordem)}</select></label></div>
-      <label class="f">O que aconteceu<textarea data-oc-f="desc" rows="2" placeholder="Ex.: aguardamos a PT de 07:00 às 08:30">${esc(x.desc||"")}</textarea></label></div>`).join("")}
-    <button class="btn small" data-rdo="ocAdd">+ Registrar ocorrência</button>
-  </div>
-  <div class="rsub"><h3>Equipamentos usados <span class="hint">opcional</span></h3>
-    ${r.equip.map(e=>`<div class="eqrow" data-eq="${e.id}"><span style="align-self:center">${esc(e.nome)}</span><input type="number" min="1" max="99" inputmode="numeric" value="${e.qtd}" data-eq-q="${e.id}" aria-label="Quantidade de ${esc(e.nome)}"><button class="btn small ghost danger" data-rdo="eqDel" data-id="${e.id}">Remover</button></div>`).join("")}
-    <div class="eqrow"><label class="f">Equipamento<input id="eqNome" list="eqLista" placeholder="Ex.: Máquina de solda" autocomplete="off"></label><label class="f">Qtd.<input id="eqQtd" type="number" min="1" max="99" value="1" inputmode="numeric"></label><button class="btn small" data-rdo="eqAdd">Adicionar</button></div>
-    <datalist id="eqLista">${EQUIPS.filter(n=>!r.equip.some(e=>e.nome===n)).map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
-  </div>
-  <div class="rsub"><h3>Fotos do serviço <span class="hint">${fotos.length?fotos.length+" no RDO":"opcional"}</span></h3>
-    <p class="hint">${fotos.length?"As fotos do quadro Envio entram no RDO com a legenda que você escrever lá.":"Tire fotos do serviço: elas entram no RDO."}</p>
-    <div class="row"><label class="btn small" for="anxFoto">Tirar foto</label><button class="btn small ghost" data-rdo="verFotos">${fotos.length?"Ver fotos e legendas":"Escolher da galeria"}</button></div>
-  </div>`;
-  updRdoChip();
-}
-
-document.addEventListener("click", ev=>{
-  const b=ev.target.closest("[data-rdo-clima],[data-rdo-cond],[data-rdo]"); if(!b) return;
-  const r=rdo();
-  if(b.dataset.rdoClima) r.clima[b.dataset.rdoClima]=b.dataset.v;
-  else if(b.dataset.rdoCond) r.cond[b.dataset.rdoCond]=b.dataset.v;
-  else switch(b.dataset.rdo){
-    case "ocAdd": r.ocorr.push({id:uid(), tipo:"", ordem:"", desc:""}); r.semOcorr=false; break;
-    case "ocDel": r.ocorr=r.ocorr.filter(x=>x.id!==b.dataset.id); break;
-    case "eqDel": r.equip=r.equip.filter(x=>x.id!==b.dataset.id); break;
-    case "eqAdd": { const n=$("eqNome").value.trim().replace(/\s+/g," "), q=Math.max(1,Math.min(99,parseInt($("eqQtd").value,10)||1));
-      if(n.length<3){ toast("Escreva o nome do equipamento"); $("eqNome").focus(); return; }
-      const ex=r.equip.find(e=>e.nome.toLowerCase()===n.toLowerCase()); if(ex) ex.qtd=q; else r.equip.push({id:uid(), nome:n, qtd:q}); break; }
-    case "verFotos": if((day().anexos||[]).some(a=>/^image\//.test(a.tipo))) $("anxBox").scrollIntoView({behavior:"smooth",block:"center"}); else $("anxArq").click(); return;
-    default: return;
-  }
-  save(); renderRdo(); renderSum();
-  if(b.dataset.rdo==="ocAdd"){ const el=$("rdoBody").querySelector(`[data-oc="${r.ocorr[r.ocorr.length-1].id}"] select`); el && el.focus(); }
-  if(b.dataset.rdo==="eqAdd") $("eqNome").focus();
-});
-document.addEventListener("keydown", ev=>{ if(ev.key==="Enter" && (ev.target.id==="eqNome"||ev.target.id==="eqQtd")){ ev.preventDefault(); document.querySelector('[data-rdo="eqAdd"]').click(); } });
-document.addEventListener("input", ev=>{
-  const t=ev.target; if(!t.closest || !(t.closest("#rdoBody") || t.dataset.anxLeg)) return;
-  const d=day(), r=rdo(d);
-  if(t.dataset.anxLeg){ const a=(d.anexos||[]).find(x=>x.id===t.dataset.anxLeg); if(a){ a.legenda=t.value.trim(); save(); } return; }
-  if(t.dataset.rdoTxt==="parada") r.parada=t.value;
-  else if(t.dataset.ordFeito) (r.ord[t.dataset.ordFeito] ||= {}).feito=t.value;
-  else if(t.dataset.ordAv){ (r.ord[t.dataset.ordAv] ||= {}).av=+t.value; const box=t.closest(".av"); box.classList.remove("unset"); box.querySelector(".pct").textContent=t.value+"%"; }
-  else if(t.dataset.ocF){ const x=r.ocorr.find(o=>o.id===t.closest("[data-oc]").dataset.oc); if(x) x[t.dataset.ocF]=t.value; }
-  else if(t.dataset.eqQ){ const e=r.equip.find(x=>x.id===t.dataset.eqQ); if(e) e.qtd=Math.max(1,Math.min(99,parseInt(t.value,10)||1)); }
-  else return;
-  save(); updRdoChip(); renderSum();
-});
-document.addEventListener("change", ev=>{ const t=ev.target;
-  if(t.id==="rdoSemOc"){ rdo().semOcorr=t.checked; save(); updRdoChip(); renderSum(); }
-  else if(t.dataset && t.dataset.ordAv){ // toque sem arrastar também conta
-    const r=rdo(); (r.ord[t.dataset.ordAv] ||= {}).av=+t.value; save(); renderRdo(); renderSum(); }
-});
-
 /* ---------- PDF do RDO (gerado no aparelho, sem internet, com a marca Lins Agroindustrial) ---------- */
 const COR = {azul:[0,50,160], verde:[0,181,173], azulm:[25,150,220], tinta:[209,234,248], txt:[28,34,48], mut:[96,106,122], ln:[214,219,228], zeb:[246,248,251], alerta:[255,148,33]};
 const CP1252 = "€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ";
@@ -1081,7 +808,11 @@ async function fotoJpeg(blob){
   const b=await new Promise(ok=>cv.toBlob(ok,"image/jpeg",0.72)); if(!b) throw new Error("foto");
   return {bytes:new Uint8Array(await b.arrayBuffer()), w:cv.width, h:cv.height};
 }
-const rdoNome = (envioN) => `RDO_${empSlug(S.empresa)}_${curDate}${envioN>1?"_REENVIO"+envioN:""}.pdf`;
+const rdoNome = (envioN, n) => `RDO_${empSlug(S.empresa)}_${curDate}${n?"_EQUIPE"+n:""}${envioN>1?"_REENVIO"+envioN:""}.pdf`;
+// o RDO de cada equipe: as condições do dia + só as pessoas, ordens, ocorrências, equipamentos e fotos da equipe
+const vdEquipe = (d,eq) => ({linhas:d.linhas.filter(l=>l.eq===eq.id), ordens:d.ordens, status:d.status, envios:d.envios, motivo:d.motivo,
+  anexos:(d.anexos||[]).filter(a=>a.eq===eq.id), equipeNome:eqNome(eq), equipeN:eq.n, membros:eq.membros,
+  rdo:{clima:d.rdo.clima, cond:d.rdo.cond, parada:d.rdo.parada, ord:eq.rdo.ord, ocorr:eq.rdo.ocorr, equip:eq.rdo.equip, semOcorr:eq.rdo.semOcorr}});
 
 async function buildRdo(d=day(), envioN=d.envios.length+1){
   const P=novoPdf(), A=window.RDO_ASSETS, M=40, CW=P.W-2*M, BOT=P.H-52, r=rdo(d), lin=d.linhas;
@@ -1091,7 +822,7 @@ async function buildRdo(d=day(), envioN=d.envios.length+1){
   let y=0;
   const cab = primeira => { P.add(); P.draw(logo, M-3, 26, LW, LH);
     P.text(M, 46, "RELATÓRIO DIÁRIO DE OBRA", {f:"b", sz:primeira?14:11, c:COR.azul, align:"right", w:CW});
-    P.text(M, 60, primeira ? `${br} · ${wd}` : `${S.empresa} · ${br}`, {sz:9, c:COR.mut, align:"right", w:CW});
+    P.text(M, 60, (primeira ? `${br} · ${wd}` : `${S.empresa} · ${br}`)+(d.equipeNome?" · "+d.equipeNome:""), {sz:9, c:COR.mut, align:"right", w:CW});
     P.rect(M, 74, CW*.82, 3, COR.azul); P.rect(M+CW*.82, 74, CW*.18, 3, COR.verde);
     y = 92; };
   const ensure = h => { if(y+h>BOT){ cab(false); return true; } return false; };
@@ -1114,7 +845,7 @@ async function buildRdo(d=day(), envioN=d.envios.length+1){
   /* página 1: identificação */
   cab(true);
   const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), nP=new Set(lin.map(pkey)).size, ords=ordensDia(d);
-  const cel=[["Empresa",S.empresa],["Data",`${br} (${wd})`],["Encarregado",S.enc.trim()||"—"],["Efetivo",`${nP} ${nP>1?"pessoas":"pessoa"}`],["Horas-homem",durTxt(hh)],["Ordens",`${ords.length} ${ords.length>1?"ordens":"ordem"}`]];
+  const cel=[["Empresa",S.empresa+(d.equipeNome?" · "+d.equipeNome:"")],["Data",`${br} (${wd})`],["Encarregado",S.enc.trim()||"—"],["Efetivo",`${nP} ${nP>1?"pessoas":"pessoa"}`],["Horas-homem",durTxt(hh)],["Ordens",`${ords.length} ${ords.length>1?"ordens":"ordem"}`]];
   const cw3=CW/3; P.box(M, y, CW, 64, COR.ln, .7); P.line(M, y+32, M+CW, y+32, COR.ln); P.line(M+cw3, y, M+cw3, y+64, COR.ln); P.line(M+2*cw3, y, M+2*cw3, y+64, COR.ln);
   cel.forEach(([l,v],i)=>{ const x=M+(i%3)*cw3+8, yy=y+(i>2?32:0); P.text(x, yy+11, l.toUpperCase(), {sz:6.8, c:COR.mut}); P.text(x, yy+25, P.fit(v,"b",10.5,cw3-16), {f:"b", sz:10.5}); });
   y+=72;
@@ -1183,23 +914,401 @@ async function buildRdo(d=day(), envioN=d.envios.length+1){
   const ger=new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
   P.pages.forEach((pg,i)=>{ P.cur=pg; const yb=P.H-36;
     P.line(M, yb, M+CW, yb, COR.ln);
-    P.text(M, yb+12, `Lins Agroindustrial · RDO ${S.empresa} · ${br}${envioN>1?" · reenvio "+envioN:""}`, {sz:7, c:COR.mut});
+    P.text(M, yb+12, `Lins Agroindustrial · RDO ${S.empresa}${d.equipeNome?" · "+d.equipeNome:""} · ${br}${envioN>1?" · reenvio "+envioN:""}`, {sz:7, c:COR.mut});
     P.text(M, yb+22, `Gerado em ${ger} pelo formulário de Apontamento de Terceiros`, {sz:6.5, c:COR.mut});
     P.text(M, yb+12, `Página ${i+1} de ${P.pages.length}`, {f:"b", sz:7, c:COR.azul, align:"right", w:CW}); });
-  return {blob:P.build(`RDO ${S.empresa} ${br}`), nome:rdoNome(envioN)};
+  return {blob:P.build(`RDO ${S.empresa}${d.equipeNome?" "+d.equipeNome:""} ${br}`), nome:rdoNome(envioN, d.equipeN)};
 }
 async function rdoPayload(d, envioN){
-  try{ const {blob, nome}=await buildRdo(d, envioN); return [{nome, tipo:"application/pdf", b64:await b64(blob)}]; }
-  catch(e){ console.error(e); toast("Não consegui montar o RDO em PDF: "+(e.message||"erro")+". O apontamento segue sem ele."); return []; }
+  const out=[];
+  for(const eq of d.equipes){
+    try{ const {blob, nome}=await buildRdo(vdEquipe(d,eq), envioN); out.push({nome, tipo:"application/pdf", b64:await b64(blob)}); }
+    catch(e){ console.error(e); toast(`Não consegui montar o RDO da ${eqNome(eq)}: `+(e.message||"erro")+". O apontamento segue sem ele."); }
+  }
+  return out;
 }
-async function verRdo(){
-  const b=$("bRdo"); b.disabled=true; b.textContent="Montando…";
-  try{ const {blob, nome}=await buildRdo(day(), day().envios.length+1);
+async function verRdo(eqId){
+  const d=day(), eq=findEq(eqId); if(!eq) return;
+  try{ const {blob, nome}=await buildRdo(vdEquipe(d,eq), d.envios.length+1);
     if(downloadsP){ const dl=await downloadsP; if(dl){ try{ await dl.save({filename:nome, data:blob}); toast("RDO baixado."); return; }catch(e){ if(e?.code==="declined") return; } } }
-    dlBlob(blob, nome); if(rdoIssues().length) toast("RDO baixado. Ainda há itens pendentes no quadro RDO."); else toast("RDO baixado.");
+    dlBlob(blob, nome); toast(issues4().length ? "RDO baixado. Ainda há itens pendentes na tela 4." : "RDO baixado.");
   }catch(e){ console.error(e); toast("Não consegui montar o RDO: "+(e.message||"erro")); }
-  finally{ b.disabled=false; b.textContent="Ver RDO em PDF"; }
 }
+
+/* ================= FLUXO EM TELAS (2 a 5) ================= */
+let passo = 2, fotoEq = null, confLimpar = null, confRm = null;
+const PASSOS = [[1,"Empresa"],[2,"Início"],[3,"Equipes"],[4,"Avanço"],[5,"Revisão"]];
+const eqNome = eq => "Equipe "+eq.n;
+const linhasEq = (d,eq) => d.linhas.filter(l=>l.eq===eq.id);
+const hhDe = ls => ls.reduce((a,l)=>a+Math.max(0,total(l)),0);
+const temNoite = l => l.in < EARLY || l.out > 1080;
+const findEq = id => day().equipes.find(e=>e.id===id);
+
+function novaEquipe(d){ const eq={id:"eq-"+uid(), n:d.equipes.length+1, membros:[], ordens:[], rdo:{ord:{}, ocorr:[], equip:[], semOcorr:false}}; d.equipes.push(eq); return eq; }
+function renumerar(d){ d.equipes.forEach((e,i)=>e.n=i+1); }
+function novaOrdem(eq){
+  const o={k:uid(), ordem:"", setor:"", solicitante:"", desc:"", status:"Em andamento", in:J.entrada, out:J.saida, alm:true};
+  const ult=eq.ordens[eq.ordens.length-1];
+  if(ult){
+    if(ult.out===J.saida && ult.in<J.almIni){ ult.out=J.almIni; ult.alm=false; toast("A ordem anterior ficou de "+hm(ult.in)+" às 11:30 e a nova de 12:30 às 16:48. Ajuste se for diferente."); }
+    o.in = ult.out===J.almIni ? J.almFim : ult.out; o.out = o.in<J.saida ? J.saida : o.in+60; o.alm = o.in<J.almIni;
+  }
+  eq.ordens.push(o); return o;
+}
+// cada pessoa × ordem da equipe vira uma linha do apontamento
+function syncEquipe(d, eq){
+  eq.ordens.forEach(o=>{ if(o.ordem){ d.ordens[o.ordem]={ordem:o.ordem, setor:o.setor, solicitante:o.solicitante, desc:o.desc, status:o.status}; d.status[o.ordem]=o.status; } });
+  d.linhas = d.linhas.filter(l=> l.eq!==eq.id || (eq.membros.includes(l.nome) && eq.ordens.some(o=>o.k===l.ok)));
+  eq.ordens.forEach(o=>eq.membros.forEach(nome=>{
+    let l=d.linhas.find(x=>x.eq===eq.id && x.ok===o.k && x.nome===nome);
+    if(!l){ const f=funcs().find(x=>x.nome===nome)||{}; l={id:uid(), eq:eq.id, ok:o.k, nome, mat:f.mat||"", obs:"", adj:false, custom:false}; d.linhas.push(l); }
+    l.ordem=o.ordem;
+    if(!l.custom){ l.in=o.in; l.out=o.out; l.alm=o.alm; l.adj=!!o.adj; }
+  }));
+}
+function syncTudo(d=day()){ d.equipes.forEach(eq=>syncEquipe(d,eq)); d.linhas=d.linhas.filter(l=>d.equipes.some(e=>e.id===l.eq)); }
+
+// dias salvos no formato antigo (sem equipes): cada ordem vira uma equipe
+function migrar(d){
+  if(d.v===2) return d;
+  d.equipes ||= [];
+  if(!d.equipes.length && d.linhas.length){
+    const old = d.rdo || {}, by = {};
+    d.linhas.forEach(l=>(by[l.ordem] ||= []).push(l));
+    Object.entries(by).forEach(([o,ls],i)=>{
+      const eq=novaEquipe(d), info=d.ordens[o]||{}, f=ls[0];
+      const ord={k:uid(), ordem:o, setor:info.setor||"", solicitante:info.solicitante||"", desc:info.desc||"", status:d.status[o]||info.status||"Em andamento", in:f.in, out:f.out, alm:!!f.alm};
+      eq.ordens.push(ord);
+      ls.forEach(l=>{ if(!eq.membros.includes(l.nome)) eq.membros.push(l.nome); l.eq=eq.id; l.ok=ord.k; l.custom=(l.in!==f.in||l.out!==f.out||!!l.alm!==!!f.alm); });
+      if(old.ord && old.ord[o]) eq.rdo.ord[o]={...old.ord[o]};
+      if(i===0){ eq.rdo.ocorr=old.ocorr||[]; eq.rdo.equip=old.equip||[]; eq.rdo.semOcorr=!!old.semOcorr; (d.anexos||[]).forEach(a=>{ if(!a.eq) a.eq=eq.id; }); }
+    });
+  }
+  d.rdo ||= {}; d.rdo = {clima:d.rdo.clima||{}, cond:d.rdo.cond||{}, parada:d.rdo.parada||"", noite:!!d.rdo.noite};
+  d.v=2; return d;
+}
+
+/* ---------- validação por tela ---------- */
+function periodosT2(d=day()){ const noite = d.rdo.noite || d.linhas.some(temNoite); return PERIODOS.filter(([k])=>k!=="noite" || noite); }
+function issues2(d=day()){
+  const out=[], diff=Math.round((new Date(curDate+"T12:00:00") - new Date(todayISO()+"T12:00:00"))/864e5), r=d.rdo;
+  if(diff>0) out.push("A data está no futuro. Confira o dia trabalhado.");
+  if(!(S.enc||"").trim()) out.push("Preencha o nome do encarregado.");
+  const falta=periodosT2(d).filter(([k])=>!r.clima[k]||!r.cond[k]).map(p=>p[1].toLowerCase());
+  if(falta.length) out.push(`Informe clima e condição de trabalho (${falta.join(", ")}).`);
+  if(periodosT2(d).some(([k])=>r.cond[k] && r.cond[k]!=="Normal") && (r.parada||"").trim().length<5) out.push("Explique a paralisação (motivo e horário).");
+  return out;
+}
+function issues3(d=day()){
+  const out=[];
+  if(!d.equipes.length) out.push("Crie pelo menos uma equipe.");
+  d.equipes.forEach(eq=>{ const nm=eqNome(eq);
+    if(!eq.membros.length) out.push(`${nm}: coloque pelo menos uma pessoa.`);
+    if(!eq.ordens.length) out.push(`${nm}: adicione pelo menos uma ordem.`);
+    eq.ordens.forEach((o,i)=>{ const e=ordErr(o); if(e) out.push(`${nm}, ordem ${o.ordem||i+1}: ${e.charAt(0).toLowerCase()+e.slice(1)}`); });
+  });
+  d.linhas.forEach(l=>{ const eq=d.equipes.find(e=>e.id===l.eq); lineFlags(l,d.linhas).filter(f=>f[0]==="err").forEach(f=>{
+    if(f[1].startsWith("Hora extra") && (l.obs||"").trim().length>=5) return;
+    out.push(`${eq?eqNome(eq)+" · ":""}${l.nome} (${l.ordem||"sem ordem"}): ${f[1].startsWith("Hora extra")?"hora extra / fora da jornada sem justificativa":f[1].toLowerCase()}.`); }); });
+  if(d.linhas.some(temNoite) && !d.rdo.noite){ out.push("Tem trabalho à noite/madrugada: volte à tela 2 e preencha as condições da noite."); }
+  return out;
+}
+function issues4(d=day()){
+  const out=[];
+  d.equipes.forEach(eq=>{ const nm=eqNome(eq), r=eq.rdo;
+    eq.ordens.forEach(o=>{ if(o.ordem && o.status!=="Concluída" && (r.ord[o.ordem]||{}).av==null) out.push(`${nm}: informe o avanço da ordem ${o.ordem}.`); });
+    if(!r.semOcorr && !r.ocorr.length) out.push(`${nm}: marque “Sem ocorrências” ou registre uma ocorrência.`);
+    r.ocorr.forEach((x,i)=>{ if(!x.tipo || (x.desc||"").trim().length<5) out.push(`${nm}: complete a ocorrência ${i+1} (tipo e descrição).`); });
+    if(!(d.anexos||[]).some(a=>a.eq===eq.id && /^image\//.test(a.tipo))) out.push(`${nm}: tire pelo menos uma foto do serviço.`);
+  });
+  return out;
+}
+const issuesPasso = p => p===2 ? issues2() : p===3 ? issues3() : p===4 ? issues4() : [];
+// usado pelo envio: [tipo, texto, tela]
+function issues(){
+  const d=day(), out=[];
+  issues2(d).forEach(m=>out.push(["err",m,2])); issues3(d).forEach(m=>out.push(["err",m,3])); issues4(d).forEach(m=>out.push(["err","RDO: "+m,4]));
+  if(d.envios.length && (d.motivo||"").trim().length<5) out.push(["err",`Este dia já foi enviado ${d.envios.length}x. Escreva o motivo do reenvio abaixo.`,5]);
+  return out;
+}
+function podeIr(p){ for(let i=2;i<p;i++) if(issuesPasso(i).length) return i; return 0; }
+
+/* ---------- desenho das telas ---------- */
+function renderApont(){
+  day(); syncTudo();
+  $("steps").innerHTML = PASSOS.map(([n,t])=>`<button type="button" data-step="${n}" class="${n===passo?"cur":(n<passo?"done":"")}" ${n===passo?'aria-current="step"':""}><span class="n">${n<passo?"✓":n}</span><span class="t">${t}</span></button>`).join("");
+  const box=$("pBody");
+  box.innerHTML = passo===2 ? html2() : passo===3 ? html3() : passo===4 ? html4() : html5();
+  if(passo===4) carregarMiniaturas();
+  updateBar();
+}
+function limparHTML(p, txt){
+  return confLimpar===p ? `<div class="split"><span>${txt}</span><div class="row"><button class="btn small danger" data-limpar-ok="${p}">Apagar</button><button class="btn small" data-limpar-no>Cancelar</button></div></div>`
+    : `<div class="row" style="justify-content:flex-end"><button class="btn small ghost danger" data-limpar="${p}">Limpar tela</button></div>`;
+}
+function errosHTML(p){ const e=issuesPasso(p); return e.length ? `<section class="card"><h2>Falta para continuar</h2><div class="issues">${e.map(m=>`<div class="issue err">${esc(m)}</div>`).join("")}</div></section>` : ""; }
+
+function html2(){
+  const d=day(), r=d.rdo, dt=new Date(curDate+"T12:00:00"), diff=Math.round((dt - new Date(todayISO()+"T12:00:00"))/864e5);
+  let chip=`<span class="chip ok">${WD[dt.getDay()]}</span>`;
+  if(diff>0) chip=`<span class="chip err">Data no futuro</span>`; else if(diff<-10) chip=`<span class="chip warn">Há ${-diff} dias · confira</span>`;
+  const prev=lastDay(), noiteObrig=d.linhas.some(temNoite);
+  const seg=(grp,k,opts,val)=>`<div class="seg" role="group">${opts.map(v=>`<button type="button" data-${grp}="${k}" data-v="${esc(v)}" aria-pressed="${val===v}">${esc(v)}</button>`).join("")}</div>`;
+  const parado=periodosT2(d).some(([k])=>r.cond[k] && r.cond[k]!=="Normal");
+  return `<section class="card"><h2>Dia trabalhado ${chip}</h2>
+    <div class="grid"><label class="f">Data<input type="date" id="fData" value="${curDate}"></label>
+    <label class="f">Encarregado<input type="text" id="fEnc" value="${esc(S.enc||"")}" placeholder="Seu nome" autocomplete="name"></label></div>
+    <div class="row"><button class="btn small" id="bRepeat" ${prev?"":"disabled"}>Repetir último dia</button><span class="hint">${prev?"Copia as equipes e ordens de "+prev.split("-").reverse().join("/"):"Nenhum dia anterior salvo"}</span></div></section>
+  <section class="card"><h2>Condições do dia</h2>
+    ${periodosT2(d).map(([k,nome])=>`<div class="per"><span class="pl">${nome}</span><span class="hint">Clima</span>${seg("cl",k,CLIMAS,r.clima[k])}<span class="hint">Condição de trabalho</span>${seg("cn",k,CONDS,r.cond[k])}</div>`).join("")}
+    <label class="chk"><input type="checkbox" id="fNoite" ${r.noite||noiteObrig?"checked":""} ${noiteObrig?"disabled":""}> Teve trabalho à noite / madrugada${noiteObrig?" (tem equipe com horário à noite)":""}</label>
+    ${parado?`<label class="f">O que parou, por quê e de que horas a que horas<textarea id="fParada" rows="2" placeholder="Ex.: chuva forte das 13:30 às 15:00, serviço em altura suspenso">${esc(r.parada||"")}</textarea></label>`:""}
+    ${limparHTML(2,"Apagar o encarregado e as condições do dia?")}
+  </section>${errosHTML(2)}`;
+}
+
+function html3(){
+  const d=day(), fs=funcs(), used=usedFull();
+  const naEq = nome => d.equipes.filter(e=>e.membros.includes(nome)).map(eqNome);
+  const disp=fs.filter(f=>!used.has(f.nome));
+  const setOpts=sel=>`<option value="">Escolha…</option>`+BASE.setores.map(s=>`<option ${s===sel?"selected":""}>${esc(s)}</option>`).join("");
+  const solOpts=sel=>`<option value="">Escolha…</option>`+BASE.solicitantes.map(s=>`<option ${s===sel?"selected":""}>${esc(s)}</option>`).join("");
+  const dispHTML = !fs.length ? `<div class="empty">Nenhum funcionário cadastrado para esta empresa. Fale com a usina.</div>`
+    : !disp.length ? `<div class="empty">Todo mundo já está numa equipe com o dia completo.</div>`
+    : `<div class="people" id="people">${disp.map(f=>{ const em=naEq(f.nome); return `<label class="person"><input type="checkbox" value="${esc(f.nome)}"><span><span class="nm">${esc(f.nome)}</span>${f.mat||em.length?`<br><span class="mt">${[f.mat, em.length?"já na "+em.join(", "):""].filter(Boolean).map(esc).join(" · ")}</span>`:""}</span></label>`; }).join("")}</div>
+      <div class="row"><button class="btn small ghost" id="bTodosDisp">Marcar todos</button><button class="btn small primary" id="bNovaEq">Criar equipe com os marcados</button>${d.equipes.map(e=>`<button class="btn small" data-colocar="${e.id}">Colocar na ${eqNome(e)}</button>`).join("")}</div>`;
+  const eqHTML = d.equipes.map(eq=>{ const ls=linhasEq(d,eq);
+    return `<div class="eqcard" data-eqc="${eq.id}">
+      <div class="eqhead"><h3>${eqNome(eq)}</h3><span class="row"><span class="chip info">${eq.membros.length} ${eq.membros.length===1?"pessoa":"pessoas"} · ${durTxt(hhDe(ls))}</span>
+        <button class="btn small ghost danger" data-rmeq="${eq.id}">${confRm==="eq:"+eq.id?"Confirmar remoção":"Remover equipe"}</button></span></div>
+      <div class="mchips">${eq.membros.map(n=>`<span class="mchip">${esc(n)}<button type="button" data-rmm="${eq.id}" data-nome="${esc(n)}" aria-label="Tirar ${esc(n)} da equipe">×</button></span>`).join("") || `<span class="hint">Marque pessoas acima e toque em “Colocar na ${eqNome(eq)}”.</span>`}</div>
+      ${eq.ordens.map((o,i)=>{ const lo=ls.filter(l=>l.ok===o.k).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")), alerta=lo.some(l=>l.custom||lineFlags(l,d.linhas).some(f=>f[0]!=="info"));
+        return `<div class="ordr" data-ok="${o.k}">
+        <div class="oh"><b style="font-family:var(--f-display)">Ordem ${i+1}</b><button class="btn small ghost danger" data-rmord="${eq.id}" data-k="${o.k}">${confRm==="o:"+o.k?"Confirmar":"Remover ordem"}</button></div>
+        <div class="grid">
+          <label class="f">Nº da ordem<input data-eo="ordem" data-eq="${eq.id}" data-k="${o.k}" value="${esc(o.ordem)}" inputmode="numeric" maxlength="8" placeholder="40500000" class="mono"></label>
+          <label class="f">Setor<select data-eo="setor" data-eq="${eq.id}" data-k="${o.k}">${setOpts(o.setor)}</select></label>
+          <label class="f">Solicitante<select data-eo="solicitante" data-eq="${eq.id}" data-k="${o.k}">${solOpts(o.solicitante)}</select></label>
+          <label class="f">Status<select data-eo="status" data-eq="${eq.id}" data-k="${o.k}"><option ${o.status==="Em andamento"?"selected":""}>Em andamento</option><option ${o.status==="Concluída"?"selected":""}>Concluída</option></select></label>
+        </div>
+        <label class="f">Descrição do serviço<input data-eo="desc" data-eq="${eq.id}" data-k="${o.k}" value="${esc(o.desc)}" placeholder="Ex.: Confeccionar chuveiro para os prés 06 e 07"></label>
+        <div class="times">
+          <label class="f">Entrada da equipe<input type="time" step="60" data-et="in" data-eq="${eq.id}" data-k="${o.k}" value="${hm(o.in)}"></label>
+          <label class="f">Saída da equipe<input type="time" step="60" data-et="out" data-eq="${eq.id}" data-k="${o.k}" value="${hm(o.out)}"></label>
+          <label class="alm"><input type="checkbox" data-et="alm" data-eq="${eq.id}" data-k="${o.k}" ${o.alm?"checked":""}> Almoço ${hm(J.almIni)}–${hm(J.almFim)}</label>
+        </div>
+        ${lo.length?`<details class="ind" ${alerta?"open":""}><summary>Horário de cada pessoa (${lo.length})${alerta?" · tem ajuste ou aviso":""}</summary><div class="lrows">${lo.map(l=>lineHTML(l,d.linhas)).join("")}</div></details>`:""}
+      </div>`; }).join("")}
+      <button class="btn small" data-addord="${eq.id}">+ Adicionar ordem nesta equipe</button>
+    </div>`; }).join("");
+  return `<section class="card"><h2>Pessoas disponíveis <span class="mono">${disp.length}</span></h2>
+      <p class="hint">Marque quem trabalhou junto e crie a equipe. Quem já está com o dia completo sai desta lista.</p>${dispHTML}</section>
+    ${eqHTML || `<div class="empty">Nenhuma equipe ainda. Marque as pessoas acima e toque em “Criar equipe com os marcados”.</div>`}
+    <section class="card">${limparHTML(3,"Apagar todas as equipes e ordens? O que foi preenchido na tela 4 (avanço, ocorrências, equipamentos e fotos) também será apagado.")}</section>
+    ${errosHTML(3)}`;
+}
+function lineHTML(l, all){
+  const fl=lineFlags(l,all), needObs=fl.some(f=>f[1].startsWith("Hora extra"));
+  return `<div class="line" data-id="${l.id}">
+    <div class="lt"><span class="nm">${esc(l.nome)}</span><span class="tot">${durTxt(total(l))}</span></div>
+    <div class="times">
+      <label class="f">Entrada<input type="time" step="60" data-f="in" value="${hm(l.in)}"></label>
+      <label class="f">Saída<input type="time" step="60" data-f="out" value="${hm(l.out)}"></label>
+      <label class="alm"><input type="checkbox" data-f="alm" ${l.alm?"checked":""}> Almoço</label>
+    </div>
+    ${fl.length?`<div class="chips">${fl.map(f=>`<span class="chip ${f[0]}">${esc(f[1])}</span>`).join("")}</div>`:""}
+    ${needObs||l.obs?`<label class="f">Justificativa / observação<input data-f="obs" value="${esc(l.obs||"")}" placeholder="Ex.: término da montagem do rolo, autorizado por…"></label>`:""}
+    ${l.custom?`<div class="row"><button class="btn small ghost" data-reset="${l.id}">Voltar ao horário da equipe</button></div>`:""}
+  </div>`;
+}
+
+function html4(){
+  const d=day();
+  if(!d.equipes.length) return `<div class="empty">Monte as equipes na tela 3 primeiro.</div>`;
+  return d.equipes.map(eq=>{ const r=eq.rdo, pend=issues4({equipes:[eq], anexos:d.anexos}).length, fotos=(d.anexos||[]).filter(a=>a.eq===eq.id);
+    const ordOpts=sel=>`<option value="">Geral (dia todo)</option>`+eq.ordens.filter(o=>o.ordem).map(o=>`<option ${o.ordem===sel?"selected":""}>${esc(o.ordem)}</option>`).join("");
+    return `<div class="eqcard">
+    <div class="eqhead"><h3>${eqNome(eq)}</h3>${pend?`<span class="chip warn">${pend} pendente${pend>1?"s":""}</span>`:`<span class="chip ok">Completo</span>`}</div>
+    <p class="hint">${eq.membros.map(esc).join(", ")}</p>
+    <div class="rsub" style="border-top:0;padding-top:0"><h3>Avanço das ordens</h3>
+      ${eq.ordens.filter(o=>o.ordem).map(o=>{ const conc=o.status==="Concluída", av=conc?100:(r.ord[o.ordem]||{}).av, ant=avAnterior(o.ordem);
+        return `<div class="ordr"><div class="oh"><b>${esc(o.ordem)}</b><span class="chip ${conc?"ok":"info"}">${esc(o.status)}</span></div>
+        <span class="hint">${esc(o.setor)}${o.desc?" · "+esc(o.desc):""}</span>
+        <div class="av${av==null?" unset":""}"><input type="range" min="0" max="100" step="5" value="${av??(ant?ant.v:0)}" data-av="${eq.id}" data-o="${esc(o.ordem)}" ${conc?"disabled":""} aria-label="Avanço físico da ordem ${esc(o.ordem)}"><span class="pct">${av==null?"informe":av+"%"}</span></div>
+        <span class="hint">${conc?"Ordem concluída: avanço 100%. Para mudar, troque o status na tela 3.":ant?`Último informado: ${ant.v}% em ${ant.d.split("-").reverse().join("/")}`:"Arraste até o percentual concluído da ordem."}</span>
+        <label class="f">O que foi feito hoje nesta ordem (opcional)<textarea data-feito="${eq.id}" data-o="${esc(o.ordem)}" rows="2" placeholder="Ex.: soldagem das chapas do lado direito, faltou pintura">${esc((r.ord[o.ordem]||{}).feito||"")}</textarea></label></div>`; }).join("")}
+    </div>
+    <div class="rsub"><h3>Ocorrências</h3>
+      <label class="chk"><input type="checkbox" data-semoc="${eq.id}" ${r.semOcorr&&!r.ocorr.length?"checked":""} ${r.ocorr.length?"disabled":""}> Sem ocorrências hoje</label>
+      ${r.ocorr.map((x,i)=>`<div class="ordr" data-oc="${x.id}"><div class="oh"><b style="font-family:var(--f-display)">Ocorrência ${i+1}</b><button class="btn small ghost danger" data-ocdel="${eq.id}" data-id="${x.id}">Remover</button></div>
+        <div class="grid"><label class="f">Tipo<select data-ocf="tipo" data-eq="${eq.id}" data-id="${x.id}"><option value="">Escolha…</option>${OCORR_TIPOS.map(t=>`<option ${t===x.tipo?"selected":""}>${esc(t)}</option>`).join("")}</select></label>
+        <label class="f">Ordem<select data-ocf="ordem" data-eq="${eq.id}" data-id="${x.id}">${ordOpts(x.ordem)}</select></label></div>
+        <label class="f">O que aconteceu<textarea data-ocf="desc" data-eq="${eq.id}" data-id="${x.id}" rows="2" placeholder="Ex.: aguardamos a PT de 07:00 às 08:30">${esc(x.desc||"")}</textarea></label></div>`).join("")}
+      <button class="btn small" data-ocadd="${eq.id}">+ Registrar ocorrência</button>
+    </div>
+    <div class="rsub"><h3>Equipamentos usados <span class="hint">opcional</span></h3>
+      ${r.equip.map(e=>`<div class="eqrow"><span style="align-self:center">${esc(e.nome)}</span><input type="number" min="1" max="99" inputmode="numeric" value="${e.qtd}" data-eqq="${eq.id}" data-id="${e.id}" aria-label="Quantidade de ${esc(e.nome)}"><button class="btn small ghost danger" data-eqdel="${eq.id}" data-id="${e.id}">Remover</button></div>`).join("")}
+      <div class="eqrow"><label class="f">Equipamento<input id="eqNome-${eq.id}" list="eqLista-${eq.id}" placeholder="Ex.: Máquina de solda" autocomplete="off"></label><label class="f">Qtd.<input id="eqQtd-${eq.id}" type="number" min="1" max="99" value="1" inputmode="numeric"></label><button class="btn small" data-eqadd="${eq.id}">Adicionar</button></div>
+      <datalist id="eqLista-${eq.id}">${EQUIPS.filter(n=>!r.equip.some(e=>e.nome===n)).map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
+    </div>
+    <div class="rsub"><h3>Fotos do serviço <span class="hint">${fotos.length?fotos.length+" no RDO":"obrigatório · pelo menos 1"}</span></h3>
+      <div class="row"><button class="btn small" data-foto="${eq.id}">Tirar foto</button><button class="btn small" data-galeria="${eq.id}">Escolher da galeria</button></div>
+      <div class="anxlist">${fotos.map(x=>`<div class="anxi"><img alt="" data-img="${x.id}"><span class="nm">${esc(x.nome)} <span class="tm">${kb(x.tam)}</span><br><input data-anx-leg="${x.id}" value="${esc(x.legenda||"")}" placeholder="Legenda no RDO (ex.: rolo montado)" maxlength="120" aria-label="Legenda da foto ${esc(x.nome)}"></span><button class="btn small ghost danger" data-anx-rm="${x.id}">Remover</button></div>`).join("")}</div>
+    </div>
+  </div>`; }).join("") + `<section class="card">${limparHTML(4,"Apagar avanço, ocorrências, equipamentos e fotos de todas as equipes?")}</section>${errosHTML(4)}`;
+}
+async function carregarMiniaturas(){
+  for(const img of document.querySelectorAll("[data-img]")){ const id=img.dataset.img;
+    if(!anxUrls[id]){ const r=await idbGet("anexos",id); if(r&&r.blob) anxUrls[id]=URL.createObjectURL(r.blob); }
+    if(anxUrls[id]) img.src=anxUrls[id]; }
+}
+
+function html5(){
+  const d=day(), all=issues(), lin=d.linhas, ev=d.envios;
+  const ult=ev[ev.length-1], hora=ult?new Date(ult.em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"";
+  const chip = !ult ? `<span class="chip warn">Não enviado</span>` : ult.status==="pendente" ? `<span class="chip warn">Aguardando internet · ${hora}</span>` : ult.status==="app" ? `<span class="chip info">Aberto no e-mail do aparelho ${ev.length}x · ${hora}</span>` : `<span class="chip ok">Entregue ${ev.length}x · último ${hora}</span>`;
+  const r=d.rdo;
+  return `<section class="card"><h2>Resumo do dia</h2>
+      <div class="pvgrid"><div><span class="hint">Data</span><b>${curDate.split("-").reverse().join("/")}</b></div><div><span class="hint">Encarregado</span><b>${esc(S.enc||"—")}</b></div>
+      <div><span class="hint">Pessoas</span><b>${new Set(lin.map(pkey)).size}</b></div><div><span class="hint">Horas-homem</span><b>${durTxt(hhDe(lin))}</b></div></div>
+      <p class="hint">${periodosT2(d).map(([k,n])=>`${n}: ${esc(r.clima[k]||"—")}, ${esc(r.cond[k]||"—")}`).join(" · ")}</p></section>
+    ${d.equipes.map(eq=>{ const ls=linhasEq(d,eq), rr=eq.rdo;
+      return `<div class="eqcard"><div class="eqhead"><h3>${eqNome(eq)}</h3><span class="chip info">${eq.membros.length} ${eq.membros.length===1?"pessoa":"pessoas"} · ${durTxt(hhDe(ls))}</span></div>
+      <p class="hint">${eq.membros.map(esc).join(", ")}</p>
+      ${eq.ordens.map(o=>{ const av=o.status==="Concluída"?100:(rr.ord[o.ordem]||{}).av; return `<div class="pvord"><b class="mono">${esc(o.ordem||"—")}</b> <span class="chip ${o.status==="Concluída"?"ok":"info"}">${esc(o.status)}</span> <span class="mono">${hm(o.in)}–${hm(o.out)}</span><br><span class="hint">${esc(o.setor)}${o.desc?" · "+esc(o.desc):""}</span>${av!=null?`<div class="pvbar"><span style="width:${av}%"></span></div><span class="hint">Avanço ${av}%</span>`:""}</div>`; }).join("")}
+      <p class="hint">${rr.ocorr.length?rr.ocorr.length+" ocorrência(s)":(rr.semOcorr?"Sem ocorrências":"Ocorrências não informadas")} · ${rr.equip.length?rr.equip.map(e=>e.qtd+"× "+esc(e.nome)).join(", "):"sem equipamentos"} · ${(d.anexos||[]).filter(a=>a.eq===eq.id).length} foto(s)</p>
+      <div class="row"><button class="btn small" data-ver-rdo="${eq.id}">Ver RDO da ${eqNome(eq)} em PDF</button></div></div>`; }).join("")}
+    ${all.length?`<section class="card"><h2>Antes de enviar</h2><div class="issues">${all.map(i=>`<div class="issue err">${esc(i[1])} ${i[2]<5?`<button class="btn small" data-goto="${i[2]}" style="margin-left:6px">Ir para a tela ${i[2]}</button>`:""}</div>`).join("")}</div></section>`:""}
+    <section class="card"><h2>Envio ${chip}</h2>
+      <p class="hint">O botão “Enviar” manda para a usina (<span class="mono" style="user-select:all">${esc(DESTINO_EMAIL)}</span>) <b>uma planilha com todas as pessoas</b> e <b>um RDO em PDF por equipe</b> (${d.equipes.length}). Sem internet, o envio fica guardado neste aparelho e sai sozinho quando o sinal voltar.</p>
+      ${ev.length?`<label class="f">Motivo do reenvio (obrigatório)<input id="fMotivo" value="${esc(d.motivo||"")}" placeholder="Ex.: corrigi a saída do João, que ficou até 17:30"></label>`:""}
+      <div class="row"><button class="btn small ghost" id="bMailApp">Enviar pelo e-mail do aparelho</button><button class="btn small ghost" id="bGen">Baixar só a planilha .xlsx</button></div>
+    </section>`;
+}
+function updateBar(){
+  const d=day(), lin=d.linhas;
+  $("bPrev").textContent = passo===2 ? "Trocar empresa" : "Voltar";
+  $("bNext").hidden = passo===5; $("bMail").hidden = passo!==5;
+  $("sum").innerHTML = lin.length ? `<b>${durTxt(hhDe(lin))}</b> HH<br>${new Set(lin.map(pkey)).size} pessoas · ${d.equipes.length} equipe${d.equipes.length===1?"":"s"}` : `<span>Tela ${passo} de 5</span>`;
+  if(!qRunning) $("bMail").textContent = d.envios.length ? "Reenviar" : "Enviar";
+}
+function renderSum(){ if(tab==="apont" && S.empresa && !$("vApont").hidden){ if(passo===5) renderApont(); else updateBar(); } }
+function irPara(p){
+  if(p<2){ S.empresa=null; save(); render(); return; }
+  if(p>passo){ const bloq=podeIr(p); if(bloq){ passo=bloq; confLimpar=null; renderApont(); window.scrollTo({top:0,behavior:"smooth"}); toast("Complete esta tela antes de seguir."); return; } }
+  passo=p; confLimpar=null; confRm=null; renderApont(); window.scrollTo({top:0,behavior:"smooth"});
+}
+function proximo(){
+  const e=issuesPasso(passo);
+  if(e.length){ renderApont(); const c=[...document.querySelectorAll("#pBody .issues")].pop(); c && c.scrollIntoView({behavior:"smooth",block:"center"}); toast(e.length===1?e[0]:`Faltam ${e.length} itens para continuar.`); return; }
+  irPara(passo+1);
+}
+function limparTela(p){
+  const d=day();
+  if(p===2){ d.rdo={clima:{}, cond:{}, parada:"", noite:false}; S.enc=""; }
+  if(p===3){ (d.anexos||[]).forEach(a=>idbDel("anexos",a.id)); d.anexos=[]; d.equipes=[]; d.linhas=[]; d.ordens={}; d.status={}; }
+  if(p===4){ d.equipes.forEach(eq=>eq.rdo={ord:{}, ocorr:[], equip:[], semOcorr:false}); (d.anexos||[]).forEach(a=>idbDel("anexos",a.id)); d.anexos=[]; }
+  confLimpar=null; save(); renderApont(); toast("Tela limpa.");
+}
+function repeat(){
+  const p=lastDay(); if(!p) return; const src=migrar(S.dias[S.empresa+"|"+p]), d=day();
+  if(d.equipes.length){ toast("Este dia já tem equipes. Use “Limpar tela” na tela 3 antes de repetir."); return; }
+  src.equipes.forEach(se=>{ const eq=novaEquipe(d); eq.membros=[...se.membros]; eq.ordens=se.ordens.map(o=>({...o, k:uid()}));
+    eq.rdo.equip=(se.rdo.equip||[]).map(e=>({...e, id:uid()})); });
+  d.rdo.noite=!!(src.rdo&&src.rdo.noite);
+  syncTudo(d); save(); passo=3; renderApont(); window.scrollTo({top:0}); toast("Equipes e ordens copiadas de "+p.split("-").reverse().join("/")+". Confira quem faltou ou mudou.");
+}
+function lastDay(){ const ks = Object.keys(S.dias).filter(k=>k.startsWith(S.empresa+"|") && (S.dias[k].linhas.length || (S.dias[k].equipes||[]).length)).map(k=>k.split("|")[1]).filter(x=>x<curDate).sort(); return ks.pop()||null; }
+function usedFull(){ const s=new Set(), by={}; day().linhas.forEach(l=>{ (by[pkey(l)] ||= []).push(l); });
+  Object.entries(by).forEach(([k,ls])=>{ const mn=Math.min(...ls.map(l=>l.in)), mx=Math.max(...ls.map(l=>l.out)); if(mn<=J.entrada+J.tol && mx>=J.saida-J.tol) s.add(k); }); return s; }
+function ordErr(o){ return !/^\d{8}$/.test(o.ordem||"") ? "A ordem precisa ter 8 dígitos." : !o.setor ? "Escolha o setor da ordem." : (o.desc||"").trim().length<5 ? "Descreva o serviço da ordem." : ""; }
+function marcados(){ return [...document.querySelectorAll("#people input:checked")].map(x=>x.value); }
+function colocar(eq, nomes){
+  if(!nomes.length){ toast("Marque as pessoas na lista de disponíveis."); return false; }
+  nomes.forEach(n=>{ if(!eq.membros.includes(n)) eq.membros.push(n); });
+  if(!eq.ordens.length) novaOrdem(eq);
+  return true;
+}
+
+/* ---------- eventos do fluxo ---------- */
+document.addEventListener("click", ev=>{
+  const t=ev.target.closest("button"); if(!t || !t.closest("#vApont, #bar")) return;
+  const d=day(), ds=t.dataset;
+  if(ds.step){ irPara(+ds.step); return; }
+  if(ds.goto){ irPara(+ds.goto); return; }
+  if(ds.limpar){ confLimpar=+ds.limpar; renderApont(); return; }
+  if(ds.limparOk){ limparTela(+ds.limparOk); return; }
+  if(t.hasAttribute("data-limpar-no")){ confLimpar=null; renderApont(); return; }
+  if(ds.cl!==undefined || ds.cn!==undefined){ (ds.cl!==undefined ? d.rdo.clima : d.rdo.cond)[ds.cl??ds.cn]=ds.v; save(); renderApont(); return; }
+  if(ds.colocar){ if(colocar(findEq(ds.colocar), marcados())){ syncTudo(d); save(); renderApont(); toast("Pessoas colocadas na "+eqNome(findEq(ds.colocar))+"."); } return; }
+  if(ds.rmm){ const eq=findEq(ds.rmm); eq.membros=eq.membros.filter(n=>n!==ds.nome); syncTudo(d); save(); renderApont(); return; }
+  if(ds.rmeq){ if(confRm!=="eq:"+ds.rmeq){ confRm="eq:"+ds.rmeq; renderApont(); return; }
+    (d.anexos||[]).filter(a=>a.eq===ds.rmeq).forEach(a=>idbDel("anexos",a.id)); d.anexos=(d.anexos||[]).filter(a=>a.eq!==ds.rmeq);
+    d.equipes=d.equipes.filter(e=>e.id!==ds.rmeq); renumerar(d); confRm=null; syncTudo(d); save(); renderApont(); toast("Equipe removida."); return; }
+  if(ds.addord){ novaOrdem(findEq(ds.addord)); syncTudo(d); save(); renderApont(); return; }
+  if(ds.rmord){ if(confRm!=="o:"+ds.k){ confRm="o:"+ds.k; renderApont(); return; }
+    const eq=findEq(ds.rmord); eq.ordens=eq.ordens.filter(o=>o.k!==ds.k); confRm=null; syncTudo(d); save(); renderApont(); return; }
+  if(ds.reset){ const l=d.linhas.find(x=>x.id===ds.reset); if(l){ l.custom=false; l.obs=""; } syncTudo(d); save(); renderApont(); return; }
+  if(ds.ocadd){ const r=findEq(ds.ocadd).rdo; r.ocorr.push({id:uid(), tipo:"", ordem:"", desc:""}); r.semOcorr=false; save(); renderApont(); return; }
+  if(ds.ocdel){ const r=findEq(ds.ocdel).rdo; r.ocorr=r.ocorr.filter(x=>x.id!==ds.id); save(); renderApont(); return; }
+  if(ds.eqdel){ const r=findEq(ds.eqdel).rdo; r.equip=r.equip.filter(x=>x.id!==ds.id); save(); renderApont(); return; }
+  if(ds.eqadd){ const r=findEq(ds.eqadd).rdo, n=$("eqNome-"+ds.eqadd).value.trim().replace(/\s+/g," "), q=Math.max(1,Math.min(99,parseInt($("eqQtd-"+ds.eqadd).value,10)||1));
+    if(n.length<3){ toast("Escreva o nome do equipamento"); $("eqNome-"+ds.eqadd).focus(); return; }
+    const ex=r.equip.find(e=>e.nome.toLowerCase()===n.toLowerCase()); if(ex) ex.qtd=q; else r.equip.push({id:uid(), nome:n, qtd:q}); save(); renderApont(); $("eqNome-"+ds.eqadd).focus(); return; }
+  if(ds.foto){ fotoEq=ds.foto; $("anxFoto").click(); return; }
+  if(ds.galeria){ fotoEq=ds.galeria; $("anxArq").click(); return; }
+  if(ds.verRdo){ verRdo(ds.verRdo); return; }
+  switch(t.id){
+    case "bPrev": irPara(passo-1); break;
+    case "bNext": proximo(); break;
+    case "bRepeat": repeat(); break;
+    case "bTodosDisp": document.querySelectorAll("#people input").forEach(i=>i.checked=true); document.querySelectorAll("#people .person").forEach(p=>p.classList.add("on")); break;
+    case "bNovaEq": { const nomes=marcados(); if(!nomes.length){ toast("Marque as pessoas na lista de disponíveis."); return; }
+      const eq=novaEquipe(d); colocar(eq, nomes); syncTudo(d); save(); renderApont(); const c=document.querySelector(`[data-eqc="${eq.id}"]`); c && c.scrollIntoView({behavior:"smooth",block:"start"}); toast(eqNome(eq)+" criada. Preencha a ordem."); break; }
+    case "bGen": generate(); break;
+    case "bMail": sendMail(); break;
+    case "bMailApp": sendViaApp(); break;
+  }
+});
+document.addEventListener("change", ev=>{
+  const t=ev.target; if(!t.closest || !t.closest("#vApont")) return; const d=day(), ds=t.dataset;
+  if(t.closest("#people")){ t.closest(".person").classList.toggle("on", t.checked); return; }
+  if(t.id==="fData"){ if(t.value){ curDate=t.value; confLimpar=null; renderApont(); } return; }
+  if(t.id==="fNoite"){ d.rdo.noite=t.checked; save(); renderApont(); return; }
+  if(ds.eo){ const o=findEq(ds.eq).ordens.find(x=>x.k===ds.k); let v=t.value.trim(); if(ds.eo==="ordem") v=v.replace(/\D/g,"").slice(0,8); if(ds.eo==="desc") v=v.replace(/\s+/g," ");
+    o[ds.eo]=v;
+    if(ds.eo==="ordem" && v && d.ordens[v] && !o.setor){ const i=d.ordens[v]; o.setor=i.setor; o.solicitante=i.solicitante; o.desc=i.desc; o.status=i.status||o.status; } // mesma ordem já usada noutra equipe hoje
+    syncTudo(d); save(); renderApont(); return; }
+  if(ds.et){ const o=findEq(ds.eq).ordens.find(x=>x.k===ds.k);
+    if(ds.et==="alm") o.alm=t.checked;
+    else { let m=toMin(t.value); if(m==null) return; if(ds.et==="in"){ if(isEarly(m)){ m=J.entrada; o.adj=true; toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } else o.adj=false; }
+      o[ds.et]=m; const oc=o.out%1440; o.out = oc<=o.in ? oc+1440 : oc; }
+    syncTudo(d); save(); renderApont(); return; }
+  const line=t.closest(".line"); if(line && ds.f){ const l=d.linhas.find(x=>x.id===line.dataset.id); if(!l) return;
+    if(ds.f==="alm"){ l.alm=t.checked; l.custom=true; }
+    if(ds.f==="in"||ds.f==="out"){ let m=toMin(t.value); if(m==null) return;
+      if(ds.f==="in" && isEarly(m)){ m=J.entrada; l.adj=true; toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } else if(ds.f==="in") l.adj=false;
+      l[ds.f]=m; norm(l); l.custom=true; }
+    if(ds.f==="obs") l.obs=t.value.trim();
+    save(); setTimeout(renderApont,0); return; }
+  if(ds.semoc){ findEq(ds.semoc).rdo.semOcorr=t.checked; save(); renderApont(); return; }
+  if(ds.av){ const r=findEq(ds.av).rdo; (r.ord[ds.o] ||= {}).av=+t.value; save(); renderApont(); return; }
+  if(ds.ocf && t.tagName==="SELECT"){ const x=findEq(ds.eq).rdo.ocorr.find(o=>o.id===ds.id); if(x){ x[ds.ocf]=t.value; save(); renderApont(); } return; }
+});
+document.addEventListener("input", ev=>{
+  const t=ev.target; if(!t.closest || !t.closest("#vApont")) return; const d=day(), ds=t.dataset;
+  if(t.id==="fEnc"){ S.enc=t.value; save(); return; }
+  if(t.id==="fParada"){ d.rdo.parada=t.value; save(); return; }
+  if(t.id==="fMotivo"){ d.motivo=t.value; save(); return; }
+  if(ds.eo==="ordem"){ const v=t.value.replace(/\D/g,""); if(v!==t.value) t.value=v; return; }
+  if(ds.feito){ (findEq(ds.feito).rdo.ord[ds.o] ||= {}).feito=t.value; save(); return; }
+  if(ds.av){ (findEq(ds.av).rdo.ord[ds.o] ||= {}).av=+t.value; const b=t.closest(".av"); b.classList.remove("unset"); b.querySelector(".pct").textContent=t.value+"%"; save(); return; }
+  if(ds.ocf && t.tagName!=="SELECT"){ const x=findEq(ds.eq).rdo.ocorr.find(o=>o.id===ds.id); if(x){ x[ds.ocf]=t.value; save(); } return; }
+  if(ds.eqq){ const e=findEq(ds.eqq).rdo.equip.find(x=>x.id===ds.id); if(e){ e.qtd=Math.max(1,Math.min(99,parseInt(t.value,10)||1)); save(); } return; }
+  if(ds.anxLeg){ const a=(d.anexos||[]).find(x=>x.id===ds.anxLeg); if(a){ a.legenda=t.value.trim(); save(); } return; }
+});
+document.addEventListener("keydown", ev=>{ if(ev.key==="Enter" && ev.target.id && ev.target.id.startsWith("eqNome-")){ ev.preventDefault(); document.querySelector(`[data-eqadd="${ev.target.id.slice(7)}"]`).click(); } });
+
 
 /* ---------- início ---------- */
 const h = location.hash.slice(1).toLowerCase(); const fromHash = Object.keys(SLUG).find(n=>SLUG[n]===h);
