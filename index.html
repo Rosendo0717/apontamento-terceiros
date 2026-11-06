@@ -936,7 +936,28 @@ async function verRdo(eqId){
 }
 
 /* ================= FLUXO EM TELAS (2 a 5) ================= */
-let passo = 2, fotoEq = null, confLimpar = null, confRm = null;
+let passo = 2, fotoEq = null, confLimpar = null, confRm = null, trocaData = null;
+const fmtD = iso => iso.split("-").reverse().join("/");
+const temConteudo = d => !!(d && ((d.equipes||[]).length || (d.linhas||[]).length || (d.anexos||[]).length || Object.keys((d.rdo||{}).clima||{}).length));
+// pergunta exibida quando a data muda num dia que já tem coisa preenchida
+function trocaHTML(){
+  if(!trocaData) return "";
+  const {de, para}=trocaData, alvo=S.dias[S.empresa+"|"+para], ocupado=temConteudo(alvo), enviado=(day().envios||[]).length;
+  return `<div class="split" id="trocaBox"><b>Mover este apontamento de ${fmtD(de)} para ${fmtD(para)}?</b>
+    ${ocupado ? `<span>O dia ${fmtD(para)} já tem um apontamento salvo neste aparelho. Para não apagar nada, não dá para mover para ele. Abra o dia ${fmtD(para)} e use “Limpar tela” se ele estiver errado.</span>`
+      : `<span>Vão junto: equipes, ordens, horários, condições do dia, avanço, ocorrências, equipamentos e fotos.${enviado?` Este dia já foi enviado com a data ${fmtD(de)}: esse envio continua no Google com a data errada (avise o PCM para desconsiderar). Na data nova ele conta como o primeiro envio.`:""}</span>`}
+    <div class="row">${ocupado?"":`<button class="btn small primary" data-mover>Mover para ${fmtD(para)}</button>`}<button class="btn small" data-so-abrir>Só abrir o dia ${fmtD(para)}</button><button class="btn small ghost" data-troca-cancel>Cancelar</button></div></div>`;
+}
+function moverDia(de, para){
+  const kDe=S.empresa+"|"+de, kPara=S.empresa+"|"+para, d=S.dias[kDe];
+  if(!d || temConteudo(S.dias[kPara])) return;
+  // envio da data errada que ainda não saiu (sem internet) é cancelado: sairia com a data errada
+  const pend=(S.fila||[]).filter(f=>f.empresa===S.empresa && f.dataISO===de);
+  pend.forEach(f=>idbDel("fila", f.id)); S.fila=(S.fila||[]).filter(f=>!pend.includes(f));
+  if(d.envios.length){ d.enviosOutraData=[...(d.enviosOutraData||[]), ...d.envios.map(e=>({...e, data:de}))]; d.envios=[]; d.motivo=""; }
+  S.dias[kPara]=d; delete S.dias[kDe]; curDate=para; trocaData=null; save(); renderApont(); renderQ();
+  toast(`Apontamento movido para ${fmtD(para)}.`+(pend.length?" O envio que estava aguardando internet foi cancelado: envie de novo.":""));
+}
 const PASSOS = [[1,"Empresa"],[2,"Início"],[3,"Equipes"],[4,"Avanço"],[5,"Revisão"]];
 const eqNome = eq => "Equipe "+eq.n;
 const linhasEq = (d,eq) => d.linhas.filter(l=>l.eq===eq.id);
@@ -1056,8 +1077,9 @@ function html2(){
   const seg=(grp,k,opts,val)=>`<div class="seg" role="group">${opts.map(v=>`<button type="button" data-${grp}="${k}" data-v="${esc(v)}" aria-pressed="${val===v}">${esc(v)}</button>`).join("")}</div>`;
   const parado=periodosT2(d).some(([k])=>r.cond[k] && r.cond[k]!=="Normal");
   return `<section class="card"><h2>Dia trabalhado ${chip}</h2>
-    <div class="grid"><label class="f">Data<input type="date" id="fData" value="${curDate}"></label>
+    <div class="grid"><label class="f">Data<input type="date" id="fData" value="${trocaData?trocaData.para:curDate}"></label>
     <label class="f">Encarregado<input type="text" id="fEnc" value="${esc(S.enc||"")}" placeholder="Seu nome" autocomplete="name"></label></div>
+    ${trocaHTML()}
     <div class="row"><button class="btn small" id="bRepeat" ${prev?"":"disabled"}>Repetir último dia</button><span class="hint">${prev?"Copia as equipes e ordens de "+prev.split("-").reverse().join("/"):"Nenhum dia anterior salvo"}</span></div></section>
   <section class="card"><h2>Condições do dia</h2>
     ${periodosT2(d).map(([k,nome])=>`<div class="per"><span class="pl">${nome}</span><span class="hint">Clima</span>${seg("cl",k,CLIMAS,r.clima[k])}<span class="hint">Condição de trabalho</span>${seg("cn",k,CONDS,r.cond[k])}</div>`).join("")}
@@ -1169,8 +1191,9 @@ function html5(){
   const chip = !ult ? `<span class="chip warn">Não enviado</span>` : ult.status==="pendente" ? `<span class="chip warn">Aguardando internet · ${hora}</span>` : ult.status==="app" ? `<span class="chip info">Aberto no e-mail do aparelho ${ev.length}x · ${hora}</span>` : `<span class="chip ok">Entregue ${ev.length}x · último ${hora}</span>`;
   const r=d.rdo;
   return `<section class="card"><h2>Resumo do dia</h2>
-      <div class="pvgrid"><div><span class="hint">Data</span><b>${curDate.split("-").reverse().join("/")}</b></div><div><span class="hint">Encarregado</span><b>${esc(S.enc||"—")}</b></div>
+      <div class="pvgrid"><label class="f">Data (toque para corrigir)<input type="date" id="fData" value="${trocaData?trocaData.para:curDate}"></label><div><span class="hint">Encarregado</span><b>${esc(S.enc||"—")}</b></div>
       <div><span class="hint">Pessoas</span><b>${new Set(lin.map(pkey)).size}</b></div><div><span class="hint">Horas-homem</span><b>${durTxt(hhDe(lin))}</b></div></div>
+      ${trocaHTML()}
       <p class="hint">${periodosT2(d).map(([k,n])=>`${n}: ${esc(r.clima[k]||"—")}, ${esc(r.cond[k]||"—")}`).join(" · ")}</p></section>
     ${d.equipes.map(eq=>{ const ls=linhasEq(d,eq), rr=eq.rdo;
       return `<div class="eqcard"><div class="eqhead"><h3>${eqNome(eq)}</h3><span class="chip info">${eq.membros.length} ${eq.membros.length===1?"pessoa":"pessoas"} · ${durTxt(hhDe(ls))}</span></div>
@@ -1196,7 +1219,7 @@ function renderSum(){ if(tab==="apont" && S.empresa && !$("vApont").hidden){ if(
 function irPara(p){
   if(p<2){ S.empresa=null; save(); render(); return; }
   if(p>passo){ const bloq=podeIr(p); if(bloq){ passo=bloq; confLimpar=null; renderApont(); window.scrollTo({top:0,behavior:"smooth"}); toast("Complete esta tela antes de seguir."); return; } }
-  passo=p; confLimpar=null; confRm=null; renderApont(); window.scrollTo({top:0,behavior:"smooth"});
+  passo=p; confLimpar=null; confRm=null; trocaData=null; renderApont(); window.scrollTo({top:0,behavior:"smooth"});
 }
 function proximo(){
   const e=issuesPasso(passo);
@@ -1239,6 +1262,9 @@ document.addEventListener("click", ev=>{
   if(ds.limpar){ confLimpar=+ds.limpar; renderApont(); return; }
   if(ds.limparOk){ limparTela(+ds.limparOk); return; }
   if(t.hasAttribute("data-limpar-no")){ confLimpar=null; renderApont(); return; }
+  if(t.hasAttribute("data-mover") && trocaData){ moverDia(trocaData.de, trocaData.para); return; }
+  if(t.hasAttribute("data-so-abrir") && trocaData){ curDate=trocaData.para; trocaData=null; passo=2; renderApont(); window.scrollTo({top:0}); toast(`Dia ${fmtD(curDate)} aberto. O apontamento anterior continua salvo no dia de antes.`); return; }
+  if(t.hasAttribute("data-troca-cancel")){ trocaData=null; renderApont(); return; }
   if(ds.cl!==undefined || ds.cn!==undefined){ (ds.cl!==undefined ? d.rdo.clima : d.rdo.cond)[ds.cl??ds.cn]=ds.v; save(); renderApont(); return; }
   if(ds.colocar){ if(colocar(findEq(ds.colocar), marcados())){ syncTudo(d); save(); renderApont(); toast("Pessoas colocadas na "+eqNome(findEq(ds.colocar))+"."); } return; }
   if(ds.rmm){ const eq=findEq(ds.rmm); eq.membros=eq.membros.filter(n=>n!==ds.nome); syncTudo(d); save(); renderApont(); return; }
@@ -1273,7 +1299,10 @@ document.addEventListener("click", ev=>{
 document.addEventListener("change", ev=>{
   const t=ev.target; if(!t.closest || !t.closest("#vApont")) return; const d=day(), ds=t.dataset;
   if(t.closest("#people")){ t.closest(".person").classList.toggle("on", t.checked); return; }
-  if(t.id==="fData"){ if(t.value){ curDate=t.value; confLimpar=null; renderApont(); } return; }
+  if(t.id==="fData"){ const v=t.value; if(!v) return;
+    if(v===curDate){ trocaData=null; renderApont(); return; }
+    if(temConteudo(S.dias[dkey()])){ trocaData={de:curDate, para:v}; renderApont(); const b=$("trocaBox"); b && b.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+    curDate=v; trocaData=null; confLimpar=null; if(passo>2) passo=2; renderApont(); return; }
   if(t.id==="fNoite"){ d.rdo.noite=t.checked; save(); renderApont(); return; }
   if(ds.eo){ const o=findEq(ds.eq).ordens.find(x=>x.k===ds.k); let v=t.value.trim(); if(ds.eo==="ordem") v=v.replace(/\D/g,"").slice(0,8); if(ds.eo==="desc") v=v.replace(/\s+/g," ");
     o[ds.eo]=v;
