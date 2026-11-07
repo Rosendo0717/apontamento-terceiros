@@ -26,8 +26,9 @@ const EMAILS_EXTRAS = {
 const ABAS = {
   REGISTRO: ['RECEBIDO EM', 'ID ENVIO', 'EMPRESA', 'DATA', 'ENVIO Nº', 'SITUAÇÃO', 'MOTIVO DO REENVIO', 'ENCARREGADO', 'PESSOAS', 'ARQUIVO', 'ANEXOS'],
   BASE: ['ID ENVIO', 'RECEBIDO EM', 'ENVIO Nº', 'SITUAÇÃO', 'EMPRESA', 'DATA', 'MATRÍCULA', 'COLABORADOR', 'ENTRADA', 'SAÍDA ALMOÇO',
-         'VOLTA ALMOÇO', 'SAÍDA', 'TOTAL', 'ORDEM', 'SETOR', 'SOLICITANTE', 'DESCRIÇÃO SERVIÇOS', 'STATUS DA ORDEM', 'OBSERVAÇÃO',
-         'ENCARREGADO', 'MOTIVO DO REENVIO'],
+         'VOLTA ALMOÇO', 'SAÍDA', 'TOTAL', 'ORDEM', 'SETOR', 'RESPONSÁVEL DO SETOR', 'DESCRIÇÃO SERVIÇOS', 'STATUS DA ORDEM', 'OBSERVAÇÃO',
+         'ENCARREGADO', 'MOTIVO DO REENVIO', 'EQUIPE', 'INÍCIO ESPERA LT', 'FIM ESPERA LT', 'TEMPO ESPERA LT'],
+  SETORES: ['SETOR', 'E-MAILS (CÓPIA)'],
   EMPRESAS: ['EMPRESA', 'LINK (#)'],
   FUNCIONARIOS: ['EMPRESA', 'COLABORADOR', 'MATRÍCULA']
 };
@@ -49,6 +50,19 @@ function doPost(e) {
   if (p.chave !== CHAVE) return resp({ ok: false, erro: 'chave inválida' });
 
   if (p.acao === 'login') return resp(senhaOk_(p.senha) ? { ok: true } : { ok: false, erro: 'senha incorreta' });
+
+  if (p.acao === 'setores') {
+    if (!senhaOk_(p.senha)) return resp({ ok: false, erro: 'senha incorreta' });
+    return resp({ ok: true, setores: lerSetores_() });
+  }
+  if (p.acao === 'salvarSetores') {
+    if (!senhaOk_(p.senha)) return resp({ ok: false, erro: 'senha incorreta' });
+    return comTrava_(() => { salvarSetores_(p.setores || {}); return { ok: true }; });
+  }
+  if (p.acao === 'relatorio') {
+    if (!senhaOk_(p.senha)) return resp({ ok: false, erro: 'senha incorreta' });
+    return resp({ ok: true, linhas: relatorio_(p.empresa, p.de, p.ate) });
+  }
 
   if (p.acao === 'salvarCadastro') {
     if (!senhaOk_(p.senha)) return resp({ ok: false, erro: 'senha incorreta' });
@@ -76,7 +90,7 @@ function receberEnvio_(p) {
 
   MailApp.sendEmail({
     to: DESTINO,
-    cc: extrasDe_(p.empresa),
+    cc: copias_(p),
     subject: p.assunto || ('APONTAMENTO | ' + p.empresa + ' | ' + p.data),
     body: p.corpo || '',
     attachments: [xlsx].concat(extras),
@@ -100,7 +114,7 @@ function receberEnvio_(p) {
 
   const linhas = (p.linhas || []).map(l => [p.id, agora, p.envio || 1, 'VÁLIDO', p.empresa, "'" + p.data, l.mat ? "'" + l.mat : '', l.nome,
     l.entrada, l.saidaAlm || '', l.voltaAlm || '', l.saida, l.total, l.ordem, l.setor || '', l.solicitante || '', l.desc || '',
-    l.status || '', l.obs || '', p.encarregado || '', p.motivo || '']);
+    l.status || '', l.obs || '', p.encarregado || '', p.motivo || '', l.equipe || '', l.ltIni || '', l.ltFim || '', l.ltTempo || '']);
   if (linhas.length) base.getRange(base.getLastRow() + 1, 1, linhas.length, linhas[0].length).setValues(linhas);
 
   return { ok: true };
@@ -150,6 +164,45 @@ function salvarCadastro_(c) {
 }
 
 /* ---------------- apoio ---------------- */
+
+/* ---------------- e-mails em cópia: por empresa (código) + por setor (área do administrador) ---------------- */
+
+function copias_(p) {
+  const lista = extrasDe_(p.empresa).split(',');
+  const porSetor = lerSetores_();
+  const setores = {};
+  (p.linhas || []).forEach(l => { if (l.setor) setores[String(l.setor).trim().toLowerCase()] = true; });
+  Object.keys(porSetor).forEach(s => { if (setores[s.trim().toLowerCase()]) lista.push.apply(lista, String(porSetor[s]).split(/[,;\s]+/)); });
+  const vistos = {};
+  return lista.map(e => e.trim()).filter(e => /@/.test(e) && !vistos[e.toLowerCase()] && (vistos[e.toLowerCase()] = true)).join(',');
+}
+
+function lerSetores_() {
+  const aba = planilha_().getSheetByName('SETORES'), out = {};
+  if (aba.getLastRow() > 1) aba.getRange(2, 1, aba.getLastRow() - 1, 2).getDisplayValues().forEach(r => { if (r[0]) out[r[0]] = r[1]; });
+  return out;
+}
+
+function salvarSetores_(m) {
+  const aba = planilha_().getSheetByName('SETORES');
+  if (aba.getLastRow() > 1) aba.getRange(2, 1, aba.getLastRow() - 1, 2).clearContent();
+  const linhas = Object.keys(m).filter(s => String(m[s] || '').trim()).map(s => [s, String(m[s]).trim()]);
+  if (linhas.length) aba.getRange(2, 1, linhas.length, 2).setValues(linhas);
+}
+
+/* ---------------- planilha do período (área do administrador) ---------------- */
+
+function relatorio_(empresa, de, ate) {
+  const iso = s => { const m = String(s || '').match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; };
+  const a = iso(de), b = iso(ate), base = planilha_().getSheetByName('BASE');
+  if (base.getLastRow() < 2) return [];
+  const n = ABAS.BASE.length;
+  return base.getRange(2, 1, base.getLastRow() - 1, n).getDisplayValues()
+    .filter(r => r[3] === 'VÁLIDO' && r[4] === empresa && iso(r[5]) >= a && iso(r[5]) <= b)
+    .map(r => ({ envio: r[2], data: r[5], mat: r[6], nome: r[7], entrada: r[8], saidaAlm: r[9], voltaAlm: r[10], saida: r[11], total: r[12],
+      ordem: r[13], setor: r[14], solicitante: r[15], desc: r[16], status: r[17], obs: r[18], encarregado: r[19],
+      equipe: r[21], ltIni: r[22], ltFim: r[23], ltTempo: r[24] }));
+}
 
 function extrasDe_(empresa) {
   const k = Object.keys(EMAILS_EXTRAS).find(n => n.trim().toLowerCase() === String(empresa || '').trim().toLowerCase());
