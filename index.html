@@ -235,6 +235,21 @@ textarea{resize:vertical;min-height:64px}
         <p class="hint" id="admFErr" style="color:var(--err)"></p>
         <div class="tscroll"><table class="list" id="tAdmF"></table></div>
       </section>
+      <section class="card">
+        <h2>E-mails por setor <span id="admSetSave"></span></h2>
+        <p class="hint">Quem recebe <b>cópia</b> do e-mail quando o dia tiver alguma ordem daquele setor. Vários e-mails: separe por vírgula. Salva ao sair do campo.</p>
+        <div class="tscroll"><table class="list" id="tAdmSet"></table></div>
+      </section>
+      <section class="card">
+        <h2>Planilha do período</h2>
+        <p class="hint">Todos os apontamentos <b>recebidos</b> de uma empresa no período de fechamento (só os envios válidos; reenvios substituem os anteriores). Não vai por e-mail.</p>
+        <div class="grid">
+          <label class="f">Empresa<select id="relEmp"></select></label>
+          <label class="f">De<input type="date" id="relDe"></label>
+          <label class="f">Até<input type="date" id="relAte"></label>
+        </div>
+        <div class="row"><button class="btn primary" id="bRel">Baixar planilha do período</button><span class="hint" id="relMsg"></span></div>
+      </section>
       <div class="row"><button class="btn ghost" id="bAdmOut">Sair da área do administrador</button></div>
     </div>
   </div>
@@ -404,8 +419,25 @@ async function admSave(msg){
     else { el.innerHTML=`<span class="chip err">Não salvou</span>`; toast("O servidor recusou: "+(j.erro||"erro")); if(j.erro==="senha incorreta"){ ADM.senha=null; renderAdmin(); } }
   }catch(e){ el.innerHTML=`<span class="chip err">Sem internet · não salvou</span>`; toast("Sem internet. A alteração não foi salva no servidor."); }
 }
+function periodoPadrao(){ const h=new Date(); let y=h.getFullYear(), m=h.getMonth(); if(h.getDate()>20) m++; // fechamento: 21 do mês anterior a 20 do mês
+  const fim=new Date(y, m, 20), ini=new Date(y, m-1, 21), iso=x=>new Date(x.getTime()-x.getTimezoneOffset()*6e4).toISOString().slice(0,10); return [iso(ini), iso(fim)]; }
+function renderSetores(){
+  const box=$("tAdmSet"); if(!box) return; const em=ADM.setores||{};
+  box.innerHTML = `<tr><th>Setor</th><th>E-mails (cópia)</th></tr>` + SETORES_LINS.map(([s,r])=>`<tr><td><b>${esc(s)}</b><br><span class="hint">${esc(r)}</span></td>
+    <td><input data-adm-setor="${esc(s)}" value="${esc(em[s]||"")}" placeholder="ninguém por enquanto" style="min-height:38px" aria-label="E-mails do setor ${esc(s)}" autocomplete="off"></td></tr>`).join("");
+}
+async function carregarSetores(){ try{ const j=await admPost({acao:"setores", senha:ADM.senha}); ADM.setores = j.ok ? (j.setores||{}) : {}; if(!j.ok) $("admSetSave").innerHTML=`<span class="chip warn">Atualize o script do Google</span>`; }catch(e){ ADM.setores={}; } renderSetores(); }
+async function salvarSetores(){
+  const el=$("admSetSave"); el.innerHTML=`<span class="chip info">Salvando…</span>`;
+  try{ const j=await admPost({acao:"salvarSetores", senha:ADM.senha, setores:ADM.setores});
+    el.innerHTML = j.ok ? `<span class="chip ok">Salvo</span>` : `<span class="chip err">Não salvou: ${esc(j.erro||"erro")}</span>`; }
+  catch(e){ el.innerHTML=`<span class="chip err">Sem internet · não salvou</span>`; }
+}
 function renderAdmin(){
   const on=!!ADM.senha; $("admLogin").hidden=on; $("admPanel").hidden=!on; if(!on) return;
+  const re=$("relEmp"), atual=re.value; re.innerHTML=CAD.empresas.map(e=>`<option ${e.nome===atual?"selected":""}>${esc(e.nome)}</option>`).join("");
+  if(!$("relDe").value){ const [a,b]=periodoPadrao(); $("relDe").value=a; $("relAte").value=b; }
+  if(!ADM.setores){ ADM.setores={}; carregarSetores(); } else renderSetores();
   $("tAdmEmp").innerHTML = `<tr><th>Empresa</th><th>Link</th><th>Pessoas</th><th></th></tr>` + CAD.empresas.map(e=>`<tr>
     <td><b>${esc(e.nome)}</b></td><td class="mono" style="user-select:all">#${esc(e.slug)}</td><td class="mono">${(CAD.funcionarios[e.nome]||[]).length}</td>
     <td><div class="row"><button class="btn small" data-adm-sel="${esc(e.nome)}">Funcionários</button>
@@ -448,7 +480,8 @@ document.addEventListener("click", ev=>{
   switch(t.id){
     case "bAdmin": tab="admin"; render(); break;
     case "bAdmBack": tab="apont"; S.empresa=null; render(); break;
-    case "bAdmOut": ADM.senha=null; ADM.sel=null; tab="apont"; S.empresa=null; render(); fetchCad(); break;
+    case "bRel": baixarPeriodo(); break;
+    case "bAdmOut": ADM.setores=null; ADM.senha=null; ADM.sel=null; tab="apont"; S.empresa=null; render(); fetchCad(); break;
     case "bAdmEnter": admLogin(); break;
     case "bAdmAddEmp": admAddEmp(); break;
     case "bAdmAddF": admAddF(); break;
@@ -458,6 +491,9 @@ document.addEventListener("click", ev=>{
 });
 document.addEventListener("change", ev=>{
   const t=ev.target;
+  if(t.dataset && t.dataset.admSetor!==undefined){ const v=t.value.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
+    const bad=v.filter(x=>!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)); if(bad.length){ toast("E-mail inválido: "+bad.join(", ")); return; }
+    t.value=v.join(", "); (ADM.setores ||= {})[t.dataset.admSetor]=t.value; salvarSetores(); return; }
   if(t.dataset && t.dataset.admMat!==undefined){ const f=(CAD.funcionarios[ADM.sel]||[]).find(x=>x.nome===t.dataset.admMat); if(f){ f.mat=t.value.trim().toUpperCase(); t.value=f.mat; admSave("Matrícula de "+f.nome+" salva."); } }
 });
 document.addEventListener("keydown", ev=>{ if(ev.key!=="Enter") return; const id=ev.target.id;
@@ -476,7 +512,59 @@ function zip(files){ const enc=new TextEncoder(), parts=[], cen=[]; let off=0;
   return new Blob([...parts, ...cen, new Uint8Array(e.buffer)], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}); }
 const xesc = s => String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
 function colL(i){ let s=""; i++; while(i){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; }
-function buildXlsx(rows, head, widths){
+function buildXlsx(rows, head, widths){ return buildXlsxMulti([{nome:"APONTAMENTO", head, rows, widths}]); }
+function buildXlsxMulti(abas){
+  const cell=(v,r,c)=>{ const ref=colL(c)+r; if(v==null||v==="") return "";
+    if(typeof v==="object") return `<c r="${ref}" s="${v.s}"><v>${v.v}</v></c>`;
+    if(typeof v==="number") return `<c r="${ref}"><v>${v}</v></c>`;
+    return `<c r="${ref}" t="inlineStr"${r===1?' s="1"':""}><is><t xml:space="preserve">${xesc(v)}</t></is></c>`; };
+  const folha = ({head, rows, widths}) => { const sd=`<sheetData>`+[head,...rows].map((row,ri)=>`<row r="${ri+1}">${row.map((v,ci)=>cell(v,ri+1,ci)).join("")}</row>`).join("")+`</sheetData>`;
+    const cols=`<cols>`+head.map((_,i)=>`<col min="${i+1}" max="${i+1}" width="${(widths&&widths[i])||14}" customWidth="1"/>`).join("")+`</cols>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>${cols}${sd}<autoFilter ref="A1:${colL(head.length-1)}${rows.length+1}"/></worksheet>`; };
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="hh:mm"/><numFmt numFmtId="166" formatCode="[h]:mm"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0032A0"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const W = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  return zip([
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${abas.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${W}/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${W}"><sheets>${abas.map((a,i)=>`<sheet name="${xesc(a.nome)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets><definedNames>${abas.map((a,i)=>`<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${xesc(a.nome)}'!$A$1:$${colL(a.head.length-1)}$${a.rows.length+1}</definedName>`).join("")}</definedNames></workbook>`],
+    ["xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${abas.map((_,i)=>`<Relationship Id="rId${i+1}" Type="${W}/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}<Relationship Id="rId${abas.length+1}" Type="${W}/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/styles.xml", styles],
+    ...abas.map((a,i)=>[`xl/worksheets/sheet${i+1}.xml`, folha(a)]),
+  ]);
+}
+/* ---------- planilha do período (área do administrador) ---------- */
+const hmMin = s => { const m=String(s||"").match(/(\d+):(\d{2})/); return m ? (+m[1])*60+(+m[2]) : null; };
+const brIso = s => { const m=String(s||"").match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : ""; };
+async function baixarPeriodo(){
+  const emp=$("relEmp").value, de=$("relDe").value, ate=$("relAte").value, msg=$("relMsg"), b=$("bRel");
+  if(!emp || !de || !ate || ate<de){ msg.textContent="Escolha a empresa e um período válido."; return; }
+  b.disabled=true; b.textContent="Buscando…"; msg.textContent="";
+  try{
+    const j=await admPost({acao:"relatorio", senha:ADM.senha, empresa:emp, de:fmtD(de), ate:fmtD(ate)});
+    if(!j.ok){ msg.textContent = j.erro==="ação desconhecida" || !j.erro ? "Atualize o script do Google (Codigo.gs novo) para usar esta planilha." : "Não deu certo: "+j.erro; return; }
+    const L=(j.linhas||[]).map(r=>({...r, iso:brIso(r.data), tot:hmMin(r.total)||0, lt:hmMin(r.ltTempo)}));
+    if(!L.length){ msg.textContent=`Nenhum apontamento recebido de ${emp} entre ${fmtD(de)} e ${fmtD(ate)}.`; return; }
+    L.sort((a,b)=>a.iso.localeCompare(b.iso)||String(a.equipe).localeCompare(String(b.equipe))||a.nome.localeCompare(b.nome,"pt"));
+    const T=m=>m==null?"":tv(m), D=m=>({s:4, v:(m/1440).toFixed(10)});
+    const ab1={nome:"APONTAMENTO", head:["DATA","EQUIPE","MATRÍCULA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","RESPONSÁVEL DO SETOR","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","INÍCIO ESPERA LT","FIM ESPERA LT","TEMPO ESPERA LT","OBSERVAÇÃO","ENCARREGADO","ENVIO Nº"],
+      widths:[11,11,12,32,9,13,13,9,9,11,20,20,48,16,12,12,12,30,20,9],
+      rows:L.map(r=>[{s:2,v:serial(r.iso)}, r.equipe||"", r.mat||"", r.nome, T(hmMin(r.entrada)), T(hmMin(r.saidaAlm)), T(hmMin(r.voltaAlm)), T(hmMin(r.saida)), D(r.tot), Number(r.ordem)||r.ordem, r.setor||"", r.solicitante||"", r.desc||"", r.status||"", T(hmMin(r.ltIni)), T(hmMin(r.ltFim)), r.lt!=null?D(r.lt):"", r.obs||"", r.encarregado||"", Number(r.envio)||""])};
+    const dias=[...new Set(L.map(r=>r.iso))].sort(), pes={};
+    L.forEach(r=>{ const k=r.nome; (pes[k] ||= {mat:r.mat||"", nome:r.nome, d:{}}).d[r.iso]=(pes[k].d[r.iso]||0)+r.tot; if(r.mat) pes[k].mat=r.mat; });
+    const ab2={nome:"RESUMO", head:["COLABORADOR","MATRÍCULA","DIAS TRABALHADOS","TOTAL HH",...dias.map(fmtD)], widths:[32,12,10,10,...dias.map(()=>9)],
+      rows:Object.values(pes).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")).map(p=>{ const tot=Object.values(p.d).reduce((a,b)=>a+b,0); return [p.nome, p.mat, Object.keys(p.d).length, D(tot), ...dias.map(x=>p.d[x]!=null?D(p.d[x]):"")]; })};
+    const tdia=dias.map(x=>L.filter(r=>r.iso===x).reduce((a,r)=>a+r.tot,0)); ab2.rows.push(["TOTAL DO DIA","","",D(tdia.reduce((a,b)=>a+b,0)),...tdia.map(D)]);
+    const ords={}; L.forEach(r=>{ const o=(ords[r.ordem] ||= {ordem:r.ordem, setor:r.setor, resp:r.solicitante, desc:r.desc, status:r.status, hh:0, dias:new Set(), pes:new Set(), lt:{} , ult:""});
+      o.hh+=r.tot; o.dias.add(r.iso); o.pes.add(r.nome); if(r.lt!=null) o.lt[r.iso]=r.lt; if(r.iso>=o.ult){ o.ult=r.iso; o.status=r.status; o.desc=r.desc||o.desc; } });
+    const ab3={nome:"ORDENS", head:["ORDEM","SETOR","RESPONSÁVEL DO SETOR","DESCRIÇÃO SERVIÇOS","STATUS (ÚLTIMO DIA)","DIAS","PESSOAS","TOTAL HH","ESPERA LT TOTAL"], widths:[11,20,20,48,16,8,9,10,12],
+      rows:Object.values(ords).sort((a,b)=>String(a.ordem).localeCompare(String(b.ordem))).map(o=>{ const lt=Object.values(o.lt).reduce((a,b)=>a+b,0); return [Number(o.ordem)||o.ordem, o.setor||"", o.resp||"", o.desc||"", o.status||"", o.dias.size, o.pes.size, D(o.hh), lt?D(lt):""]; })};
+    const blob=buildXlsxMulti([ab1,ab2,ab3]), nome=`APONT_PERIODO_${empSlug(emp)}_${de}_a_${ate}.xlsx`;
+    if(downloadsP){ const dl=await downloadsP; if(dl){ try{ await dl.save({filename:nome, data:blob}); msg.textContent=`Planilha baixada: ${L.length} linhas, ${dias.length} dias.`; return; }catch(e){ if(e?.code==="declined") return; } } }
+    dlBlob(blob, nome); msg.textContent=`Planilha baixada: ${L.length} linhas, ${dias.length} dias.`;
+  }catch(e){ msg.textContent="Sem conexão com o servidor."; }
+  finally{ b.disabled=false; b.textContent="Baixar planilha do período"; }
+}
+function buildXlsxAntigo(rows, head, widths){
   // estilos: 0 normal, 1 cabeçalho, 2 data, 3 hora, 4 duração
   const cell=(v,r,c)=>{ const ref=colL(c)+r; if(v==null||v==="") return "";
     if(typeof v==="object") return `<c r="${ref}" s="${v.s}"><v>${v.v}</v></c>`;
@@ -503,13 +591,14 @@ let downloadsP = null;
 try { if(window.claude?.use) downloadsP = window.claude.use("downloads").catch(()=>null); } catch(e){}
 
 function buildDay(){
-  const d=day(), head=["EMPRESA","DATA","EQUIPE","MATRÍCULA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","SOLICITANTE","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","OBSERVAÇÃO","ENCARREGADO"];
+  const d=day(), head=["EMPRESA","DATA","EQUIPE","MATRÍCULA","COLABORADOR","ENTRADA","SAÍDA ALMOÇO","VOLTA ALMOÇO","SAÍDA","TOTAL","ORDEM","SETOR","RESPONSÁVEL DO SETOR","DESCRIÇÃO SERVIÇOS","STATUS DA ORDEM","INÍCIO ESPERA LT","FIM ESPERA LT","TEMPO ESPERA LT","OBSERVAÇÃO","ENCARREGADO"];
   const eqN = l => (d.equipes.find(e=>e.id===l.eq)||{}).n || 0;
   const lin=[...d.linhas].sort((a,b)=>eqN(a)-eqN(b)||a.nome.localeCompare(b.nome,"pt")||a.in-b.in);
   const rows = lin.map(l=>{ const o=findOrd(l.ordem)||{}; const ov=almOverlap(l);
     const ai = ov? Math.max(l.in,J.almIni):null, af = ov? Math.min(l.out,J.almFim):null;
-    return [S.empresa, {s:2,v:serial(curDate)}, eqN(l)?"Equipe "+eqN(l):"", matOf(l), l.nome, tv(l.in), ai!=null?tv(ai):"", af!=null?tv(af):"", tv(l.out%1440), {s:4,v:(total(l)/1440).toFixed(10)}, Number(l.ordem), o.setor||"", o.solicitante||"", o.desc||"", d.status[l.ordem]||o.status||"", l.obs||"", S.enc.trim()]; });
-  const blob = buildXlsx(rows, head, [16,11,11,12,32,9,13,13,9,9,11,22,18,48,16,30,20]);
+    return [S.empresa, {s:2,v:serial(curDate)}, eqN(l)?"Equipe "+eqN(l):"", matOf(l), l.nome, tv(l.in), ai!=null?tv(ai):"", af!=null?tv(af):"", tv(l.out%1440), {s:4,v:(total(l)/1440).toFixed(10)}, Number(l.ordem), o.setor||"", o.solicitante||respSetor(o.setor)||"", o.desc||"", d.status[l.ordem]||o.status||"",
+      temLT(o)?tv(o.ltIni):"", temLT(o)?tv(o.ltFim):"", temLT(o)?{s:4,v:((o.ltFim-o.ltIni)/1440).toFixed(10)}:"", l.obs||"", S.enc.trim()]; });
+  const blob = buildXlsx(rows, head, [16,11,11,12,32,9,13,13,9,9,11,22,20,48,16,12,12,12,30,20]);
   const envioN = d.envios.length+1, br=curDate.split("-").reverse().join("/");
   const fname = `APONT_${empSlug(S.empresa)}_${curDate}${envioN>1?"_REENVIO"+envioN:""}.xlsx`;
   const hh=lin.reduce((a,l)=>a+Math.max(0,total(l)),0), n=new Set(lin.map(pkey)).size, nOrd=new Set(lin.map(l=>l.ordem)).size;
@@ -568,7 +657,8 @@ function payloadLinhas(d){
   return [...d.linhas].sort((a,b)=>a.nome.localeCompare(b.nome,"pt")||a.in-b.in).map(l=>{ const o=findOrd(l.ordem)||{}, ov=almOverlap(l);
     const eq=d.equipes.find(e=>e.id===l.eq);
     return {equipe:eq?eqNome(eq):"", mat:matOf(l), nome:l.nome, ordem:l.ordem, entrada:hm(l.in), saidaAlm:ov?hm(Math.max(l.in,J.almIni)):"", voltaAlm:ov?hm(Math.min(l.out,J.almFim)):"",
-      saida:hm(l.out), total:hm(total(l)), setor:o.setor||"", solicitante:o.solicitante||"", desc:o.desc||"", status:d.status[l.ordem]||o.status||"", obs:l.obs||""}; });
+      saida:hm(l.out), total:hm(total(l)), setor:o.setor||"", solicitante:o.solicitante||respSetor(o.setor)||"", desc:o.desc||"", status:d.status[l.ordem]||o.status||"", obs:l.obs||"",
+      ltIni:temLT(o)?hm(o.ltIni):"", ltFim:temLT(o)?hm(o.ltFim):"", ltTempo:temLT(o)?hm(o.ltFim-o.ltIni):""}; });
 }
 /* ---------- anexos (fotos, PDF, planilhas) ---------- */
 const ANX_MAX = 8, ANX_TOTAL = 30*1024*1024, ANX_ARQ = 10*1024*1024;
@@ -856,7 +946,7 @@ async function buildRdo(d=day(), envioN=d.envios.length+1){
   sec("Condições do dia");
   const pers=periodosDia(d);
   table([{t:"Período",w:.24},{t:"Clima",w:.26},{t:"Condição de trabalho",w:.5}], pers.map(([k,nome])=>[nome, r.clima[k]||"Não informado", r.cond[k]||"Não informado"]));
-  if((r.parada||"").trim() && pers.some(([k])=>r.cond[k] && r.cond[k]!=="Normal")){ para("Paralisação: "+r.parada.trim(), {sz:8.5}); y+=4; }
+  if(pers.some(([k])=>r.cond[k] && r.cond[k]!=="Normal")){ para("A paralisação está descrita em Ocorrências.", {sz:8.5, c:COR.mut}); y+=4; }
 
   /* serviços executados por ordem */
   sec("Serviços executados");
@@ -868,7 +958,9 @@ async function buildRdo(d=day(), envioN=d.envios.length+1){
     P.text(M+8+P.tw("ORDEM "+o,"b",10)+10, y+15, P.fit(ord.setor||"", "r", 9, CW*.45), {sz:9, c:[255,255,255]});
     P.text(M, y+15, st.toUpperCase(), {f:"b", sz:8, c:st==="Concluída"?COR.verde:[255,255,255], align:"right", w:CW-8});
     y+=30;
-    if(ord.solicitante) para("Solicitante: "+ord.solicitante, {sz:8.5, c:COR.mut});
+    if(ord.solicitante) para("Responsável do setor: "+ord.solicitante, {sz:8.5, c:COR.mut});
+    if(temLT(ord)){ ensure(26); const lh=20; P.rect(M, y, CW, lh, [255,234,210]); P.rect(M, y, 3, lh, COR.alerta);
+      P.text(M+10, y+13.5, "Espera da LT:", {f:"b", sz:8.5}); P.text(M+10+P.tw("Espera da LT: ","b",8.5), y+13.5, ltTxt(ord), {sz:8.5}); y+=lh+6; }
     para("Serviço: "+(ord.desc||"—"), {sz:9});
     y+=3; ensure(20); const bx=M+86, bw=170; P.text(M, y+9, "Avanço físico", {f:"b", sz:8.5});
     P.rect(bx, y+2, bw, 8, COR.tinta); if(av) P.rect(bx, y+2, bw*Math.min(100,av)/100, 8, COR.azulm);
@@ -936,6 +1028,11 @@ async function verRdo(eqId){
 }
 
 /* ================= FLUXO EM TELAS (2 a 5) ================= */
+const SETORES_LINS = [["Produção de Açúcar","Guilherme Araújo"],["Produção de Etanol","Lucas Gama"],["ETA","Paulo Idelfonso"],["ETEL","Paulo Idelfonso"],["Caldeira","Paulo Idelfonso"],["Extração","Julio César"],["Laboratórios","Evandro Araújo"],["Suprimentos","Ricardo Juvêncio"],["Manutenção","Everton Pinheiro"],["Armazenagem","Fabiano Leoncio"],["Levedura","Roberta Teixeira"],["Administrativo","Italo Jaloretto"],["Segurança","Italo Jaloretto"],["Ambulatório","Lívia Aparecida"],["Expedição/Checklist","Thiago Mussato"],["ETE","Adriano Calegari"],["Lubrificação","Bruno Santo"],["ENGMAN/Espessura","Bruno Santo"]];
+const respSetor = s => (SETORES_LINS.find(x=>x[0]===s)||[])[1] || "";
+const setorTxt = (s, r) => s ? s+((r||respSetor(s))?"-"+(r||respSetor(s)):"") : "";
+const temLT = o => o && o.ltIni!=null && o.ltFim!=null && o.ltFim>o.ltIni;
+const ltTxt = o => temLT(o) ? `início ${hm(o.ltIni)} · fim ${hm(o.ltFim)} · tempo de espera ${durTxt(o.ltFim-o.ltIni)}` : "";
 let passo = 2, fotoEq = null, confLimpar = null, confRm = null, trocaData = null;
 const fmtD = iso => iso.split("-").reverse().join("/");
 const temConteudo = d => !!(d && ((d.equipes||[]).length || (d.linhas||[]).length || (d.anexos||[]).length || Object.keys((d.rdo||{}).clima||{}).length));
@@ -978,7 +1075,7 @@ function novaOrdem(eq){
 }
 // cada pessoa × ordem da equipe vira uma linha do apontamento
 function syncEquipe(d, eq){
-  eq.ordens.forEach(o=>{ if(o.ordem){ d.ordens[o.ordem]={ordem:o.ordem, setor:o.setor, solicitante:o.solicitante, desc:o.desc, status:o.status}; d.status[o.ordem]=o.status; } });
+  eq.ordens.forEach(o=>{ if(o.ordem){ d.ordens[o.ordem]={ordem:o.ordem, setor:o.setor, solicitante:o.solicitante, desc:o.desc, status:o.status, ltIni:o.ltIni??null, ltFim:o.ltFim??null}; d.status[o.ordem]=o.status; } });
   d.linhas = d.linhas.filter(l=> l.eq!==eq.id || (eq.membros.includes(l.nome) && eq.ordens.some(o=>o.k===l.ok)));
   eq.ordens.forEach(o=>eq.membros.forEach(nome=>{
     let l=d.linhas.find(x=>x.eq===eq.id && x.ok===o.k && x.nome===nome);
@@ -987,7 +1084,17 @@ function syncEquipe(d, eq){
     if(!l.custom){ l.in=o.in; l.out=o.out; l.alm=o.alm; l.adj=!!o.adj; }
   }));
 }
-function syncTudo(d=day()){ d.equipes.forEach(eq=>syncEquipe(d,eq)); d.linhas=d.linhas.filter(l=>d.equipes.some(e=>e.id===l.eq)); }
+function syncTudo(d=day()){ d.equipes.forEach(eq=>syncEquipe(d,eq)); d.linhas=d.linhas.filter(l=>d.equipes.some(e=>e.id===l.eq)); syncParalisacao(d); }
+// cada período "Parcialmente paralisado" ou "Paralisado" vira uma ocorrência em cada equipe
+function syncParalisacao(d=day()){
+  const pers=periodosT2(d).filter(([k])=>d.rdo.cond[k] && d.rdo.cond[k]!=="Normal");
+  d.equipes.forEach(eq=>{ const r=eq.rdo;
+    r.ocorr = r.ocorr.filter(x=>!x.auto || pers.some(([k])=>k===x.auto));
+    pers.forEach(([k,nome])=>{ const tipo=`Paralisação – ${nome} (${d.rdo.cond[k]})`; let x=r.ocorr.find(o=>o.auto===k);
+      if(!x){ x={id:"par-"+k+"-"+uid(), auto:k, tipo, ordem:"", desc:(d.rdo.parada||"").trim()}; r.ocorr.unshift(x); r.semOcorr=false; }
+      x.tipo=tipo; });
+  });
+}
 
 // dias salvos no formato antigo (sem equipes): cada ordem vira uma equipe
 function migrar(d){
@@ -1017,7 +1124,6 @@ function issues2(d=day()){
   if(!(S.enc||"").trim()) out.push("Preencha o nome do encarregado.");
   const falta=periodosT2(d).filter(([k])=>!r.clima[k]||!r.cond[k]).map(p=>p[1].toLowerCase());
   if(falta.length) out.push(`Informe clima e condição de trabalho (${falta.join(", ")}).`);
-  if(periodosT2(d).some(([k])=>r.cond[k] && r.cond[k]!=="Normal") && (r.parada||"").trim().length<5) out.push("Explique a paralisação (motivo e horário).");
   return out;
 }
 function issues3(d=day()){
@@ -1026,7 +1132,10 @@ function issues3(d=day()){
   d.equipes.forEach(eq=>{ const nm=eqNome(eq);
     if(!eq.membros.length) out.push(`${nm}: coloque pelo menos uma pessoa.`);
     if(!eq.ordens.length) out.push(`${nm}: adicione pelo menos uma ordem.`);
-    eq.ordens.forEach((o,i)=>{ const e=ordErr(o); if(e) out.push(`${nm}, ordem ${o.ordem||i+1}: ${e.charAt(0).toLowerCase()+e.slice(1)}`); });
+    eq.ordens.forEach((o,i)=>{ const e=ordErr(o); if(e) out.push(`${nm}, ordem ${o.ordem||i+1}: ${e.charAt(0).toLowerCase()+e.slice(1)}`);
+      const a=o.ltIni!=null, b=o.ltFim!=null;
+      if(a!==b) out.push(`${nm}, ordem ${o.ordem||i+1}: preencha o início e o fim da espera da LT (ou deixe os dois em branco).`);
+      else if(a && o.ltFim<=o.ltIni) out.push(`${nm}, ordem ${o.ordem||i+1}: o fim da espera da LT tem que ser depois do início.`); });
   });
   d.linhas.forEach(l=>{ const eq=d.equipes.find(e=>e.id===l.eq); lineFlags(l,d.linhas).filter(f=>f[0]==="err").forEach(f=>{
     if(f[1].startsWith("Hora extra") && (l.obs||"").trim().length>=5) return;
@@ -1039,7 +1148,8 @@ function issues4(d=day()){
   d.equipes.forEach(eq=>{ const nm=eqNome(eq), r=eq.rdo;
     eq.ordens.forEach(o=>{ if(o.ordem && o.status!=="Concluída" && (r.ord[o.ordem]||{}).av==null) out.push(`${nm}: informe o avanço da ordem ${o.ordem}.`); });
     if(!r.semOcorr && !r.ocorr.length) out.push(`${nm}: marque “Sem ocorrências” ou registre uma ocorrência.`);
-    r.ocorr.forEach((x,i)=>{ if(!x.tipo || (x.desc||"").trim().length<5) out.push(`${nm}: complete a ocorrência ${i+1} (tipo e descrição).`); });
+    r.ocorr.forEach((x,i)=>{ if(x.auto){ if((x.desc||"").trim().length<5) out.push(`${nm}: descreva a ${x.tipo.toLowerCase()} (o que parou, motivo e horário).`); }
+      else if(!x.tipo || (x.desc||"").trim().length<5) out.push(`${nm}: complete a ocorrência ${i+1} (tipo e descrição).`); });
     if(!(d.anexos||[]).some(a=>a.eq===eq.id && /^image\//.test(a.tipo))) out.push(`${nm}: tire pelo menos uma foto do serviço.`);
   });
   return out;
@@ -1047,7 +1157,7 @@ function issues4(d=day()){
 const issuesPasso = p => p===2 ? issues2() : p===3 ? issues3() : p===4 ? issues4() : [];
 // usado pelo envio: [tipo, texto, tela]
 function issues(){
-  const d=day(), out=[];
+  const d=day(), out=[]; syncParalisacao(d);
   issues2(d).forEach(m=>out.push(["err",m,2])); issues3(d).forEach(m=>out.push(["err",m,3])); issues4(d).forEach(m=>out.push(["err","RDO: "+m,4]));
   if(d.envios.length && (d.motivo||"").trim().length<5) out.push(["err",`Este dia já foi enviado ${d.envios.length}x. Escreva o motivo do reenvio abaixo.`,5]);
   return out;
@@ -1084,7 +1194,7 @@ function html2(){
   <section class="card"><h2>Condições do dia</h2>
     ${periodosT2(d).map(([k,nome])=>`<div class="per"><span class="pl">${nome}</span><span class="hint">Clima</span>${seg("cl",k,CLIMAS,r.clima[k])}<span class="hint">Condição de trabalho</span>${seg("cn",k,CONDS,r.cond[k])}</div>`).join("")}
     <label class="chk"><input type="checkbox" id="fNoite" ${r.noite||noiteObrig?"checked":""} ${noiteObrig?"disabled":""}> Teve trabalho à noite / madrugada${noiteObrig?" (tem equipe com horário à noite)":""}</label>
-    ${parado?`<label class="f">O que parou, por quê e de que horas a que horas<textarea id="fParada" rows="2" placeholder="Ex.: chuva forte das 13:30 às 15:00, serviço em altura suspenso">${esc(r.parada||"")}</textarea></label>`:""}
+    ${parado?`<div class="issue warn">Teve paralisação: na tela 4, cada equipe vai descrever o que parou, o motivo e o horário, como ocorrência.</div>`:""}
     ${limparHTML(2,"Apagar o encarregado e as condições do dia?")}
   </section>${errosHTML(2)}`;
 }
@@ -1093,7 +1203,8 @@ function html3(){
   const d=day(), fs=funcs(), used=usedFull();
   const naEq = nome => d.equipes.filter(e=>e.membros.includes(nome)).map(eqNome);
   const disp=fs.filter(f=>!used.has(f.nome));
-  const setOpts=sel=>`<option value="">Escolha…</option>`+BASE.setores.map(s=>`<option ${s===sel?"selected":""}>${esc(s)}</option>`).join("");
+  const setOpts=sel=>`<option value="">Escolha…</option>`+SETORES_LINS.map(([s,r])=>`<option value="${esc(s)}" ${s===sel?"selected":""}>${esc(s+"-"+r)}</option>`).join("")
+    + (sel && !SETORES_LINS.some(x=>x[0]===sel) ? `<option value="${esc(sel)}" selected>${esc(sel)} (lista antiga: escolha um setor novo)</option>` : "");
   const solOpts=sel=>`<option value="">Escolha…</option>`+BASE.solicitantes.map(s=>`<option ${s===sel?"selected":""}>${esc(s)}</option>`).join("");
   const dispHTML = !fs.length ? `<div class="empty">Nenhum funcionário cadastrado para esta empresa. Fale com a usina.</div>`
     : !disp.length ? `<div class="empty">Todo mundo já está numa equipe com o dia completo.</div>`
@@ -1110,9 +1221,13 @@ function html3(){
         <div class="grid">
           <label class="f">Nº da ordem<input data-eo="ordem" data-eq="${eq.id}" data-k="${o.k}" value="${esc(o.ordem)}" inputmode="numeric" maxlength="8" placeholder="40500000" class="mono"></label>
           <label class="f">Setor<select data-eo="setor" data-eq="${eq.id}" data-k="${o.k}">${setOpts(o.setor)}</select></label>
-          <label class="f">Solicitante<select data-eo="solicitante" data-eq="${eq.id}" data-k="${o.k}">${solOpts(o.solicitante)}</select></label>
           <label class="f">Status<select data-eo="status" data-eq="${eq.id}" data-k="${o.k}"><option ${o.status==="Em andamento"?"selected":""}>Em andamento</option><option ${o.status==="Concluída"?"selected":""}>Concluída</option></select></label>
         </div>
+        <div class="grid">
+          <label class="f">Início da espera da LT<input type="time" step="60" data-elt="ltIni" data-eq="${eq.id}" data-k="${o.k}" value="${o.ltIni!=null?hm(o.ltIni):""}"></label>
+          <label class="f">Fim da espera da LT<input type="time" step="60" data-elt="ltFim" data-eq="${eq.id}" data-k="${o.k}" value="${o.ltFim!=null?hm(o.ltFim):""}"></label>
+        </div>
+        <span class="hint">${temLT(o) ? "Tempo de espera da LT: <b>"+durTxt(o.ltFim-o.ltIni)+"</b>" : "Só preencha se a equipe esperou a liberação de trabalho (LT)."}</span>
         <label class="f">Descrição do serviço<input data-eo="desc" data-eq="${eq.id}" data-k="${o.k}" value="${esc(o.desc)}" placeholder="Ex.: Confeccionar chuveiro para os prés 06 e 07"></label>
         <div class="times">
           <label class="f">Entrada da equipe<input type="time" step="60" data-et="in" data-eq="${eq.id}" data-k="${o.k}" value="${hm(o.in)}"></label>
@@ -1155,14 +1270,18 @@ function html4(){
     <div class="rsub" style="border-top:0;padding-top:0"><h3>Avanço das ordens</h3>
       ${eq.ordens.filter(o=>o.ordem).map(o=>{ const conc=o.status==="Concluída", av=conc?100:(r.ord[o.ordem]||{}).av, ant=avAnterior(o.ordem);
         return `<div class="ordr"><div class="oh"><b>${esc(o.ordem)}</b><span class="chip ${conc?"ok":"info"}">${esc(o.status)}</span></div>
-        <span class="hint">${esc(o.setor)}${o.desc?" · "+esc(o.desc):""}</span>
+        <span class="hint">${esc(setorTxt(o.setor,o.solicitante))}${o.desc?" · "+esc(o.desc):""}</span>
         <div class="av${av==null?" unset":""}"><input type="range" min="0" max="100" step="5" value="${av??(ant?ant.v:0)}" data-av="${eq.id}" data-o="${esc(o.ordem)}" ${conc?"disabled":""} aria-label="Avanço físico da ordem ${esc(o.ordem)}"><span class="pct">${av==null?"informe":av+"%"}</span></div>
         <span class="hint">${conc?"Ordem concluída: avanço 100%. Para mudar, troque o status na tela 3.":ant?`Último informado: ${ant.v}% em ${ant.d.split("-").reverse().join("/")}`:"Arraste até o percentual concluído da ordem."}</span>
         <label class="f">O que foi feito hoje nesta ordem (opcional)<textarea data-feito="${eq.id}" data-o="${esc(o.ordem)}" rows="2" placeholder="Ex.: soldagem das chapas do lado direito, faltou pintura">${esc((r.ord[o.ordem]||{}).feito||"")}</textarea></label></div>`; }).join("")}
     </div>
     <div class="rsub"><h3>Ocorrências</h3>
       <label class="chk"><input type="checkbox" data-semoc="${eq.id}" ${r.semOcorr&&!r.ocorr.length?"checked":""} ${r.ocorr.length?"disabled":""}> Sem ocorrências hoje</label>
-      ${r.ocorr.map((x,i)=>`<div class="ordr" data-oc="${x.id}"><div class="oh"><b style="font-family:var(--f-display)">Ocorrência ${i+1}</b><button class="btn small ghost danger" data-ocdel="${eq.id}" data-id="${x.id}">Remover</button></div>
+      ${r.ocorr.map((x,i)=>x.auto ? `<div class="ordr" data-oc="${x.id}"><div class="oh"><b style="font-family:var(--f-display)">Ocorrência ${i+1} · ${esc(x.tipo)}</b><span class="chip warn">da tela 2</span></div>
+        <label class="f">Ordem<select data-ocf="ordem" data-eq="${eq.id}" data-id="${x.id}">${ordOpts(x.ordem)}</select></label>
+        <label class="f">O que parou, por quê e de que horas a que horas<textarea data-ocf="desc" data-eq="${eq.id}" data-id="${x.id}" rows="2" placeholder="Ex.: chuva forte das 13:30 às 15:00, serviço em altura suspenso">${esc(x.desc||"")}</textarea></label>
+        <span class="hint">Para tirar esta ocorrência, volte à tela 2 e mude a condição de trabalho para “Normal”.</span></div>`
+      : `<div class="ordr" data-oc="${x.id}"><div class="oh"><b style="font-family:var(--f-display)">Ocorrência ${i+1}</b><button class="btn small ghost danger" data-ocdel="${eq.id}" data-id="${x.id}">Remover</button></div>
         <div class="grid"><label class="f">Tipo<select data-ocf="tipo" data-eq="${eq.id}" data-id="${x.id}"><option value="">Escolha…</option>${OCORR_TIPOS.map(t=>`<option ${t===x.tipo?"selected":""}>${esc(t)}</option>`).join("")}</select></label>
         <label class="f">Ordem<select data-ocf="ordem" data-eq="${eq.id}" data-id="${x.id}">${ordOpts(x.ordem)}</select></label></div>
         <label class="f">O que aconteceu<textarea data-ocf="desc" data-eq="${eq.id}" data-id="${x.id}" rows="2" placeholder="Ex.: aguardamos a PT de 07:00 às 08:30">${esc(x.desc||"")}</textarea></label></div>`).join("")}
@@ -1198,7 +1317,7 @@ function html5(){
     ${d.equipes.map(eq=>{ const ls=linhasEq(d,eq), rr=eq.rdo;
       return `<div class="eqcard"><div class="eqhead"><h3>${eqNome(eq)}</h3><span class="chip info">${eq.membros.length} ${eq.membros.length===1?"pessoa":"pessoas"} · ${durTxt(hhDe(ls))}</span></div>
       <p class="hint">${eq.membros.map(esc).join(", ")}</p>
-      ${eq.ordens.map(o=>{ const av=o.status==="Concluída"?100:(rr.ord[o.ordem]||{}).av; return `<div class="pvord"><b class="mono">${esc(o.ordem||"—")}</b> <span class="chip ${o.status==="Concluída"?"ok":"info"}">${esc(o.status)}</span> <span class="mono">${hm(o.in)}–${hm(o.out)}</span><br><span class="hint">${esc(o.setor)}${o.desc?" · "+esc(o.desc):""}</span>${av!=null?`<div class="pvbar"><span style="width:${av}%"></span></div><span class="hint">Avanço ${av}%</span>`:""}</div>`; }).join("")}
+      ${eq.ordens.map(o=>{ const av=o.status==="Concluída"?100:(rr.ord[o.ordem]||{}).av; return `<div class="pvord"><b class="mono">${esc(o.ordem||"—")}</b> <span class="chip ${o.status==="Concluída"?"ok":"info"}">${esc(o.status)}</span> <span class="mono">${hm(o.in)}–${hm(o.out)}</span><br><span class="hint">${esc(setorTxt(o.setor,o.solicitante))}${o.desc?" · "+esc(o.desc):""}</span>${temLT(o)?`<br><span class="hint">Espera da LT: ${ltTxt(o)}</span>`:""}${av!=null?`<div class="pvbar"><span style="width:${av}%"></span></div><span class="hint">Avanço ${av}%</span>`:""}</div>`; }).join("")}
       <p class="hint">${rr.ocorr.length?rr.ocorr.length+" ocorrência(s)":(rr.semOcorr?"Sem ocorrências":"Ocorrências não informadas")} · ${rr.equip.length?rr.equip.map(e=>e.qtd+"× "+esc(e.nome)).join(", "):"sem equipamentos"} · ${(d.anexos||[]).filter(a=>a.eq===eq.id).length} foto(s)</p>
       <div class="row"><button class="btn small" data-ver-rdo="${eq.id}">Ver RDO da ${eqNome(eq)} em PDF</button></div></div>`; }).join("")}
     ${all.length?`<section class="card"><h2>Antes de enviar</h2><div class="issues">${all.map(i=>`<div class="issue err">${esc(i[1])} ${i[2]<5?`<button class="btn small" data-goto="${i[2]}" style="margin-left:6px">Ir para a tela ${i[2]}</button>`:""}</div>`).join("")}</div></section>`:""}
@@ -1305,9 +1424,10 @@ document.addEventListener("change", ev=>{
     curDate=v; trocaData=null; confLimpar=null; if(passo>2) passo=2; renderApont(); return; }
   if(t.id==="fNoite"){ d.rdo.noite=t.checked; save(); renderApont(); return; }
   if(ds.eo){ const o=findEq(ds.eq).ordens.find(x=>x.k===ds.k); let v=t.value.trim(); if(ds.eo==="ordem") v=v.replace(/\D/g,"").slice(0,8); if(ds.eo==="desc") v=v.replace(/\s+/g," ");
-    o[ds.eo]=v;
+    o[ds.eo]=v; if(ds.eo==="setor") o.solicitante=respSetor(v);
     if(ds.eo==="ordem" && v && d.ordens[v] && !o.setor){ const i=d.ordens[v]; o.setor=i.setor; o.solicitante=i.solicitante; o.desc=i.desc; o.status=i.status||o.status; } // mesma ordem já usada noutra equipe hoje
     syncTudo(d); save(); renderApont(); return; }
+  if(ds.elt){ const o=findEq(ds.eq).ordens.find(x=>x.k===ds.k); o[ds.elt] = t.value ? toMin(t.value) : null; syncTudo(d); save(); renderApont(); return; }
   if(ds.et){ const o=findEq(ds.eq).ordens.find(x=>x.k===ds.k);
     if(ds.et==="alm") o.alm=t.checked;
     else { let m=toMin(t.value); if(m==null) return; if(ds.et==="in"){ if(isEarly(m)){ m=J.entrada; o.adj=true; toast("Entrada entre 06:00 e 07:00 conta como 07:00"); } else o.adj=false; }
