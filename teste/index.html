@@ -296,9 +296,62 @@ const WD = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
 
 let S = { empresa:null, enc:"", dias:{}, fila:[] };
 try { const raw = localStorage.getItem(KEY); if(raw) S = Object.assign(S, JSON.parse(raw)); } catch(e){}
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} try{ agendarRascunho(); }catch(e){} }
 
 S.fila ||= [];
+/* ---------- rascunho no Google: continuar o mesmo dia em outro aparelho (sem as fotos) ---------- */
+const tipoAparelho = () => /iPad|Tablet/i.test(navigator.userAgent) || (/Android/i.test(navigator.userAgent) && !/Mobile/i.test(navigator.userAgent)) ? "tablet" : (/Android|iPhone|iPod|Mobile/i.test(navigator.userAgent) ? "celular" : "computador");
+S.aparelho ||= {id:"ap-"+Math.random().toString(36).slice(2,10), nome:tipoAparelho()};
+const rascUlt = {}; // último conteúdo enviado/recebido por dia (para não reenviar igual)
+let rascTimer = null, rascAviso = null, rascChecado = "";
+const hhmm = iso => { try{ return new Date(iso).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } };
+function snapDia(d){ return {equipes:d.equipes||[], linhas:d.linhas||[], ordens:d.ordens||{}, status:d.status||{}, rdo:d.rdo||{}, motivo:d.motivo||"", enc:S.enc||"", v:d.v||2}; }
+function agendarRascunho(){ if(!ENVIO_URL || !S.empresa || tab!=="apont") return; clearTimeout(rascTimer); rascTimer=setTimeout(enviarRascunho, 2500); }
+async function enviarRascunho(forcar){
+  const k=S.empresa+"|"+curDate, d=S.dias[k]; if(!d || !temConteudo(d) || (rascAviso && rascAviso.key===k && !forcar)) return;
+  const snap=JSON.stringify(snapDia(d)); if(!forcar && (rascUlt[k]===snap || d.rascEnviado===snap)) return; // não recria rascunho de dia já enviado sem mudanças
+  try{
+    const r=await fetch(ENVIO_URL,{method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({chave:ENVIO_CHAVE, acao:"rascunho", empresa:S.empresa, data:curDate,
+      aparelho:S.aparelho.id, aparelhoNome:S.aparelho.nome, passo, base:d.rascBase||"", forcar:!!forcar, conteudo:snap})});
+    const j=await r.json();
+    if(j.ok){ rascUlt[k]=snap; d.rascBase=j.atualizado; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} return; }
+    if(j.conflito){ rascAviso={key:k, tipo:"conflito", ...j.rascunho}; if(tab==="apont" && S.empresa) renderApont(); }
+  }catch(e){} // sem internet: tenta de novo na próxima alteração ou quando a internet voltar
+}
+async function verificarRascunho(forcarCheck){
+  if(!ENVIO_URL || !S.empresa) return; const k=S.empresa+"|"+curDate; if(!forcarCheck && rascChecado===k) return; rascChecado=k;
+  try{
+    const r=await fetch(ENVIO_URL,{method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({chave:ENVIO_CHAVE, acao:"buscarRascunho", empresa:S.empresa, data:curDate})});
+    const j=await r.json(); const x=j.ok && j.rascunho; if(!x || k!==S.empresa+"|"+curDate) return;
+    const d=S.dias[k];
+    if(x.aparelho===S.aparelho.id) { if(d) d.rascBase=x.atualizado; return; }       // fui eu mesmo
+    if(d && d.rascBase && x.atualizado<=d.rascBase) return;                          // já conheço esta versão
+    if(d && temConteudo(d) && JSON.stringify(snapDia(d))===x.conteudo){ d.rascBase=x.atualizado; return; } // igual ao meu
+    rascAviso={key:k, tipo:"outro", ...x}; if(tab==="apont") renderApont();
+  }catch(e){}
+}
+function rascHTML(){
+  const k=S.empresa+"|"+curDate; if(!rascAviso || rascAviso.key!==k) return "";
+  const a=rascAviso, temLocal=temConteudo(S.dias[k]);
+  const tit = a.tipo==="conflito" ? `Este dia foi alterado em outro aparelho (${esc(a.aparelhoNome||"outro aparelho")}) às ${hhmm(a.atualizado)}.`
+    : `Tem um apontamento de ${fmtD(curDate)} começado em outro aparelho (${esc(a.aparelhoNome||"outro aparelho")}, salvo às ${hhmm(a.atualizado)}, tela ${a.passo||2}).`;
+  return `<section class="card" id="rascBox" style="border-color:var(--accent)"><h2>Continuar de outro aparelho</h2><p style="margin:0">${tit}</p>
+    <p class="hint">As fotos não vêm junto: elas ficam no aparelho onde foram tiradas. Se continuar daqui, tire as fotos de novo na tela 4.</p>
+    <div class="row"><button class="btn primary" data-rasc-usar>Continuar daqui</button>
+    <button class="btn" data-rasc-manter>${temLocal?"Manter o que está neste aparelho":"Começar do zero neste aparelho"}</button></div></section>`;
+}
+function usarRascunho(){
+  const a=rascAviso, k=a.key, d=S.dias[k] ||= {linhas:[], status:{}, ordens:{}, envios:[], motivo:"", equipes:[], anexos:[], rdo:{clima:{}, cond:{}, parada:"", noite:false}, v:2};
+  let c={}; try{ c=JSON.parse(a.conteudo); }catch(e){ toast("Não consegui ler o rascunho."); return; }
+  Object.assign(d, {equipes:c.equipes||[], linhas:c.linhas||[], ordens:c.ordens||{}, status:c.status||{}, rdo:c.rdo||d.rdo, motivo:c.motivo||"", v:c.v||2});
+  const ids=new Set(d.equipes.map(e=>e.id)); (d.anexos||[]).filter(x=>!ids.has(x.eq)).forEach(x=>idbDel("anexos",x.id)); d.anexos=(d.anexos||[]).filter(x=>ids.has(x.eq));
+  if(c.enc) S.enc=c.enc; d.rascBase=a.atualizado; rascUlt[k]=a.conteudo; rascAviso=null;
+  passo=Math.min(Math.max(2, +a.passo||2), 5); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+  renderApont(); window.scrollTo({top:0}); toast("Apontamento carregado do outro aparelho. Confira e tire as fotos de novo na tela 4.");
+}
+function manterLocal(){ const a=rascAviso, d=S.dias[a.key]; if(d) d.rascBase=a.atualizado; rascAviso=null; renderApont(); enviarRascunho(true); }
+async function apagarRascunho(empresa, dataISO){ try{ await fetch(ENVIO_URL,{method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({chave:ENVIO_CHAVE, acao:"apagarRascunho", empresa, data:dataISO})}); }catch(e){} }
+document.addEventListener("click", ev=>{ const b=ev.target.closest("[data-rasc-usar],[data-rasc-manter]"); if(!b || !rascAviso) return; if(b.hasAttribute("data-rasc-usar")) usarRascunho(); else manterLocal(); });
 let curDate = todayISO(), tab = "apont", splitOpen = null;
 
 /* cadastro central (servidor) com cópia neste aparelho para funcionar sem internet */
@@ -614,7 +667,7 @@ function buildDay(){
 const matOf = l => l.mat || (funcs().find(f=>f.nome===l.nome)||{}).mat || "";
 const okToSend = (soPlanilha) => { const is = issues().filter(i=>!soPlanilha || i[2]===3);
   if(is.length){ irPara(5); const c=document.querySelector("#pBody .issues"); c && c.scrollIntoView({behavior:"smooth",block:"center"}); toast(soPlanilha?"Corrija as equipes (tela 3) antes de baixar a planilha":"Corrija os itens em vermelho antes de enviar"); return false; } return true; };
-function markSent(d){ d.envios.push({id:uid(), em:new Date().toISOString(), motivo:d.envios.length?(d.motivo||"").trim():"", status:"app"}); d.motivo=""; save(); renderSum(); }
+function markSent(d){ d.envios.push({id:uid(), em:new Date().toISOString(), motivo:d.envios.length?(d.motivo||"").trim():"", status:"app"}); d.motivo=""; d.rascEnviado=JSON.stringify(snapDia(d)); clearTimeout(rascTimer); save(); renderSum(); }
 function dlBlob(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},3000); }
 
 async function generate(){
@@ -731,7 +784,7 @@ async function sendMail(){
     corpo: body,
     nomeArquivo:fname, arquivo:await b64(blob), anexos, envio:envioN, motivo:envioN>1?motivo:"", encarregado:S.enc.trim(),
     pessoas:new Set(d.linhas.map(pkey)).size, linhas:payloadLinhas(d)};
-  d.envios.push({id, em:new Date().toISOString(), motivo:envioN>1?motivo:"", status:"pendente"}); d.motivo="";
+  d.envios.push({id, em:new Date().toISOString(), motivo:envioN>1?motivo:"", status:"pendente"}); d.motivo=""; d.rascEnviado=JSON.stringify(snapDia(d)); clearTimeout(rascTimer);
   const meta={id, empresa:S.empresa, dataISO:curDate};
   const guardou = await idbPut("fila", {...meta, payload, url:ENVIO_URL});
   S.fila.push(guardou!=null ? meta : {...meta, payload}); // sem IndexedDB: guarda tudo aqui mesmo
@@ -767,8 +820,8 @@ function renderQ(){
   const n=(S.fila||[]).length; $("qBar").hidden = !n || tab==="admin";
   if(n){ const err=S.fila.find(x=>x.erro); $("qTxt").textContent = err ? `${n} envio(s) não aceitos pelo servidor (${err.erro}).` : `${n} envio${n>1?"s":""} guardado${n>1?"s":""} neste aparelho, aguardando internet.`; }
 }
-window.addEventListener("online", ()=>processQueue(false));
-document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") processQueue(false); });
+window.addEventListener("online", ()=>{ processQueue(false); enviarRascunho(); });
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ processQueue(false); if(tab==="apont" && S.empresa) verificarRascunho(true); } });
 
 /* ---------- fila também no IndexedDB, para o service worker enviar com o app fechado ---------- */
 let idbP=null;
@@ -1052,7 +1105,7 @@ function moverDia(de, para){
   const pend=(S.fila||[]).filter(f=>f.empresa===S.empresa && f.dataISO===de);
   pend.forEach(f=>idbDel("fila", f.id)); S.fila=(S.fila||[]).filter(f=>!pend.includes(f));
   if(d.envios.length){ d.enviosOutraData=[...(d.enviosOutraData||[]), ...d.envios.map(e=>({...e, data:de}))]; d.envios=[]; d.motivo=""; }
-  S.dias[kPara]=d; delete S.dias[kDe]; curDate=para; trocaData=null; save(); renderApont(); renderQ();
+  S.dias[kPara]=d; delete S.dias[kDe]; d.rascBase=""; apagarRascunho(S.empresa, de); curDate=para; trocaData=null; save(); renderApont(); renderQ();
   toast(`Apontamento movido para ${fmtD(para)}.`+(pend.length?" O envio que estava aguardando internet foi cancelado: envie de novo.":""));
 }
 const PASSOS = [[1,"Empresa"],[2,"Início"],[3,"Equipes"],[4,"Avanço"],[5,"Revisão"]];
@@ -1169,7 +1222,8 @@ function renderApont(){
   day(); syncTudo();
   $("steps").innerHTML = PASSOS.map(([n,t])=>`<button type="button" data-step="${n}" class="${n===passo?"cur":(n<passo?"done":"")}" ${n===passo?'aria-current="step"':""}><span class="n">${n<passo?"✓":n}</span><span class="t">${t}</span></button>`).join("");
   const box=$("pBody");
-  box.innerHTML = passo===2 ? html2() : passo===3 ? html3() : passo===4 ? html4() : html5();
+  box.innerHTML = rascHTML() + (passo===2 ? html2() : passo===3 ? html3() : passo===4 ? html4() : html5());
+  verificarRascunho();
   if(passo===4) carregarMiniaturas();
   updateBar();
 }

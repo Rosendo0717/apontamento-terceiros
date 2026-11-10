@@ -29,6 +29,7 @@ const ABAS = {
          'VOLTA ALMOÇO', 'SAÍDA', 'TOTAL', 'ORDEM', 'SETOR', 'RESPONSÁVEL DO SETOR', 'DESCRIÇÃO SERVIÇOS', 'STATUS DA ORDEM', 'OBSERVAÇÃO',
          'ENCARREGADO', 'MOTIVO DO REENVIO', 'EQUIPE', 'INÍCIO ESPERA LT', 'FIM ESPERA LT', 'TEMPO ESPERA LT'],
   SETORES: ['SETOR', 'E-MAILS (CÓPIA)'],
+  RASCUNHOS: ['EMPRESA', 'DATA', 'APARELHO', 'ID DO APARELHO', 'ATUALIZADO', 'TELA', 'ARQUIVO'],
   EMPRESAS: ['EMPRESA', 'LINK (#)'],
   FUNCIONARIOS: ['EMPRESA', 'COLABORADOR', 'MATRÍCULA']
 };
@@ -50,6 +51,11 @@ function doPost(e) {
   if (p.chave !== CHAVE) return resp({ ok: false, erro: 'chave inválida' });
 
   if (p.acao === 'login') return resp(senhaOk_(p.senha) ? { ok: true } : { ok: false, erro: 'senha incorreta' });
+
+  // rascunho do dia: para continuar o preenchimento em outro aparelho (sem as fotos)
+  if (p.acao === 'rascunho') return comTrava_(() => salvarRascunho_(p));
+  if (p.acao === 'buscarRascunho') return resp({ ok: true, rascunho: buscarRascunho_(p.empresa, p.data) });
+  if (p.acao === 'apagarRascunho') return comTrava_(() => { apagarRascunho_(p.empresa, p.data); return { ok: true }; });
 
   if (p.acao === 'setores') {
     if (!senhaOk_(p.senha)) return resp({ ok: false, erro: 'senha incorreta' });
@@ -116,6 +122,10 @@ function receberEnvio_(p) {
     l.entrada, l.saidaAlm || '', l.voltaAlm || '', l.saida, l.total, l.ordem, l.setor || '', l.solicitante || '', l.desc || '',
     l.status || '', l.obs || '', p.encarregado || '', p.motivo || '', l.equipe || '', l.ltIni || '', l.ltFim || '', l.ltTempo || '']);
   if (linhas.length) base.getRange(base.getLastRow() + 1, 1, linhas.length, linhas[0].length).setValues(linhas);
+
+  // o dia foi enviado: o rascunho não serve mais
+  const m = String(p.data || '').match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) apagarRascunho_(p.empresa, m[3] + '-' + m[2] + '-' + m[1]);
 
   return { ok: true };
 }
@@ -189,6 +199,54 @@ function salvarSetores_(m) {
   const linhas = Object.keys(m).filter(s => String(m[s] || '').trim()).map(s => [s, String(m[s]).trim()]);
   if (linhas.length) aba.getRange(2, 1, linhas.length, 2).setValues(linhas);
 }
+
+/* ---------------- rascunhos (continuar em outro aparelho) ---------------- */
+
+function linhaRascunho_(aba, empresa, data) {
+  if (aba.getLastRow() < 2) return 0;
+  const v = aba.getRange(2, 1, aba.getLastRow() - 1, 2).getDisplayValues();
+  for (let i = 0; i < v.length; i++) if (v[i][0] === empresa && v[i][1] === data) return i + 2;
+  return 0;
+}
+
+function salvarRascunho_(p) {
+  if (!p.empresa || !/^\d{4}-\d{2}-\d{2}$/.test(p.data || '') || !p.conteudo) return { ok: false, erro: 'rascunho incompleto' };
+  const aba = planilha_().getSheetByName('RASCUNHOS'), n = linhaRascunho_(aba, p.empresa, p.data);
+  if (n) {
+    const r = aba.getRange(n, 1, 1, 7).getDisplayValues()[0];
+    // outro aparelho salvou depois da última versão que este aparelho conhece: avisa em vez de sobrescrever
+    if (!p.forcar && r[3] !== p.aparelho && r[4] > String(p.base || '')) {
+      return { ok: false, conflito: true, rascunho: { aparelhoNome: r[2], aparelho: r[3], atualizado: r[4], passo: r[5], conteudo: lerArquivo_(r[6]) } };
+    }
+  }
+  const agora = new Date().toISOString();
+  const pasta = subpasta_(pasta_(), 'Rascunhos'), nome = p.empresa + ' ' + p.data + '.json';
+  let id = n ? aba.getRange(n, 7).getDisplayValue() : '';
+  let arq = null;
+  if (id) { try { arq = DriveApp.getFileById(id); arq.setContent(p.conteudo); } catch (e) { arq = null; } }
+  if (!arq) arq = pasta.createFile(nome, p.conteudo, 'application/json');
+  const linha = [p.empresa, "'" + p.data, p.aparelhoNome || '', p.aparelho || '', "'" + agora, p.passo || '', arq.getId()];
+  if (n) aba.getRange(n, 1, 1, 7).setValues([linha]); else aba.appendRow(linha);
+  return { ok: true, atualizado: agora };
+}
+
+function buscarRascunho_(empresa, data) {
+  const aba = planilha_().getSheetByName('RASCUNHOS'), n = linhaRascunho_(aba, empresa, data);
+  if (!n) return null;
+  const r = aba.getRange(n, 1, 1, 7).getDisplayValues()[0];
+  const conteudo = lerArquivo_(r[6]);
+  return conteudo ? { aparelhoNome: r[2], aparelho: r[3], atualizado: r[4], passo: r[5], conteudo: conteudo } : null;
+}
+
+function apagarRascunho_(empresa, data) {
+  const aba = planilha_().getSheetByName('RASCUNHOS'), n = linhaRascunho_(aba, empresa, data);
+  if (!n) return;
+  const id = aba.getRange(n, 7).getDisplayValue();
+  try { if (id) DriveApp.getFileById(id).setTrashed(true); } catch (e) {}
+  aba.deleteRow(n);
+}
+
+function lerArquivo_(id) { try { return id ? DriveApp.getFileById(id).getBlob().getDataAsString('UTF-8') : ''; } catch (e) { return ''; } }
 
 /* ---------------- planilha do período (área do administrador) ---------------- */
 
