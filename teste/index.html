@@ -160,6 +160,8 @@ textarea{resize:vertical;min-height:64px}
 .chk{display:flex;align-items:center;gap:8px;font-size:.9rem;min-height:40px;cursor:pointer}
 .chk input{width:20px;height:20px;min-height:0;accent-color:var(--accent);flex:none}
 .eqrow{display:grid;grid-template-columns:1fr 84px auto;gap:8px;align-items:end}
+.eqitem{display:grid;grid-template-columns:72px 1fr 1fr auto;gap:8px;align-items:end;padding:10px 0;border-top:1px solid var(--line,#e3e8ef)}.eqitem .eqnm{grid-column:1/-1;font-weight:600}.eqitem .eqtempo{grid-column:1/-1;margin:0}
+@media (max-width:420px){.eqitem{grid-template-columns:64px 1fr 1fr}.eqitem .btn{grid-column:1/-1}}
 .anxi input{min-height:34px;padding:4px 8px;font-size:.82rem;margin-top:4px}
 @media (prefers-reduced-motion:no-preference){.person,.btn{transition:background .12s,border-color .12s}}
 </style>
@@ -880,6 +882,7 @@ const CONDS = ["Normal","Parcialmente paralisado","Paralisado"];
 const OCORR_TIPOS = ["Falta de material","Aguardando liberação / PT","Interferência de outra equipe","Equipamento com defeito","Paralisação pela usina","Condição insegura","Quase-acidente","Acidente","Outro"];
 const EQUIPS = ["Máquina de solda","Lixadeira / esmerilhadeira","Maçarico / oxicorte","Furadeira","Andaime","Talha / tirfor","Caminhão munck","Guindaste","Plataforma elevatória","Compressor","Hidrojateamento","Gerador","Caminhão"];
 const PERIODOS = [["manha","Manhã",[[360,720]]],["tarde","Tarde",[[720,1080]]],["noite","Noite / madrugada",[[1080,1800],[0,360]]]];
+const tempoEquip = e => (e && e.ini!=null && e.fim!=null) ? ((e.fim-e.ini+1440)%1440 || 1440) : null;
 function rdo(d=day()){ const r = d.rdo ||= {}; r.clima ||= {}; r.cond ||= {}; r.ocorr ||= []; r.equip ||= []; r.ord ||= {}; return r; }
 const periodosDia = (d=day()) => PERIODOS.filter(([,,ws])=>d.linhas.some(l=>ws.some(([a,b])=>l.in<b && l.out>a)));
 const ordensDia = (d=day()) => [...new Set(d.linhas.map(l=>l.ordem))];
@@ -1029,7 +1032,7 @@ async function buildRdo(d=day(), envioN=d.envios.length+1){
 
   /* equipamentos */
   sec("Equipamentos");
-  if(r.equip.length) table([{t:"Equipamento",w:.8},{t:"Quantidade",w:.2,a:"right"}], r.equip.map(e=>[e.nome, String(e.qtd)]));
+  if(r.equip.length) table([{t:"Equipamento",w:.43},{t:"Qtd.",w:.1,a:"right"},{t:"Pegou às",w:.15,a:"center"},{t:"Fim do uso",w:.15,a:"center"},{t:"Tempo de uso",w:.17,a:"right"}], r.equip.map(e=>{ const tu=tempoEquip(e); return [e.nome, String(e.qtd), hm(e.ini)||"—", hm(e.fim)||"—", tu!=null?durTxt(tu):"—"]; }));
   else para("Nenhum equipamento informado.", {sz:9, c:COR.mut});
 
   /* ocorrências */
@@ -1203,6 +1206,7 @@ function issues4(d=day()){
     if(!r.semOcorr && !r.ocorr.length) out.push(`${nm}: marque “Sem ocorrências” ou registre uma ocorrência.`);
     r.ocorr.forEach((x,i)=>{ if(x.auto){ if((x.desc||"").trim().length<5) out.push(`${nm}: descreva a ${x.tipo.toLowerCase()} (o que parou, motivo e horário).`); }
       else if(!x.tipo || (x.desc||"").trim().length<5) out.push(`${nm}: complete a ocorrência ${i+1} (tipo e descrição).`); });
+    r.equip.forEach(e=>{ if(e.ini==null || e.fim==null) out.push(`${nm}: informe o horário em que pegou e o fim do uso de ${e.nome}.`); });
     if(!(d.anexos||[]).some(a=>a.eq===eq.id && /^image\//.test(a.tipo))) out.push(`${nm}: tire pelo menos uma foto do serviço.`);
   });
   return out;
@@ -1342,7 +1346,12 @@ function html4(){
       <button class="btn small" data-ocadd="${eq.id}">+ Registrar ocorrência</button>
     </div>
     <div class="rsub"><h3>Equipamentos usados <span class="hint">opcional</span></h3>
-      ${r.equip.map(e=>`<div class="eqrow"><span style="align-self:center">${esc(e.nome)}</span><input type="number" min="1" max="99" inputmode="numeric" value="${e.qtd}" data-eqq="${eq.id}" data-id="${e.id}" aria-label="Quantidade de ${esc(e.nome)}"><button class="btn small ghost danger" data-eqdel="${eq.id}" data-id="${e.id}">Remover</button></div>`).join("")}
+      ${r.equip.map(e=>{ const tu=tempoEquip(e); return `<div class="eqitem"><span class="eqnm">${esc(e.nome)}</span>
+        <label class="f">Qtd.<input type="number" min="1" max="99" inputmode="numeric" value="${e.qtd}" data-eqq="${eq.id}" data-id="${e.id}" aria-label="Quantidade de ${esc(e.nome)}"></label>
+        <label class="f">Pegou às<input type="time" step="60" value="${hm(e.ini)}" data-eqt="ini" data-eq="${eq.id}" data-id="${e.id}"></label>
+        <label class="f">Fim do uso<input type="time" step="60" value="${hm(e.fim)}" data-eqt="fim" data-eq="${eq.id}" data-id="${e.id}"></label>
+        <button class="btn small ghost danger" data-eqdel="${eq.id}" data-id="${e.id}">Remover</button>
+        <p class="hint eqtempo">${tu!=null ? "Tempo de uso: <b>"+durTxt(tu)+"</b>"+(e.fim<=e.ini?" (passou da meia-noite)":"") : "Informe o horário em que pegou e o fim do uso."}</p></div>`; }).join("")}
       <div class="eqrow"><label class="f">Equipamento<input id="eqNome-${eq.id}" list="eqLista-${eq.id}" placeholder="Ex.: Máquina de solda" autocomplete="off"></label><label class="f">Qtd.<input id="eqQtd-${eq.id}" type="number" min="1" max="99" value="1" inputmode="numeric"></label><button class="btn small" data-eqadd="${eq.id}">Adicionar</button></div>
       <datalist id="eqLista-${eq.id}">${EQUIPS.filter(n=>!r.equip.some(e=>e.nome===n)).map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
     </div>
@@ -1372,7 +1381,7 @@ function html5(){
       return `<div class="eqcard"><div class="eqhead"><h3>${eqNome(eq)}</h3><span class="chip info">${eq.membros.length} ${eq.membros.length===1?"pessoa":"pessoas"} · ${durTxt(hhDe(ls))}</span></div>
       <p class="hint">${eq.membros.map(esc).join(", ")}</p>
       ${eq.ordens.map(o=>{ const av=o.status==="Concluída"?100:(rr.ord[o.ordem]||{}).av; return `<div class="pvord"><b class="mono">${esc(o.ordem||"—")}</b> <span class="chip ${o.status==="Concluída"?"ok":"info"}">${esc(o.status)}</span> <span class="mono">${hm(o.in)}–${hm(o.out)}</span><br><span class="hint">${esc(setorTxt(o.setor,o.solicitante))}${o.desc?" · "+esc(o.desc):""}</span>${temLT(o)?`<br><span class="hint">Espera da LT: ${ltTxt(o)}</span>`:""}${av!=null?`<div class="pvbar"><span style="width:${av}%"></span></div><span class="hint">Avanço ${av}%</span>`:""}</div>`; }).join("")}
-      <p class="hint">${rr.ocorr.length?rr.ocorr.length+" ocorrência(s)":(rr.semOcorr?"Sem ocorrências":"Ocorrências não informadas")} · ${rr.equip.length?rr.equip.map(e=>e.qtd+"× "+esc(e.nome)).join(", "):"sem equipamentos"} · ${(d.anexos||[]).filter(a=>a.eq===eq.id).length} foto(s)</p>
+      <p class="hint">${rr.ocorr.length?rr.ocorr.length+" ocorrência(s)":(rr.semOcorr?"Sem ocorrências":"Ocorrências não informadas")} · ${rr.equip.length?rr.equip.map(e=>e.qtd+"× "+esc(e.nome)+(e.ini!=null&&e.fim!=null?` (${hm(e.ini)}–${hm(e.fim)})`:"")).join(", "):"sem equipamentos"} · ${(d.anexos||[]).filter(a=>a.eq===eq.id).length} foto(s)</p>
       <div class="row"><button class="btn small" data-ver-rdo="${eq.id}">Ver RDO da ${eqNome(eq)} em PDF</button></div></div>`; }).join("")}
     ${all.length?`<section class="card"><h2>Antes de enviar</h2><div class="issues">${all.map(i=>`<div class="issue err">${esc(i[1])} ${i[2]<5?`<button class="btn small" data-goto="${i[2]}" style="margin-left:6px">Ir para a tela ${i[2]}</button>`:""}</div>`).join("")}</div></section>`:""}
     <section class="card"><h2>Envio ${chip}</h2>
@@ -1410,7 +1419,7 @@ function repeat(){
   const p=lastDay(); if(!p) return; const src=migrar(S.dias[S.empresa+"|"+p]), d=day();
   if(d.equipes.length){ toast("Este dia já tem equipes. Use “Limpar tela” na tela 3 antes de repetir."); return; }
   src.equipes.forEach(se=>{ const eq=novaEquipe(d); eq.membros=[...se.membros]; eq.ordens=se.ordens.map(o=>({...o, k:uid()}));
-    eq.rdo.equip=(se.rdo.equip||[]).map(e=>({...e, id:uid()})); });
+    eq.rdo.equip=(se.rdo.equip||[]).map(e=>({...e, id:uid(), ini:null, fim:null})); });
   d.rdo.noite=!!(src.rdo&&src.rdo.noite);
   syncTudo(d); save(); passo=3; renderApont(); window.scrollTo({top:0}); toast("Equipes e ordens copiadas de "+p.split("-").reverse().join("/")+". Confira quem faltou ou mudou.");
 }
@@ -1453,7 +1462,7 @@ document.addEventListener("click", ev=>{
   if(ds.eqdel){ const r=findEq(ds.eqdel).rdo; r.equip=r.equip.filter(x=>x.id!==ds.id); save(); renderApont(); return; }
   if(ds.eqadd){ const r=findEq(ds.eqadd).rdo, n=$("eqNome-"+ds.eqadd).value.trim().replace(/\s+/g," "), q=Math.max(1,Math.min(99,parseInt($("eqQtd-"+ds.eqadd).value,10)||1));
     if(n.length<3){ toast("Escreva o nome do equipamento"); $("eqNome-"+ds.eqadd).focus(); return; }
-    const ex=r.equip.find(e=>e.nome.toLowerCase()===n.toLowerCase()); if(ex) ex.qtd=q; else r.equip.push({id:uid(), nome:n, qtd:q}); save(); renderApont(); $("eqNome-"+ds.eqadd).focus(); return; }
+    const ex=r.equip.find(e=>e.nome.toLowerCase()===n.toLowerCase()); if(ex) ex.qtd=q; else r.equip.push({id:uid(), nome:n, qtd:q, ini:null, fim:null}); save(); renderApont(); $("eqNome-"+ds.eqadd).focus(); return; }
   if(ds.foto){ fotoEq=ds.foto; $("anxFoto").click(); return; }
   if(ds.galeria){ fotoEq=ds.galeria; $("anxArq").click(); return; }
   if(ds.verRdo){ verRdo(ds.verRdo); return; }
@@ -1494,6 +1503,7 @@ document.addEventListener("change", ev=>{
       l[ds.f]=m; norm(l); l.custom=true; }
     if(ds.f==="obs") l.obs=t.value.trim();
     save(); setTimeout(renderApont,0); return; }
+  if(ds.eqt){ const e=findEq(ds.eq).rdo.equip.find(x=>x.id===ds.id); if(e){ e[ds.eqt] = t.value ? toMin(t.value) : null; save(); renderApont(); } return; }
   if(ds.semoc){ findEq(ds.semoc).rdo.semOcorr=t.checked; save(); renderApont(); return; }
   if(ds.av){ const r=findEq(ds.av).rdo; (r.ord[ds.o] ||= {}).av=+t.value; save(); renderApont(); return; }
   if(ds.ocf && t.tagName==="SELECT"){ const x=findEq(ds.eq).rdo.ocorr.find(o=>o.id===ds.id); if(x){ x[ds.ocf]=t.value; save(); renderApont(); } return; }
